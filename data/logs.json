@@ -1633,5 +1633,135 @@
     "id": "msi63ws4d3db90",
     "createdAt": "2026-08-07 07:49:26",
     "message": "[ADMIN alwayscodex] Update maintenance settings"
+  },
+  {
+    "id": "msi7ajk26a4fd5",
+    "createdAt": "2026-08-07 08:22:35",
+    "message": "[SISTEM] Registrasi baru: supply"
+  },
+  {
+    "id": "msi7ar0s2e8a38",
+    "createdAt": "2026-08-07 08:22:45",
+    "message": "[SISTEM] Login: supply"
+  },
+  {
+    "id": "msi7xq010a850a",
+    "createdAt": "2026-08-07 08:40:37",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msi7y3wm82ce49",
+    "createdAt": "2026-08-07 08:40:55",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msi7y9b5b9c4f8",
+    "createdAt": "2026-08-07 08:41:02",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msi7yn1641dd61",
+    "createdAt": "2026-08-07 08:41:20",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msi8mhv3c09dd9",
+    "createdAt": "2026-08-07 08:59:53",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msiastev5a5f99",
+    "createdAt": "2026-08-07 10:00:47",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msiasthud6fb5d",
+    "createdAt": "2026-08-07 10:00:47",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msiastk194022b",
+    "createdAt": "2026-08-07 10:00:47",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msiastm851bbb7",
+    "createdAt": "2026-08-07 10:00:47",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msie9uzo340489",
+    "createdAt": "2026-08-07 11:38:01",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msieaisve83dd8",
+    "createdAt": "2026-08-07 11:38:32",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msiech4j4a5c06",
+    "createdAt": "2026-08-07 11:40:03",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msiest4ob3952b",
+    "createdAt": "2026-08-07 11:52:45",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msiets5lc51603",
+    "createdAt": "2026-08-07 11:53:30",
+    "message": "[alwayscodex] Auto generator batch selesai (1 akun)"
+  },
+  {
+    "id": "msif8kwree5c8c",
+    "createdAt": "2026-08-07 12:05:01",
+    "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "msifczrz8c0bbc",
+    "createdAt": "2026-08-07 12:08:27",
+    "message": "[alwayscodex] Auto generator batch dimulai (1 akun @1win.life)"
+  },
+  {
+    "id": "msifdkyp0bc256",
+    "createdAt": "2026-08-07 12:08:54",
+    "message": "[alwayscodex] Auto generator batch selesai (1 akun)"
+  },
+  {
+    "id": "msiffjjdc53870",
+    "createdAt": "2026-08-07 12:10:26",
+    "message": "[SISTEM] Registrasi baru: guci"
+  },
+  {
+    "id": "msiffvo99c9c0d",
+    "createdAt": "2026-08-07 12:10:41",
+    "message": "[SISTEM] Login: guci"
+  },
+  {
+    "id": "msifkulm0b7a31",
+    "createdAt": "2026-08-07 12:14:33",
+    "message": "[ADMIN alwayscodex] Blokir user guci"
+  },
+  {
+    "id": "msifldhxc7b6d8",
+    "createdAt": "2026-08-07 12:14:58",
+    "message": "[guci] Kirim tautan verifikasi ke bot@gmail.com"
+  },
+  {
+    "id": "msiflx3b766279",
+    "createdAt": "2026-08-07 12:15:23",
+    "message": "[ADMIN alwayscodex] Aktifkan user guci"
+  },
+  {
+    "id": "msifm75646cc2a",
+    "createdAt": "2026-08-07 12:15:36",
+    "message": "[ADMIN alwayscodex] Ubah role guci -> RESELLER"
+  },
+  {
+    "id": "msifnv30d53c05",
+    "createdAt": "2026-08-07 12:16:54",
+    "message": "[ADMIN alwayscodex] Ubah role guci -> PREMIUM"
   }
 ]

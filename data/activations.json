@@ -350,5 +350,37 @@
     "status": "success",
     "note": "claim-premium: lisensi aktif",
     "createdAt": "2026-08-07 01:49:23"
+  },
+  {
+    "id": "msiet85pff1fab",
+    "operator": "alwayscodex",
+    "email": "bota4@1win.life",
+    "status": "failed",
+    "note": "autogen: verify: {\"error\":{\"code\":400,\"message\":\"INVALID_OOB_CODE\",\"errors\":[{\"message\":\"INVALID_OOB_CODE\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-07 11:53:04"
+  },
+  {
+    "id": "msietpu0da1518",
+    "operator": "alwayscodex",
+    "email": "bota5@1win.life",
+    "status": "success",
+    "note": "autogen: 21010",
+    "createdAt": "2026-08-07 11:53:27"
+  },
+  {
+    "id": "msifdin41ba2fa",
+    "operator": "alwayscodex",
+    "email": "am1@1win.life",
+    "status": "success",
+    "note": "autogen: 48791",
+    "createdAt": "2026-08-07 12:08:51"
+  },
+  {
+    "id": "msifldhw0362ce",
+    "operator": "guci",
+    "email": "bot@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 12:14:58"
   }
 ]

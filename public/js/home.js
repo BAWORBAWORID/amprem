@@ -26,10 +26,10 @@
 
     var ROLE_BADGE = {
         owner: 'badge-owner', admin: 'badge-admin', premium: 'badge-premium',
-        autogen: 'badge-autogen', user: 'badge-normal'
+        autogen: 'badge-autogen', reseller: 'badge-reseller', user: 'badge-normal'
     };
-    var ROLE_LABEL = { owner: 'Owner', admin: 'Admin', premium: 'Premium', autogen: 'Auto Gen', user: 'User' };
-    var PROFILE_ROLE = { owner: 'Owner', admin: 'Administrator', premium: 'Premium', autogen: 'Auto Gen', user: 'Anggota' };
+    var ROLE_LABEL = { owner: 'Owner', admin: 'Admin', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
+    var PROFILE_ROLE = { owner: 'Owner', admin: 'Administrator', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'Anggota' };
 
     var VALID_SCREENS = ['dashboard', 'generator', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'admin', 'contributors', 'history', 'settings', 'reviews'];
 
@@ -46,8 +46,17 @@
     function $(id) { return document.getElementById(id); }
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+    function isUnlimitedRole(role) {
+        return ['reseller', 'premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    }
+    function hasApiRole(role) {
+        return ['premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    }
+    function hasBulkRole(role) {
+        return ['autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    }
     function isPrivileged() {
-        return currentUser && ['admin', 'owner', 'premium', 'autogen'].indexOf(currentUser.role) !== -1;
+        return currentUser && isUnlimitedRole(currentUser.role);
     }
     function isAdminOrOwner() {
         return currentUser && ['admin', 'owner'].indexOf(currentUser.role) !== -1;
@@ -96,7 +105,7 @@
         }
         if (VALID_SCREENS.indexOf(name) === -1) name = 'dashboard';
         if ((name === 'admin' || name === 'settings') && !isAdminOrOwner()) name = 'dashboard';
-        if (name === 'apiguide' && !isPrivileged()) name = 'dashboard';
+        if (name === 'apiguide' && (!currentUser || !hasApiRole(currentUser.role))) name = 'dashboard';
         $('main-content').classList.toggle('profile-screen-active', name === 'profile');
         if (name !== 'chat') closeChatStream();
 
@@ -136,6 +145,11 @@
         $('btn-sidebar-close').addEventListener('click', closeSidebar);
         $('sidebar-overlay').addEventListener('click', closeSidebar);
         $('btn-profile-logout').addEventListener('click', handleLogout);
+        var sidebarLogout = $('btn-logout');
+        if (sidebarLogout && !sidebarLogout.dataset.bound) {
+            sidebarLogout.dataset.bound = '1';
+            sidebarLogout.addEventListener('click', handleLogout);
+        }
         $('btn-topbar-chat').addEventListener('click', function () { showScreen('chat'); });
         $('btn-topbar-profile').addEventListener('click', function () { showScreen('profile'); });
     }
@@ -454,7 +468,7 @@
         function setupAutoGenerator() {
         bindGeneratorManual();
         if (!currentUser) return;
-        var unlocked = isPrivileged();
+        var unlocked = currentUser && hasBulkRole(currentUser.role);
         $('autogen-locked-container').classList.toggle('hidden', unlocked);
         $('autogen-unlocked-container').classList.toggle('hidden', !unlocked);
         if (!unlocked) {
@@ -568,6 +582,16 @@
     /* ============================== NETFLIX ============================== */
 
     function loadNetflix() {
+        // Cek status maintenance fitur Netflix (tampilkan halaman maintenance jika aktif)
+        api('/api/auth/system/settings').then(function (data) {
+            var maint = (data && data.maintenance) || {};
+            var isDown = !!maint.netflix;
+            var content = $('netflix-content-container');
+            var maintBox = $('netflix-maintenance-container');
+            if (content) content.classList.toggle('hidden', isDown);
+            if (maintBox) maintBox.classList.toggle('hidden', !isDown);
+        }).catch(function () { /* server offline: biarkan konten normal */ });
+
         var btn = $('btn-netflix-generate');
         if (btn && !btn.dataset.bound) {
             btn.dataset.bound = '1';
@@ -931,7 +955,7 @@
         // FITUR BARU MULAI DI SINI - Centang Biru (Verified Badge) Khusus Premium / Admin / AutoGen / Owner
         var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span[title="Terverifikasi"]');
         if (profileCheckBadge) {
-            var isVerifiedRole = ['premium', 'admin', 'owner', 'autogen'].indexOf(u.role) !== -1;
+            var isVerifiedRole = ['premium', 'admin', 'owner', 'autogen', 'reseller'].indexOf(u.role) !== -1;
             profileCheckBadge.style.display = isVerifiedRole ? 'inline-flex' : 'none';
             profileCheckBadge.style.background = '#0095f6'; // Warna Biru Khas Meta AI / Verified
             profileCheckBadge.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -943,8 +967,8 @@
 
         // Populate Personal Info (pinfo) section
         if ($('pinfo-name')) $('pinfo-name').textContent = u.username;
-        if ($('pinfo-role')) $('pinfo-role').textContent = u.role || 'user';
-        if ($('pinfo-credits')) $('pinfo-credits').textContent = creditsDisplay();
+        if ($('pinfo-role')) $('pinfo-role').textContent = PROFILE_ROLE[u.role] || 'Anggota';
+        if ($('pinfo-credits')) $('pinfo-credits').textContent = creditsDisplay() + ' Credits';
         if ($('pinfo-apikey')) $('pinfo-apikey').textContent = u.apiKey || '-';
         if ($('pinfo-expired')) {
             if (u.apiPlan === 'lifetime') {
@@ -956,12 +980,22 @@
             }
         }
         if ($('pinfo-admin')) $('pinfo-admin').textContent = (u.role === 'admin' || u.role === 'owner') ? 'True' : 'False';
-        if ($('pinfo-limit')) $('pinfo-limit').textContent = u.role === 'owner' ? 'Unlimited' : (u.role === 'premium' || u.role === 'autogen' ? 'Premium' : '0');
+        if ($('pinfo-limit')) {
+            var roleLimits = {
+                user: '50 credits / harian',
+                reseller: 'Unlimited Web',
+                premium: 'Unlimited Web + API single',
+                autogen: 'Unlimited Web + API bulk',
+                admin: 'Unlimited + Management',
+                owner: 'Unlimited + Superuser'
+            };
+            $('pinfo-limit').textContent = roleLimits[u.role] || '0';
+        }
 
         $('api-key-input').value = u.apiKey || 'Belum ada API Key. Silahkan beli di menu Beli API Key.';
 
         var apiSection = $('profile-apikey-section');
-        var canManageApiKey = ['user', 'autogen'].indexOf(u.role) === -1;
+        var canManageApiKey = hasApiRole(u.role);
         if (apiSection) apiSection.classList.toggle('hidden', !canManageApiKey);
 
         var apiKeyInput = $('api-key-input');
@@ -1531,7 +1565,7 @@
     function handleEditRole(userId) {
         Swal.fire({
             title: 'Ubah Role', input: 'select',
-            inputOptions: { USER: 'USER', PREMIUM: 'PREMIUM', 'AUTO GENERATOR': 'AUTO GENERATOR', ADMIN: 'ADMIN' },
+            inputOptions: { USER: 'USER — Credit Based', RESELLER: 'RESELLER — Unlimited Web Only', PREMIUM: 'PREMIUM — API Single Create', AUTOGEN: 'AUTOGEN — API Bulk Auto', ADMIN: 'ADMIN — Master Management' },
             inputPlaceholder: 'Pilih role baru', showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal',
             preConfirm: function (role) { if (!role) Swal.showValidationMessage('Pilih role'); return role; }
         }).then(function (r) {
@@ -1563,7 +1597,8 @@
                     }
                 });
             } else {
-                api('/api/admin/user/role', { method: 'POST', body: { userId: userId, role: role.toLowerCase() } }).then(function (res) {
+                var selectedRole = role === 'AUTOGEN' ? 'autogen' : role.toLowerCase();
+                api('/api/admin/user/role', { method: 'POST', body: { userId: userId, role: selectedRole } }).then(function (res) {
                     Swal.fire({ icon: res.success ? 'success' : 'error', title: res.success ? 'DIUBAH!' : 'GAGAL', text: res.message, timer: 1500, showConfirmButton: false });
                     loadAdminUsers();
                 });

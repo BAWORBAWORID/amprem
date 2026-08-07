@@ -5,14 +5,14 @@
     "password": "$2b$10$JumGNqqLKorxjSMwl6S94eFVXngcYQgo3yEL5MOhJ1zeUxgxras52",
     "role": "owner",
     "credits": 999999,
-    "apiKey": "Codex97c6c658a1212df408f5309c1002412",
+    "apiKey": "Codex0d3e5eb4687a6456d598813525d35f9",
     "apiPlan": "lifetime",
     "apiExpiresAt": null,
     "apiActive": true,
     "createdAt": "2026-08-06T00:53:29.737Z",
     "banned": false,
-    "ip": "127.0.0.1",
-    "device": "Unknown"
+    "ip": "114.10.151.103",
+    "device": "Android"
   },
   "yann": {
     "id": "msh3gqni93e1a9",
@@ -328,5 +328,36 @@
     "banned": false,
     "ip": "121.101.133.228",
     "device": "Android"
+  },
+  "supply": {
+    "id": "msi7ajcp75368a",
+    "username": "supply",
+    "password": "$2b$10$oYGlC2TYU9WaIkrFL3vicewmwjUUQ5Fj09WdbEY.ZEKgpP/GbtBsG",
+    "role": "user",
+    "credits": 50,
+    "apiKey": "",
+    "apiPlan": "",
+    "apiExpiresAt": null,
+    "apiActive": false,
+    "createdAt": "2026-08-07T00:22:35.878Z",
+    "banned": false,
+    "ip": "114.10.153.59",
+    "device": "Android"
+  },
+  "guci": {
+    "id": "msiffjfj58347c",
+    "username": "guci",
+    "password": "$2b$10$hMoNAoZlSizeftehxGP8juKG2Pps9IDcnXOQWbJUQJzZApBGMhEoS",
+    "role": "premium",
+    "credits": 49,
+    "apiKey": "",
+    "apiPlan": "monthly",
+    "apiExpiresAt": "2026-08-22T04:16:54.299Z",
+    "apiActive": false,
+    "createdAt": "2026-08-07T04:10:26.078Z",
+    "banned": false,
+    "ip": "114.10.151.103",
+    "device": "Android",
+    "apiKeyRevoked": true
   }
 }
