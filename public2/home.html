@@ -1,0 +1,3045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AM Premium Creator</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+/* style.css - Clean Light Enterprise Theme (Inspired by api.botcahx.eu.org) */
+
+:root {
+    /* Typography */
+    --font-primary: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-heading: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Color Palette - Light Mode Enterprise */
+    --bg-primary: #f4f6f9;
+    --bg-secondary: #ffffff;
+    --bg-sidebar: #1e293b; /* Dark slate sidebar as shown in screenshot */
+    --bg-card: #ffffff;
+    --border-color: #e2e8f0;
+    --border-color-hover: #cbd5e1;
+
+    /* Text Colors */
+    --text-primary: #0f172a;    /* Deep slate black */
+    --text-secondary: #64748b;  /* Slate gray */
+    --text-muted: #94a3b8;      /* Light gray */
+
+    /* Cyber/Indigo Accent Colors */
+    --accent-primary: #6366f1;  /* Indigo */
+    --accent-secondary: #3b82f6;/* Blue */
+    --accent-gradient: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    --accent-gradient-hover: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-primary) 100%);
+    
+    /* Icon Badges */
+    --bg-icon-badge: rgba(99, 102, 241, 0.08);
+    --color-icon-badge: #4f46e5;
+
+    /* Status Colors */
+    --success: #10B981;
+    --success-bg: rgba(16, 185, 129, 0.08);
+    --error: #EF4444;
+    --error-bg: rgba(239, 68, 68, 0.08);
+    --pending: #F59E0B;
+    --pending-bg: rgba(245, 158, 11, 0.08);
+
+    /* Border Radius & Shadow Tokens */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    
+    --sidebar-width: 260px;
+    --mobile-header-height: 60px;
+}
+
+/* ===== RESET & BASE STYLE ===== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+button {
+    background: none;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    box-shadow: none;
+}
+
+body {
+    font-family: var(--font-primary);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    letter-spacing: -0.1px;
+    line-height: 1.5;
+}
+
+/* ===== APP LAYOUT & NAVIGATION ===== */
+.app-layout {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.app-layout.sidebar-active {
+    display: flex;
+    flex-direction: row;
+}
+
+/* Sidebar Drawer - Dark Slate Style as in screenshot */
+.app-sidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    background: var(--bg-sidebar);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 20px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-sizing: border-box;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.03);
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: white;
+    font-family: var(--font-heading);
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+    padding-left: 6px;
+}
+
+.logo-icon {
+    font-size: 1.45rem;
+    color: var(--accent-primary);
+}
+
+.sidebar-user-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 18px 14px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.sidebar-user-card .badge-normal {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-user-card .badge-outline {
+    background: rgba(255, 255, 255, 0.02);
+    color: #cbd5e1;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+
+.user-avatar-container {
+    font-size: 2rem; 
+    color: #cbd5e1; 
+    margin-bottom: 6px;
+}
+
+.user-name-label {
+    font-weight: 700;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+    overflow-y: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-category {
+    font-family: var(--font-primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin: 16px 0 6px 6px;
+}
+
+.sidebar-link {
+    background: transparent;
+    border: 1px solid transparent;
+    text-align: left;
+    padding: 11px 14px;
+    border-radius: var(--radius-sm);
+    color: #94a3b8;
+    font-family: var(--font-primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-link i {
+    font-size: 1rem;
+    width: 18px;
+    text-align: center;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-link:hover i {
+    color: white;
+}
+
+.sidebar-link.active {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    font-weight: 700;
+}
+
+.sidebar-link.active i {
+    color: #1e293b !important;
+}
+
+.sidebar-footer {
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Close button for sidebar - only visible/used on mobile drawer */
+.sidebar-close-btn {
+    display: none;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: #94a3b8;
+    font-size: 1.25rem;
+    padding: 6px;
+    z-index: 10;
+}
+
+.sidebar-close-btn:hover {
+    color: white;
+}
+
+/* ===== MAIN CONTENT AREA ===== */
+.main-content {
+    flex-grow: 1;
+    padding: 40px;
+    box-sizing: border-box;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* ===== GLOBAL TOP BAR (Clean White) ===== */
+.mobile-top-bar {
+    display: flex;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 20px;
+    height: var(--mobile-header-height);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+@media (min-width: 769px) {
+    #btn-sidebar-toggle {
+        display: none;
+    }
+}
+
+.topbar-btn {
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+}
+
+.topbar-btn:active {
+    background: #f1f5f9;
+}
+
+.topbar-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.topbar-avatar {
+    font-size: 1.8rem;
+    color: #cbd5e1;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+}
+
+/* Mobile Sidebar Backdrop Overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 99;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+/* ===== CARDS & SURFACES ===== */
+.glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.glass-card:hover {
+    border-color: var(--border-color-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+/* ===== DYNAMIC headers ===== */
+.dashboard-header {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    font-family: var(--font-heading);
+    font-size: 1.65rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.section-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+/* ===== DYNAMIC STATS CARDS (Styled exactly as api.botcahx.eu.org) ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 24px;
+    background: var(--bg-card);
+    text-align: left;
+}
+
+.stat-card-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat-card-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.stat-card-value {
+    font-family: var(--font-heading);
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.25;
+    margin: 3px 0;
+}
+
+.stat-card-value.text-success {
+    color: var(--success);
+}
+
+.stat-card-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.stat-card-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--bg-icon-badge);
+    color: var(--color-icon-badge);
+    border-radius: var(--radius-sm);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* ===== DYNAMIC INTERACTIVE BUTTONS ===== */
+.btn {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3);
+    background: var(--accent-gradient-hover);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.btn-danger {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fee2e2;
+}
+
+.btn-danger:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
+.btn-block {
+    width: 100%;
+    padding: 12px;
+}
+
+.btn-sm {
+    padding: 7px 12px;
+    font-size: 0.75rem;
+}
+
+/* ===== ENTERPRISE INPUT FIELDS ===== */
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+    font-size: 0.95rem;
+    z-index: 2;
+}
+
+input {
+    width: 100%;
+    padding: 12px 14px 12px 44px;
+    border-radius: var(--radius-sm);
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+input:focus + .input-icon {
+    color: var(--accent-primary);
+}
+
+/* ===== SCREEN SECTIONS ===== */
+#screen-auth {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    padding: 30px 0;
+}
+
+.auth-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 36px 28px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-toggle-text {
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-secondary);
+}
+
+.link-accent {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.link-accent:hover {
+    text-decoration: underline;
+}
+
+/* ===== GENERATOR SYSTEM ===== */
+.generator-box {
+    padding: 28px;
+    background: var(--bg-card);
+}
+
+.panel-header-desc {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.card-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+}
+
+.card-title i {
+    color: var(--accent-primary);
+}
+
+.activation-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.flow-box {
+    padding: 20px;
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+}
+
+.flow-box h3 {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.flow-box h3 i {
+    color: var(--accent-primary);
+}
+
+.step-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.section-divider {
+    border: 0;
+    height: 1px;
+    background: var(--border-color);
+    margin: 20px 0;
+}
+
+/* ===== CLEAN TABLES ===== */
+.table-card {
+    padding: 24px;
+    background: var(--bg-card);
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+th {
+    padding: 12px 16px;
+    color: #475569;
+    font-weight: 700;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-color);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+}
+
+td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: background 0.15s ease;
+}
+
+tr:hover td {
+    background: #f8fafc;
+    color: var(--text-primary);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* ===== BADGES & STATUSES ===== */
+.badge {
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.68rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+}
+
+.badge-normal {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+}
+
+.badge-outline {
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+}
+
+.badge-admin {
+    background: #e0e7ff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+}
+
+.badge-owner {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+    font-weight: 700;
+}
+
+.badge-premium {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+    font-weight: 700;
+}
+
+.status-success {
+    color: #065f46;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+.status-failed {
+    color: #991b1b;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+.status-pending {
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+/* ===== PURCHASE PACKAGES ===== */
+.purchase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.plan-card {
+    padding: 28px 20px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.plan-card-monthly {
+    border-top: 4px solid var(--accent-primary);
+}
+
+.plan-card-lifetime {
+    border-top: 4px solid #3b82f6;
+}
+
+.best-value-badge {
+    position: absolute;
+    top: -10px;
+    right: 16px;
+}
+
+.plan-card h3 {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.plan-price {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 10px 0 14px 0;
+    letter-spacing: -0.5px;
+}
+
+.plan-duration {
+    font-family: var(--font-primary);
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px 0;
+    color: var(--text-secondary);
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.plan-features li {
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.plan-features li i {
+    color: var(--success);
+    font-size: 0.85rem;
+}
+
+/* QRIS Payment Card Inline */
+.qris-payment-card {
+    padding: 24px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    max-width: 480px;
+    margin: 24px auto 0 auto;
+    background: var(--bg-card);
+}
+
+.qris-payment-card h3 {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.qris-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+#qris-image-container {
+    margin: 12px auto 16px auto;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    display: inline-block;
+    width: 280px;
+    height: 280px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+#qris-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.qris-total {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.qris-status {
+    color: var(--pending);
+    font-weight: 700;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+}
+
+/* ===== PROFILE SECTION ===== */
+.profile-info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.profile-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+}
+
+.profile-info-row:hover {
+    border-color: #cbd5e1;
+}
+
+.profile-info-label {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+}
+
+.profile-info-label i {
+    color: var(--accent-primary);
+    width: 16px;
+    text-align: center;
+}
+
+.profile-info-value {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ===== ADMIN CONTROL PANEL ===== */
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.admin-stats-grid .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: #ffffff;
+}
+
+.admin-stats-grid .stat-card .stat-icon {
+    font-size: 2rem;
+    color: var(--accent-primary);
+    flex-shrink: 0;
+}
+
+.stat-value {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.admin-grid > * {
+    min-width: 0;
+}
+
+.admin-actions-cell {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.admin-actions-cell .btn {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    border-radius: var(--radius-sm);
+}
+
+/* ===== MODERN CLEAN TABS ===== */
+.tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border-color);
+    margin-top: 10px;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    font-family: var(--font-heading);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.35s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ===== CODE WRAPPERS ===== */
+pre {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    overflow-x: auto;
+    max-height: 240px;
+}
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #334155;
+}
+
+/* ===== FOOTER ===== */
+.main-footer {
+    text-align: center;
+    padding: 30px 0 15px;
+    margin-top: auto;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes premiumFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+        filter: blur(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+.animate-fade-in {
+    animation: premiumFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Premium Card Hover Lift Effect */
+.stat-card {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease !important;
+}
+.stat-card:hover {
+    transform: translateY(-4px) scale(1.015);
+    box-shadow: 0 12px 25px -10px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Styling copy code button in API guide */
+.btn-copy-code {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
+    font-weight: 700 !important;
+    font-size: 0.72rem !important;
+    padding: 6px 12px !important;
+    letter-spacing: 0.5px !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-copy-code:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border-color: var(--accent-primary) !important;
+    transform: translateY(-1px);
+}
+
+.btn-copy-code:active {
+    transform: translateY(0);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.btn-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ===== SWEETALERT2 CLEAN WHITE Customization ===== */
+.swal2-popup {
+    border-radius: var(--radius-md) !important;
+    border: 1px solid var(--border-color) !important;
+    background: #ffffff !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+.swal2-title {
+    font-family: var(--font-heading) !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+}
+
+.swal2-html-container {
+    font-family: var(--font-primary) !important;
+    color: var(--text-secondary) !important;
+}
+
+.swal2-confirm {
+    background: var(--accent-gradient) !important;
+    color: white !important;
+    border-radius: var(--radius-sm) !important;
+    font-family: var(--font-primary) !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25) !important;
+    transition: all 0.2s ease !important;
+}
+
+.swal2-confirm:hover {
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.35) !important;
+}
+
+.swal2-cancel {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid #e2e8f0 !important;
+    font-family: var(--font-primary) !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease !important;
+}
+
+.swal2-cancel:hover {
+    background: #e2e8f0 !important;
+}
+
+.accent-text {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* =====================================================
+   PC DESKTOP SPECIFIC MEDIA (>= 993px)
+   ===================================================== */
+@media (min-width: 993px) {
+    .main-content {
+        padding: 40px 50px;
+    }
+    
+    .purchase-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* =====================================================
+   TABLET RESPONSIVENESS (769px - 992px)
+   ===================================================== */
+@media (max-width: 992px) {
+    .main-content {
+        padding: 24px;
+    }
+    
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =====================================================
+   MOBILE SYSTEM (<= 768px) - Sliding Left Drawer
+   ===================================================== */
+@media (max-width: 768px) {
+    /* Show mobile header */
+    .mobile-top-bar {
+        display: flex;
+    }
+    
+    .app-layout.sidebar-active {
+        flex-direction: column;
+    }
+    
+    /* Sliding sidebar drawer from left */
+    .app-sidebar {
+        position: fixed;
+        left: -300px;
+        top: 0; bottom: 0;
+        height: 100vh;
+        width: 280px;
+        min-width: 0;
+        z-index: 101;
+        background: var(--bg-sidebar);
+        box-shadow: 15px 0 35px rgba(0, 0, 0, 0.15);
+    }
+    
+    .app-sidebar.active {
+        left: 0;
+    }
+
+    .sidebar-close-btn {
+        display: block; /* Show Close Button on Mobile Drawer */
+    }
+    
+    /* Content fills screen, no bottom space needed */
+    .main-content {
+        padding: 16px 12px;
+        min-height: calc(100vh - var(--mobile-header-height));
+        width: 100%;
+        overflow-x: hidden;
+    }
+    
+    /* Muted padding structures on mobile */
+    .auth-box {
+        padding: 24px 18px !important;
+    }
+    
+    #screen-auth {
+        padding: 10px 0;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+    }
+    
+    .purchase-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr; /* Single column stats as preferred in screenshot */
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 16px 20px;
+    }
+    
+    .admin-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .generator-box {
+        padding: 16px 12px;
+    }
+
+    .flow-box {
+        padding: 16px;
+    }
+    
+    .table-card {
+        padding: 16px 12px;
+    }
+    
+    table {
+        min-width: 550px;
+    }
+    
+    th, td {
+        padding: 10px 12px !important;
+        font-size: 0.76rem !important;
+    }
+    
+    input {
+        font-size: 0.9rem !important;
+        padding: 11px 12px 11px 40px !important;
+    }
+    
+    .btn {
+        padding: 10px 16px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .btn-block {
+        padding: 11px !important;
+    }
+    
+    .plan-card {
+        padding: 20px 16px;
+    }
+    
+    .profile-info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .table-responsive table {
+        min-width: 650px;
+    }
+}
+
+/* =====================================================
+   SMALL MOBILE PHONES (<= 480px)
+   ===================================================== */
+@media (max-width: 480px) {
+    .main-content {
+        padding: 12px 10px;
+    }
+    
+    .admin-stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .swal2-popup {
+        width: 92% !important;
+        padding: 20px 12px !important;
+    }
+    
+    .auth-box {
+        padding: 20px 14px !important;
+    }
+}
+
+/* ===== SECURITY OVERLAY FOR DEVTOOLS PROTECTION ===== */
+#security-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(12px);
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: opacity 0.3s ease;
+}
+
+.overlay-hidden {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.overlay-visible {
+    display: flex !important;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.security-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 40px 30px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+}
+
+.security-icon {
+    font-size: 3rem;
+    color: var(--error);
+    margin-bottom: 20px;
+}
+
+.security-card h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.security-card p {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ===== GLOBAL CHAT SYSTEM ===== */
+.chat-message-bubble {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 75%;
+    width: fit-content;
+    box-shadow: var(--shadow-sm);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.chat-msg-other {
+    align-self: flex-start;
+    background: #f1f5f9;
+    color: var(--text-primary);
+    border-bottom-left-radius: 2px;
+}
+
+.chat-msg-self {
+    align-self: flex-end;
+    background: var(--accent-gradient);
+    color: #ffffff;
+    border-bottom-right-radius: 2px;
+}
+
+.chat-message-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+    font-size: 0.72rem;
+}
+
+.chat-msg-self .chat-message-user {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-msg-other .chat-message-user {
+    font-weight: 700;
+    color: #475569;
+}
+
+.chat-msg-self .chat-message-time {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.chat-msg-other .chat-message-time {
+    color: var(--text-muted);
+}
+
+.chat-message-text {
+    font-size: 0.85rem;
+}
+
+.chat-role-badge {
+    scale: 0.85;
+    margin-left: 2px;
+    vertical-align: middle;
+}
+
+/* ===== CODE & HIGHLIGHTING FOR DOCUMENTATION ===== */
+pre {
+    background: #1e293b !important; /* Premium Dark theme for code */
+    border: 1px solid #334155;
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin: 10px 0;
+    overflow-x: auto;
+}
+
+code {
+    font-family: var(--font-mono) !important;
+    font-size: 0.78rem !important;
+    color: #e2e8f0 !important;
+}
+
+/* ===== DOKUMENTASI API STYLE (MUSTIKAPAY STYLE) ===== */
+.docs-container {
+    display: grid;
+    grid-template-columns: 240px 1fr 400px;
+    height: calc(100vh - 70px);
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.docs-sidebar {
+    background: #f8fafc;
+    border-right: 1px solid var(--border-color);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.docs-back-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+}
+
+.docs-back-btn:hover {
+    background: var(--border-color);
+    border-color: var(--text-muted);
+}
+
+.docs-toggle-btn {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.docs-toggle-btn:hover {
+    background: var(--border-color);
+}
+
+.docs-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.docs-nav-title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.docs-nav-link {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.docs-nav-link:hover {
+    background: #f1f5f9;
+    color: var(--text-primary);
+}
+
+.docs-nav-link.active {
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.method-badge {
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.method-badge.post {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.method-badge.get {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* Middle Column Content */
+.docs-content {
+    padding: 40px 30px;
+    overflow-y: auto;
+}
+
+.doc-section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.doc-section.active {
+    display: block;
+}
+
+.docs-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.docs-desc {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.docs-info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 30px;
+}
+
+.info-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.info-url {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.docs-steps-list {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.endpoint-badge-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f1f5f9;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 20px;
+    width: fit-content;
+}
+
+.endpoint-path {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.docs-params-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.88rem;
+}
+
+.docs-params-table th,
+.docs-params-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.docs-params-table th {
+    background: #f8fafc;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.docs-params-table td {
+    color: var(--text-secondary);
+}
+
+/* Right Column Code Panel */
+.docs-code-panel {
+    background: #090d16;
+    border-left: 1px solid #1e293b;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.code-tabs {
+    display: flex;
+    background: #050811;
+    border-bottom: 1px solid #1e293b;
+    padding: 6px 12px;
+    gap: 8px;
+}
+
+.code-tab-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.code-tab-btn:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.code-tab-btn.active {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.code-tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 15%;
+    width: 70%;
+    height: 2px;
+    background: var(--accent-primary);
+    transform: scaleX(0);
+    transition: transform 0.25s ease;
+}
+
+.code-tab-btn.active::after {
+    transform: scaleX(1);
+    box-shadow: 0 0 8px var(--accent-primary);
+}
+
+.code-content-wrapper {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.code-block-item {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.code-block-item.active {
+    display: flex;
+    animation: codeFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.code-title {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #475569;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.code-block-item pre {
+    margin: 0;
+    background: #050811 !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 8px !important;
+    padding: 18px !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.code-block-item code {
+    background: none !important;
+    color: #e2e8f0 !important;
+    font-size: 0.8rem !important;
+    line-height: 1.5 !important;
+    text-shadow: none !important;
+}
+
+@keyframes codeFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== DYNAMIC DARK MODE VARIABLES ===== */
+body.dark-theme {
+    --bg-primary: #0f172a;       /* Dark slate page background */
+    --bg-secondary: #1e293b;     /* Slate card background */
+    --bg-card: #1e293b;          /* Slate card background */
+    --border-color: #334155;     /* Slate border color */
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    --bg-sidebar: #0b0f19;       /* Dark navy sidebar contrast */
+}
+
+/* Specific elements for dark mode */
+body.dark-theme .mobile-top-bar {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme .topbar-btn {
+    color: #cbd5e1 !important;
+}
+
+body.dark-theme .topbar-btn:hover {
+    background: #334155 !important;
+}
+
+body.dark-theme input {
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme input::placeholder {
+    color: #475569 !important;
+}
+
+body.dark-theme .sidebar-link {
+    color: #cbd5e1 !important;
+}
+
+body.dark-theme .sidebar-link:hover,
+body.dark-theme .sidebar-link.active {
+    background: #334155 !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .sidebar-link.active i,
+body.dark-theme .sidebar-link:hover i {
+    color: #ffffff !important;
+}
+
+body.dark-theme .docs-container {
+    background: #0f172a;
+}
+
+body.dark-theme .docs-sidebar {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-theme .docs-content {
+    background: #0f172a;
+}
+
+body.dark-theme .docs-title {
+    color: #f8fafc;
+}
+
+body.dark-theme .docs-desc {
+    color: #cbd5e1;
+}
+
+body.dark-theme .docs-nav-link:hover {
+    background: #334155;
+    color: #f8fafc;
+}
+
+body.dark-theme .docs-nav-link.active {
+    background: #1e3a8a;
+    color: #60a5fa;
+}
+
+body.dark-theme .docs-params-table th {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+body.dark-theme .docs-params-table td {
+    border-color: #334155;
+}
+
+body.dark-theme .docs-back-btn {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+body.dark-theme .docs-back-btn:hover {
+    background: #334155;
+}
+
+body.dark-theme .docs-info-block {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-theme .info-url {
+    color: #60a5fa;
+}
+
+body.dark-theme .endpoint-badge-container {
+    background: #1e293b;
+}
+
+body.dark-theme .endpoint-path {
+    color: #f8fafc;
+}
+
+body.dark-theme .stat-card {
+    background: #1e293b !important;
+}
+
+body.dark-theme .stat-card-value {
+    color: #ffffff !important;
+}
+
+body.dark-theme .stat-card-label {
+    color: #cbd5e1 !important;
+}
+
+body.dark-theme .chat-container {
+    background: #1e293b !important;
+}
+
+body.dark-theme .chat-header {
+    border-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .chat-header span {
+    color: #ffffff !important;
+}
+
+body.dark-theme .chat-msg-other {
+    background: #334155 !important;
+    color: #f8fafc !important;
+}
+
+body.dark-theme .chat-msg-other .chat-message-user {
+    color: #cbd5e1 !important;
+}
+
+body.dark-theme #form-chat-send {
+    border-color: #242429 !important;
+}
+
+/* Responsive Docs */
+@media (max-width: 1024px) {
+    .docs-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+    }
+    
+    .docs-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        height: auto;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+    }
+    
+    .docs-toggle-btn {
+        display: flex;
+    }
+
+    .docs-sidebar-menu {
+        display: none;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 8px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
+        animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .docs-sidebar-menu.show {
+        display: flex;
+    }
+    
+    .docs-code-panel {
+        border-left: none;
+        border-top: 1px solid #1e293b;
+        height: 450px;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* ===== PAGINATION STYLING ===== */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px 0 4px 0;
+    width: 100%;
+}
+.pagination-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.pagination-buttons .pag-btn {
+    padding: 0 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    min-width: 38px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color) !important;
+    background: var(--bg-card) !important;
+    color: var(--text-secondary) !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.pagination-buttons .pag-btn:hover:not([disabled]) {
+    border-color: var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
+    background: rgba(99, 102, 241, 0.04) !important;
+    transform: translateY(-1px);
+}
+.pagination-buttons .pag-btn.active {
+    background: var(--accent-gradient) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25) !important;
+    font-weight: 700 !important;
+}
+.pagination-buttons .pag-btn[disabled] {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: var(--bg-primary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
+    box-shadow: none !important;
+}
+.pag-dots {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0 6px;
+    letter-spacing: 1px;
+}
+
+/* ===== SMOOTH COLOR SWITCHING TRANSITION ===== */
+body, .glass-card, .app-sidebar, .mobile-top-bar, .sidebar-link, th, td, input, .btn {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+/* ===== SWEETALERT2 DARK THEME COLOR MATCHING ===== */
+body.dark-theme .swal2-popup {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+body.dark-theme .swal2-title {
+    color: var(--text-primary) !important;
+}
+body.dark-theme .swal2-html-container {
+    color: var(--text-secondary) !important;
+}
+body.dark-theme .swal2-cancel {
+    background: #1e293b !important;
+    color: #cbd5e1 !important;
+    border: 1px solid #334155 !important;
+}
+body.dark-theme .swal2-cancel:hover {
+    background: #334155 !important;
+}
+
+/* ===== ADDITIONAL DARK THEME CORRECTIONS ===== */
+body.dark-theme th {
+    background: #0f172a !important;
+    color: #cbd5e1 !important;
+    border-bottom-color: #334155 !important;
+}
+body.dark-theme .flow-box {
+    background: #141b2d !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme .badge-normal {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+body.dark-theme .badge-outline {
+    background: transparent !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+body.dark-theme .badge-admin {
+    background: rgba(79, 70, 229, 0.25) !important;
+    color: #a5b4fc !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+}
+body.dark-theme .badge-owner {
+    background: rgba(220, 38, 38, 0.2) !important;
+    color: #fca5a5 !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+body.dark-theme .badge-premium {
+    background: rgba(217, 119, 6, 0.2) !important;
+    color: #fde68a !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+body.dark-theme .status-success {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #a7f3d0 !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+body.dark-theme .status-failed {
+    background: rgba(220, 38, 38, 0.2) !important;
+    color: #fca5a5 !important;
+    border-color: rgba(220, 38, 38, 0.4) !important;
+}
+body.dark-theme .status-pending {
+    background: rgba(217, 119, 6, 0.2) !important;
+    color: #fde68a !important;
+    border-color: rgba(217, 119, 6, 0.4) !important;
+}
+
+@media (min-width: 1200px) {
+    .admin-grid {
+        grid-template-columns: 1.25fr 1fr;
+    }
+}
+
+/* ===== CLOUDFLARE TURNSTILE ===== */
+.cf-turnstile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 8px 0;
+    width: 100%;
+}
+
+/* ===== PURCHASE & PLAN CARDS PREMIUM DESIGN ===== */
+.purchase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 28px;
+    margin-top: 15px;
+    align-items: stretch;
+}
+
+.plan-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 35px 30px;
+    border-radius: var(--radius-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.plan-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: var(--accent-gradient);
+}
+
+.plan-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.07);
+    border-color: var(--accent-primary);
+}
+
+/* Individual plan accents */
+.plan-card-monthly::before {
+    background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+}
+.plan-card-monthly:hover {
+    border-color: #6366f1;
+    box-shadow: 0 20px 35px rgba(99, 102, 241, 0.1);
+}
+
+.plan-card-lifetime {
+    border-color: var(--accent-primary);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.08);
+}
+.plan-card-lifetime::before {
+    background: linear-gradient(90deg, #818cf8 0%, #c084fc 100%);
+    height: 6px;
+}
+.plan-card-lifetime:hover {
+    border-color: #c084fc;
+    box-shadow: 0 20px 35px rgba(192, 132, 252, 0.15);
+}
+
+.plan-card-autogen {
+    border-color: #10b981 !important;
+}
+.plan-card-autogen::before {
+    background: linear-gradient(90deg, #34d399 0%, #059669 100%);
+}
+.plan-card-autogen:hover {
+    border-color: #34d399 !important;
+    box-shadow: 0 20px 35px rgba(16, 185, 129, 0.12);
+}
+
+/* Header style within card */
+.plan-card h3 {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Plan Price */
+.plan-card .plan-price {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.plan-card .plan-price .plan-duration {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Features List */
+.plan-card .plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 35px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex-grow: 1;
+}
+
+.plan-card .plan-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+}
+
+.plan-card .plan-features li i {
+    font-size: 1rem;
+    color: #6366f1; /* default check */
+    flex-shrink: 0;
+}
+
+.plan-card-lifetime .plan-features li i {
+    color: #c084fc;
+}
+
+.plan-card-autogen .plan-features li i {
+    color: #10b981;
+}
+
+/* Best Value Badge */
+.plan-card-lifetime .best-value-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #c084fc 0%, #818cf8 100%) !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    box-shadow: 0 4px 10px rgba(192, 132, 252, 0.3);
+}
+
+/* Buy buttons styling */
+.plan-card .btn-purchase-plan {
+    margin-top: auto;
+    font-weight: 700;
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+    border: none;
+}
+
+.plan-card-monthly .btn-purchase-plan {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+}
+.plan-card-monthly .btn-purchase-plan:hover {
+    box-shadow: 0 8px 18px rgba(99, 102, 241, 0.35);
+    transform: translateY(-2px);
+}
+
+.plan-card-lifetime .btn-purchase-plan {
+    background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+    color: white;
+}
+.plan-card-lifetime .btn-purchase-plan:hover {
+    box-shadow: 0 8px 18px rgba(192, 132, 252, 0.4);
+    transform: translateY(-2px);
+}
+
+.plan-card-autogen .btn-purchase-plan {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+    color: white;
+}
+.plan-card-autogen .btn-purchase-plan:hover {
+    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Dark mode compatibility */
+body.dark-theme .plan-card {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+body.dark-theme .plan-card h3 {
+    color: #f8fafc;
+}
+body.dark-theme .plan-card .plan-price {
+    color: #f8fafc;
+}
+body.dark-theme .plan-card .plan-features li {
+    color: #cbd5e1;
+}
+body.dark-theme .plan-card:hover {
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.25);
+}
+
+/* Toggle Switch Switcher */
+.switch-toggle input:checked + .slider-toggle {
+    background-color: var(--accent-primary) !important;
+}
+.switch-toggle input:checked + .slider-toggle:before {
+    transform: translateX(22px);
+}
+.slider-toggle:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+/* Interactive Rating Stars */
+.rating-stars-interactive .star-btn.hover,
+.rating-stars-interactive .star-btn.active {
+    color: #f59e0b !important;
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+/* ===== MAINTENANCE OVERLAY STYLING ===== */
+.maintenance-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 24px;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    margin: 40px auto;
+    max-width: 600px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+    animation: premiumFadeIn 0.5s ease-out;
+}
+
+.maintenance-icon {
+    font-size: 4rem;
+    color: var(--warning, #e89558);
+    margin-bottom: 24px;
+    text-shadow: 0 0 24px rgba(232, 149, 88, 0.45);
+    animation: maintPulse 2.5s infinite ease-in-out;
+}
+
+.maintenance-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary, #fff);
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+}
+
+.maintenance-text {
+    font-size: 0.95rem;
+    color: var(--text-secondary, #b3b3b3);
+    line-height: 1.6;
+    max-width: 460px;
+}
+
+@keyframes maintPulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 10px rgba(232, 149, 88, 0.2));
+    }
+    50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 20px rgba(232, 149, 88, 0.55));
+    }
+}
+
+/* ===== PROFILE PERSONAL INFO ROWS ===== */
+.profile-info-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.pinfo-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.18s ease;
+}
+
+.pinfo-row:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.pinfo-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    min-width: 90px;
+    flex-shrink: 0;
+}
+
+.pinfo-value {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    text-align: right;
+    word-break: break-word;
+}
+
+.pinfo-mono {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
+    color: var(--accent-primary);
+}
+
+body.dark-theme .pinfo-row:hover {
+    background: rgba(99, 102, 241, 0.07);
+}
+
+/* New profile colon-row layout */
+.pinfo-colon-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    gap: 0;
+}
+.pinfo-colon-label {
+    color: var(--text-secondary);
+    min-width: 100px;
+    flex-shrink: 0;
+    font-weight: 500;
+}
+.pinfo-colon-sep {
+    color: var(--text-secondary);
+    padding: 0 8px;
+    flex-shrink: 0;
+}
+.pinfo-colon-value {
+    color: var(--text-primary);
+    flex: 1;
+    min-width: 0;
+}
+body.dark-theme .pinfo-colon-row:hover {
+    background: rgba(99, 102, 241, 0.07);
+}
+
+
+        /* APK Banner Styling */
+        .apk-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: var(--radius-md);
+            margin-bottom: 28px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .apk-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .apk-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .apk-banner-icon {
+            background: rgba(59, 130, 246, 0.15);
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .apk-banner-title {
+            margin: 0;
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .apk-banner-desc {
+            margin: 3px 0 0 0;
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .apk-banner-btn {
+            background: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+            color: white !important;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .apk-banner-btn:hover {
+            background: #2563eb !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .apk-download-btn-auth {
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            background: rgba(59, 130, 246, 0.05);
+            color: #3b82f6 !important;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+            font-weight: 600;
+        }
+
+        .apk-download-btn-auth:hover {
+            border-color: #3b82f6 !important;
+            color: #ffffff !important;
+            background: #3b82f6 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .apk-banner {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                padding: 20px;
+            }
+            .apk-banner-content {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .apk-banner-icon {
+                margin: 0 auto;
+            }
+            .apk-banner-btn {
+                justify-content: center;
+            }
+        }
+
+        /* Notifications Dropdown Styling */
+        .notifications-dropdown {
+            position: absolute;
+            top: 48px;
+            right: 0;
+            width: 320px;
+            max-height: 400px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 1;
+            transform-origin: top right;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .notifications-dropdown.hidden {
+            display: none;
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        .notifications-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+        }
+
+        .notifications-header span {
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .clear-all-btn {
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            font-weight: 600;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .clear-all-btn:hover {
+            text-decoration: underline;
+        }
+
+        .notifications-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            max-height: 320px;
+        }
+
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            transition: background 0.15s ease;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .notification-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item.unread {
+            background: rgba(99, 102, 241, 0.03);
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .notification-icon-wrapper {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.95rem;
+        }
+
+        .notification-icon-info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .notification-icon-gift {
+            background: rgba(235, 94, 40, 0.1);
+            color: #eb5e28;
+        }
+
+        .notification-icon-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .notification-content {
+            flex-grow: 1;
+        }
+
+        .notification-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .notification-text {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin: 2px 0 0 0;
+            line-height: 1.4;
+        }
+
+        .notification-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: block;
+        }
+
+        .notifications-empty {
+            padding: 30px 16px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Mobile Optimization for Notifications Dropdown */
+        @media (max-width: 480px) {
+            .notifications-dropdown {
+                position: fixed !important;
+                top: 64px !important;
+                right: 16px !important;
+                left: 16px !important;
+                width: calc(100vw - 32px) !important;
+                max-height: calc(100vh - 100px) !important;
+                transform-origin: top center !important;
+            }
+            .notifications-list {
+                max-height: calc(100vh - 180px) !important;
+            }
+        }
+    
+</style>
+</head>
+<body>
+<div class="app-layout" id="app-layout"><aside id="app-sidebar" class="app-sidebar hidden"><button id="btn-sidebar-close" class="sidebar-close-btn"><i class="fa-solid fa-xmark"></i></button><div class="sidebar-logo"><i class="fa-solid fa-cube logo-icon"></i><span>AM <span class="accent-text">CREATOR</span></span></div><nav class="sidebar-nav" id="nav-menu"><div class="nav-category">MENU UTAMA</div><button id="btn-dashboard-view" class="sidebar-link active"><i class="fa-solid fa-chart-simple"></i> Statistik Live</button><button id="btn-generator-view" class="sidebar-link"><i class="fa-solid fa-wand-magic-sparkles"></i> Create Account</button><button id="btn-netflix-view" class="sidebar-link"><i class="fa-solid fa-ticket" style="color: #e50914;"></i> Netflix Crack</button><button id="btn-history-view" class="sidebar-link"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Akun</button><div class="nav-category">LAYANAN & API</div><button id="btn-purchase-view" class="sidebar-link"><i class="fa-solid fa-qrcode"></i> Beli API Key</button><button id="btn-apiguide-view" class="sidebar-link"><i class="fa-solid fa-book"></i> Panduan API</button><button id="btn-chat-view" class="sidebar-link"><i class="fa-solid fa-comments"></i> Chat Global</button><div class="nav-category">AKUN & APLIKASI</div><button id="btn-profile-view" class="sidebar-link"><i class="fa-solid fa-user"></i> Profil</button><button id="btn-reviews-view" class="sidebar-link"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Rating & Ulasan</button><button id="btn-contributors-view" class="sidebar-link"><i class="fa-solid fa-users-gear"></i> Kontributor</button><a href="https://whatsapp.com/channel/0029Vb8EfuN35fM5AX25AT1W" target="_blank" class="sidebar-link" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: #25d366;"><i class="fa-brands fa-whatsapp"></i> Channel WhatsApp</a><a href="/createamryezen.apk" download class="sidebar-link" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: #3b82f6;"><i class="fa-brands fa-android"></i> Download APK</a><div class="nav-category hidden" id="sidebar-admin-category">PENGATURAN ADMIN</div><button id="btn-admin-view" class="sidebar-link hidden"><i class="fa-solid fa-screwdriver-wrench"></i> Admin Panel</button><button id="btn-settings-view" class="sidebar-link hidden"><i class="fa-solid fa-gears"></i> Pengaturan Fitur</button></nav></aside><main class="main-content" id="main-content"><div class="mobile-top-bar hidden" id="mobile-top-bar"><button class="topbar-btn" id="btn-sidebar-toggle"><i class="fa-solid fa-bars"></i></button><div class="topbar-right"><button class="topbar-btn" id="btn-topbar-theme"><i class="fa-regular fa-moon"></i></button><button class="topbar-btn" id="btn-topbar-chat"><i class="fa-regular fa-comment-dots"></i><span class="topbar-badge"></span></button><div style="position: relative;"><button class="topbar-btn" id="btn-topbar-notifications"><i class="fa-regular fa-bell"></i><span class="topbar-badge" id="notifications-badge" style="display: none;"></span></button><div id="notifications-dropdown" class="notifications-dropdown hidden"><div class="notifications-header"><span>Pemberitahuan</span><button id="btn-clear-notifications" class="clear-all-btn">Hapus Semua</button></div><div class="notifications-list" id="notifications-list"></div></div></div><div class="topbar-avatar" id="btn-topbar-profile" style="cursor: pointer;"><i class="fa-regular fa-circle-user"></i></div></div></div><section id="screen-auth" class="screen hidden"><div class="auth-box glass-card animate-fade-in"><div id="auth-login-view"><h2 class="section-title">Sign In</h2><p class="section-subtitle">Akses Generator Alight Motion Premium</p><form id="form-login"><div class="input-group"><i class="fa-solid fa-envelope input-icon"></i><input type="text" id="login-username" placeholder="Username" required autocomplete="username"></div><div class="input-group"><i class="fa-solid fa-key input-icon"></i><input type="password" id="login-password" placeholder="Password" required autocomplete="current-password"></div><button type="submit" class="btn btn-primary btn-block btn-glow"><span>Login <i class="fa-solid fa-chevron-right"></i></span></button></form><p class="auth-toggle-text">Belum punya akun? <a href="#" id="link-to-register" class="link-accent">Daftar Akun</a></p></div><div id="auth-register-view" class="hidden"><h2 class="section-title">Sign Up</h2><p class="section-subtitle">Buat akun untuk mulai membuat lisensi premium</p><form id="form-register"><div class="input-group"><i class="fa-solid fa-envelope input-icon"></i><input type="text" id="register-username" placeholder="Username (Min 3 Karakter)" required autocomplete="username"></div><div class="input-group"><i class="fa-solid fa-key input-icon"></i><input type="password" id="register-password" placeholder="Password (Min 6 Karakter)" required autocomplete="new-password"></div><button type="submit" class="btn btn-primary btn-block btn-glow"><span>Daftar <i class="fa-solid fa-circle-check"></i></span></button></form><p class="auth-toggle-text">Sudah punya akun? <a href="#" id="link-to-login" class="link-accent">Login disini</a></p></div><div style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 18px; text-align: center;"><a href="/createamryezen.apk" download class="apk-download-btn-auth"><i class="fa-brands fa-android" style="font-size: 1.15rem;"></i><span>Unduh Aplikasi Android (.APK)</span></a></div></div></section><section id="screen-dashboard" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-chart-line" style="color: var(--accent-primary);"></i> Dashboard</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Pantau statistik aktivitas server, sisa saldo kredit, status runtime, dan informasi perangkat Anda secara real-time.</p></div><div class="apk-banner animate-fade-in"><div class="apk-banner-content"><div class="apk-banner-icon"><i class="fa-brands fa-android"></i></div><div><h4 class="apk-banner-title">Tersedia Aplikasi Android!</h4><p class="apk-banner-desc">Gunakan aplikasi Android resmi kami untuk akses yang lebih cepat, stabil, dan praktis.</p></div></div><a href="/createamryezen.apk" download class="apk-banner-btn"><i class="fa-solid fa-download"></i> Download APK </a></div><div class="stats-grid mb-4"><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Server Status</span><p class="stat-card-value text-success" id="stat-server-status">Online</p><span class="stat-card-desc">Status Server</span></div><div class="stat-card-right"><i class="fa-solid fa-server"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Total Users</span><p class="stat-card-value" id="stat-total-users">--</p><span class="stat-card-desc">Total Pengguna</span></div><div class="stat-card-right"><i class="fa-solid fa-users"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Your Credits</span><p class="stat-card-value" id="stat-your-credits">--</p><span class="stat-card-desc">Sisa Credits Anda</span><span class="stat-card-reset" id="stat-credits-reset-countdown" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: block;">Reset: --:--:--</span></div><div class="stat-card-right"><i class="fa-solid fa-bolt"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Berhasil Terbuat</span><p class="stat-card-value" id="stat-total-requests">0</p><span class="stat-card-desc">Total Berhasil Terbuat (Semua Pengguna)</span></div><div class="stat-card-right"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Baterai HP</span><p class="stat-card-value" id="stat-battery">--</p><span class="stat-card-desc" id="stat-battery-status">Membaca data...</span></div><div class="stat-card-right"><i class="fa-solid fa-battery-three-quarters" id="stat-battery-icon"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Hari</span><p class="stat-card-value" id="stat-day">--</p><span class="stat-card-desc" id="stat-date">Membaca tanggal...</span></div><div class="stat-card-right"><i class="fa-solid fa-calendar-day"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Your IP</span><p class="stat-card-value" id="stat-your-ip" style="font-size: 1.15rem; word-break: break-all;">Loading...</p><span class="stat-card-desc">Alamat IP Anda</span></div><div class="stat-card-right"><i class="fa-solid fa-network-wired"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Runtime</span><p class="stat-card-value" id="stat-runtime" style="font-size: 1.15rem;">--:--:--</p><span class="stat-card-desc">Waktu Aktif Server</span></div><div class="stat-card-right"><i class="fa-solid fa-stopwatch"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Contact Owner</span><p class="stat-card-value" style="font-size: 1.1rem;"><a href="https://wa.me/6288297563383" target="_blank" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 5px;"><i class="fa-brands fa-whatsapp" style="color: #25d366;"></i> WhatsApp</a></p><span class="stat-card-desc">6288297563383</span></div><div class="stat-card-right"><i class="fa-solid fa-headset"></i></div></div></div></section><section id="screen-generator" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-primary);"></i> Create Account</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Kirim tautan verifikasi email Alight Motion dan aktifkan status langganan premium secara instan.</p></div><div class="generator-box glass-card animate-fade-in"><div class="panel-header-desc"><h2 class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Alight Motion Premium License</h2><span id="badge-admin-control" class="badge badge-admin hidden"><i class="fa-solid fa-circle-check"></i> Admin Mode Enabled</span></div><div class="tab-switcher" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; overflow-x: auto;"><button class="tab-btn active" id="tab-btn-manual" style="padding: 10px 18px; border-radius: var(--radius-sm); border: none; background: var(--accent-primary); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Manual Generator</button><button class="tab-btn" id="tab-btn-auto" style="padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;"><i class="fa-solid fa-bolt"></i> Auto Generator (Otomatis)</button></div><div id="tab-manual-content" class="activation-flow"><div class="flow-box"><h3><i class="fa-solid fa-envelope-circle-check"></i> Masukkan Email Target</h3><p class="step-desc">Masukkan alamat email Alight Motion target Anda. Server akan mengirimkan pesan verifikasi lisensi ke email tersebut.</p><form id="form-send-link"><div class="input-group"><i class="fa-solid fa-at input-icon"></i><input type="email" id="send-email" placeholder="nama@email.com" required></div><button type="submit" id="btn-send-link" class="btn btn-primary btn-glow"><span class="btn-text">Lanjutkan <i class="fa-solid fa-arrow-right"></i></span><span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span></button></form></div><div id="stage-activate-container" class="flow-box mt-4 hidden animate-fade-in"><h3><i class="fa-solid fa-link"></i> Tempel Tautan Verifikasi</h3><p class="step-desc">Buka pesan di email target (cek folder spam jika perlu), salin tautan tombol verifikasi, dan tempelkan di bawah ini.</p><form id="form-activate"><div class="input-group"><i class="fa-solid fa-at input-icon"></i><input type="email" id="activate-email" placeholder="Email target" required readonly></div><div class="input-group"><i class="fa-solid fa-link input-icon"></i><input type="url" id="activate-link" placeholder="https://alightcreative.com/..." required></div><button type="submit" id="btn-activate" class="btn btn-primary"><span class="btn-text">Terapkan Lisensi Premium <i class="fa-solid fa-bolt"></i></span><span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin"></i> Memverifikasi...</span></button></form></div></div><div id="tab-auto-content" class="activation-flow hidden"><div id="autogen-locked-container" class="flow-box text-center" style="padding: 40px 20px;"><i class="fa-solid fa-lock text-accent" style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></i><h3 style="font-weight: 700; font-size: 1.3rem;">Fitur Auto Generator Terkunci</h3><p class="step-desc" style="max-width: 500px; margin: 10px auto 25px;"> Fitur ini memungkinkan pembuatan akun Alight Motion premium secara 100% otomatis menggunakan server kotak masuk terintegrasi. Anda tidak perlu lagi menyalin dan menempel tautan verifikasi. </p><div class="price-badge" style="background: #fffbeb; border: 1px solid #fde68a; color: #d97706; padding: 10px 20px; border-radius: var(--radius-sm); display: inline-block; font-weight: 700; margin-bottom: 25px;"> Harga: Rp 7.000 / Bulan (Sekali Jalan Maksimal 500 Akun) </div><br><button id="btn-buy-autogen-shortcut" class="btn btn-primary" style="background: #10b981 !important; border-color: #10b981 !important; font-weight: 600;"><i class="fa-solid fa-cart-shopping"></i> Beli Paket Sekarang</button></div><div id="autogen-unlocked-container" class="flow-box hidden"><h3><i class="fa-solid fa-bolt"></i> Mulai Generator Otomatis</h3><p class="step-desc">Tentukan jumlah akun yang ingin dibuat (maksimal 500), pilih domain email, lalu klik Mulai. Akun akan dibuat dan diaktifkan secara berurutan.</p><div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 15px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;"><div><span style="font-weight: 600; color: #475569; font-size: 0.9rem;">Kapasitas Pembuatan:</span><span class="badge badge-normal" style="font-weight: 700; background: #e2e8f0; color: #475569;">Maksimal 500 Akun / Batch</span></div><span class="badge badge-premium" style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a;"><i class="fa-solid fa-circle-check"></i> Paket Aktif</span></div><form id="form-autogen-start" style="margin-bottom: 25px;"><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;"><input type="checkbox" id="autogen-custom-toggle" style="width: 16px; height: 16px; cursor: pointer;"><label for="autogen-custom-toggle" style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-signature" style="color: var(--accent-primary);"></i> Gunakan Nama Custom (Email Custom) </label></div><div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;"><div id="autogen-prefix-container" class="input-group hidden" style="flex-grow: 2; margin: 0; min-width: 200px;"><i class="fa-solid fa-user-tag input-icon" style="color: var(--text-muted); z-index: 10;"></i><input type="text" id="autogen-prefix-input" placeholder="Nama email (Contoh: rehanprem)" style="width: 100%; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 12px 16px 12px 40px; background: white; font-family: inherit; font-size: 0.95rem; outline: none;"></div><div class="input-group" style="flex-grow: 2; margin: 0; min-width: 200px;"><i class="fa-solid fa-globe input-icon" style="color: var(--text-muted); z-index: 10;"></i><select id="autogen-domain-select" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 12px 16px 12px 40px; background: white; font-family: inherit; font-size: 0.95rem; cursor: pointer; outline: none;"><option value="" disabled selected>Memuat daftar domain...</option></select></div><div id="autogen-count-container" class="input-group" style="flex-grow: 1; margin: 0; max-width: 160px; min-width: 120px;"><i class="fa-solid fa-calculator input-icon" style="color: var(--text-muted); z-index: 10;"></i><input type="number" id="autogen-count-input" min="1" max="500" value="5" required placeholder="Jumlah" style="width: 100%; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 12px 16px 12px 40px; background: white; font-family: inherit; font-size: 0.95rem; outline: none; text-align: center;"></div><button type="submit" id="btn-autogen-run" class="btn btn-primary btn-glow" style="min-width: 180px; height: 48px;"><span class="btn-text"><i class="fa-solid fa-circle-play"></i> Mulai Generate</span><span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan...</span></button></div></form><div id="autogen-hud" class="hidden" style="margin-top: 15px; margin-bottom: 15px; background: #0f172a; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #f8fafc; font-family: inherit; flex-wrap: wrap; gap: 10px;"><div style="display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-spinner fa-spin" style="color: #38bdf8;"></i><span>Sisa Antrean: <strong id="autogen-hud-remaining" style="color: #38bdf8;">0</strong> / <span id="autogen-hud-total">0</span> Akun</span></div><div style="display: flex; align-items: center; gap: 8px;"><i class="fa-regular fa-clock" style="color: #10b981;"></i><span>Estimasi Selesai: <strong id="autogen-hud-eta" style="color: #10b981;">0s</strong></span></div></div><div id="autogen-log-container" class="hidden" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #0f172a; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #f8fafc; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"><div style="color: #64748b;">[SYSTEM] Logger diinisialisasi...</div></div><div id="autogen-download-area" class="hidden" style="margin-top: 15px; display: flex; justify-content: flex-end;"><button id="btn-autogen-download" class="btn btn-secondary" style="border: 1px solid #10b981; color: #10b981; background: transparent; font-weight: 600; display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;"><i class="fa-solid fa-download"></i> Download Hasil (.txt) </button></div></div></div></div></section><section id="screen-history" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-primary);"></i> Riwayat Akun</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Unduh dan tinjau seluruh riwayat akun Alight Motion Premium yang pernah Anda buat di sistem ini.</p></div><div class="glass-card table-card animate-fade-in" style="padding: 24px;"><div style="margin-bottom: 15px; display: flex; justify-content: flex-end;"><button class="btn btn-primary" id="btn-download-history-txt" style="background: #10b981 !important; border-color: #10b981 !important; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;"><i class="fa-solid fa-download"></i> Unduh List Akun (.TXT) </button></div><div class="table-responsive"><table><thead><tr><th>Tanggal & Waktu</th><th>Target Email</th><th>Order ID</th><th>Status Lisensi</th><th>Keterangan</th></tr></thead><tbody id="history-table-body"><tr><td colspan="5" class="text-center">Memuat riwayat aktivasi...</td></tr></tbody></table></div></div></section><section id="screen-netflix" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-ticket" style="color: #e50914;"></i> Netflix Crack</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Dapatkan akun token Netflix secara instan. Nonton film favorit Anda tanpa biaya!</p></div><div class="netflix-box glass-card animate-fade-in" style="padding: 25px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--card-bg); margin-bottom: 30px;"><div class="panel-header-desc" style="margin-bottom: 20px;"><h2 class="card-title" style="display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.25rem;"><i class="fa-solid fa-ticket" style="color: #e50914;"></i> Dapatkan Akun Netflix</h2></div><div class="alert alert-warning" style="display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: var(--radius-md); background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.2); color: #eab308; margin-bottom: 25px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem; flex-shrink: 0;"></i><div><strong style="display: block; margin-bottom: 4px;">PEMBERITAHUAN PENTING</strong><span>Nonton wajib menggunakan <strong>VPN</strong> agar token/akun dapat dimuat dengan sukses.</span></div></div><div style="display: flex; flex-direction: column; gap: 20px;"><p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin: 0;"> Klik tombol di bawah ini untuk membuat token login Netflix Premium (UHD/4K). Token ini dapat digunakan untuk login otomatis di PC, Android, atau Android TV. </p><div><button id="btn-netflix-generate" class="btn btn-primary" style="background: #e50914; border-color: #e50914; display: flex; align-items: center; gap: 8px; justify-content: center; width: 100%; max-width: 250px; font-weight: 600; padding: 12px 20px; transition: all 0.2s ease; border-radius: var(--radius-sm); color: white; cursor: pointer;"><span class="btn-text"><i class="fa-solid fa-play"></i> Generate Token Netflix</span><span class="btn-spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Processing...</span></button></div><div id="netflix-result-container" class="hidden glass-card" style="margin-top: 15px; border-left: 4px solid #e50914; padding: 20px; background: rgba(229, 9, 20, 0.03); border-radius: var(--radius-md); border: 1px solid var(--border-color); border-left: 4px solid #e50914;"><h3 style="margin-top: 0; margin-bottom: 15px; color: var(--text-primary); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Token Netflix Berhasil Dibuat</h3><div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px;"><div style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.9rem; align-items: center;"><span style="color: var(--text-secondary); min-width: 100px;">Email Akun:</span><strong id="netflix-email" style="color: var(--text-primary); word-break: break-all; text-align: right; max-width: 100%;">—</strong></div><div style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.9rem; align-items: center;"><span style="color: var(--text-secondary); min-width: 100px;">Paket (Plan):</span><strong id="netflix-plan" style="color: var(--text-primary); word-break: break-all; text-align: right; max-width: 100%;">—</strong></div><div style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.9rem; align-items: center;"><span style="color: var(--text-secondary); min-width: 100px;">Masa Berlaku Billing:</span><strong id="netflix-billing" style="color: var(--text-primary); word-break: break-all; text-align: right; max-width: 100%;">—</strong></div><div style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.9rem; align-items: center;"><span style="color: var(--text-secondary); min-width: 100px;">Expired Token:</span><strong id="netflix-expires" style="color: var(--text-primary); word-break: break-all; text-align: right; max-width: 100%;">—</strong></div></div><div style="display: flex; flex-direction: column; gap: 12px;"><h4 style="margin: 0; font-size: 0.95rem; color: var(--text-secondary); font-weight: 600;">PILIHAN LOGIN TOKEN:</h4><div style="display: flex; flex-wrap: wrap; gap: 10px;"><a id="netflix-link-pc" href="#" target="_blank" class="btn btn-sm btn-secondary" style="background: rgba(229, 9, 20, 0.1); border: 1px solid rgba(229, 9, 20, 0.2); color: #e50914; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.85rem; padding: 6px 12px; border-radius: var(--radius-sm); text-decoration: none;"><i class="fa-solid fa-desktop"></i> Login PC / Laptop</a><a id="netflix-link-android" href="#" target="_blank" class="btn btn-sm btn-secondary" style="background: rgba(229, 9, 20, 0.1); border: 1px solid rgba(229, 9, 20, 0.2); color: #e50914; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.85rem; padding: 6px 12px; border-radius: var(--radius-sm); text-decoration: none;"><i class="fa-brands fa-android"></i> Login Android</a><a id="netflix-link-tv" href="#" target="_blank" class="btn btn-sm btn-secondary" style="background: rgba(229, 9, 20, 0.1); border: 1px solid rgba(229, 9, 20, 0.2); color: #e50914; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.85rem; padding: 6px 12px; border-radius: var(--radius-sm); text-decoration: none;"><i class="fa-solid fa-tv"></i> Login Smart TV / STB</a></div></div></div></div></div></section><section id="screen-purchase" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-qrcode" style="color: var(--accent-primary);"></i> Beli API Key Premium</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Nikmati akses API Key eksklusif dengan penawaran paket bulanan atau seumur hidup melalui gerbang pembayaran QRIS otomatis.</p></div><div class="purchase-grid"><div class="glass-card plan-card plan-card-monthly"><h3><i class="fa-solid fa-calendar-check"></i> Plan Bulanan</h3><h2 class="plan-price">Rp 17.000<span class="plan-duration">/bln</span></h2><ul class="plan-features"><li><i class="fa-solid fa-circle-check"></i> Akses API Full 30 Hari</li><li><i class="fa-solid fa-circle-check"></i> Unlimited Generation</li><li><i class="fa-solid fa-circle-check"></i> BONUS: Auto Generator (Web)</li><li><i class="fa-solid fa-circle-check"></i> Support Prioritas</li></ul><button class="btn btn-primary btn-block btn-glow btn-purchase-plan" data-plan="monthly" data-price="17000" data-name="API Key Bulanan">Beli Sekarang</button></div><div class="glass-card plan-card plan-card-lifetime"><div class="badge badge-admin best-value-badge">Best Value</div><h3><i class="fa-solid fa-crown"></i> Plan Lifetime</h3><h2 class="plan-price">Rp 50.000<span class="plan-duration">/lifetime</span></h2><ul class="plan-features"><li><i class="fa-solid fa-circle-check"></i> Akses API Selamanya</li><li><i class="fa-solid fa-circle-check"></i> Unlimited Generation</li><li><i class="fa-solid fa-circle-check"></i> BONUS: Auto Generator (Web)</li><li><i class="fa-solid fa-circle-check"></i> Support Prioritas (VIP)</li></ul><button class="btn btn-primary btn-block btn-glow btn-purchase-plan" data-plan="lifetime" data-price="50000" data-name="API Key Lifetime">Beli Sekarang</button></div><div class="glass-card plan-card plan-card-autogen"><h3><i class="fa-solid fa-bolt"></i> Plan Auto Generator</h3><h2 class="plan-price" style="color: #10b981;">Rp 7.000<span class="plan-duration">/bln</span></h2><ul class="plan-features"><li><i class="fa-solid fa-circle-check"></i> Generator 100% Otomatis</li><li><i class="fa-solid fa-circle-check"></i> Integrasi generator.email</li><li><i class="fa-solid fa-circle-check"></i> Sekali Jalan Maksimal 500 Akun</li><li><i class="fa-solid fa-circle-check"></i> Unlimited Generation</li></ul><button class="btn btn-primary btn-block btn-glow btn-purchase-plan" data-plan="autogen" data-price="7000" data-name="Auto Generator Plan">Beli Sekarang</button></div></div></section><section id="screen-profile" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 22px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;"><h2 class="section-title" style="font-size: 1.7rem; display: flex; align-items: center; gap: 10px; margin: 0;"><i class="fa-solid fa-user" style="color: var(--accent-primary);"></i> Profil Pengguna</h2><p class="section-subtitle" style="margin-top: 5px; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">Kelola informasi profil, periksa masa berlaku, dan API Key Anda.</p></div><div class="glass-card animate-fade-in" style="padding: 20px; margin-bottom: 16px;"><div style="display: flex; align-items: center; gap: 14px; margin-bottom: 18px;"><div id="profile-avatar-circle" style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #818cf8); display: flex; align-items: center; justify-content: center; font-size: 1.9rem; font-weight: 700; color: white; flex-shrink: 0; box-shadow: 0 4px 16px rgba(99,102,241,0.4); text-transform: uppercase;">U</div><div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px;"><h2 style="margin: 0; font-size: 1.2rem; font-weight: 700; white-space: nowrap;" id="profile-username">User</h2><span title="Terverifikasi" style="display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; background: #6366f1; color: white; font-size: 0.6rem; flex-shrink: 0;"><i class="fa-solid fa-check"></i></span></div><div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 2px;" id="profile-role-label">Free User</div><div style="font-size: 0.78rem; color: var(--text-muted);" id="profile-join-date-label">Since: -</div></div></div><div style="display: flex; gap: 10px; flex-wrap: wrap;"><button id="btn-change-username" class="btn btn-secondary" style="padding: 10px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); font-weight: 600;"><i class="fa-solid fa-pen-to-square"></i> Change Username </button><button class="btn btn-secondary" id="btn-profile-logout" style="padding: 10px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; border-radius: var(--radius-sm); color: #ef4444; border-color: #ef4444; font-weight: 600; background: transparent;"><i class="fa-solid fa-right-from-bracket"></i> Keluar </button></div></div><div class="glass-card animate-fade-in" style="padding: 0; margin-bottom: 16px; overflow: hidden;"><div style="padding: 15px 20px; border-bottom: 1px solid var(--border-color);"><h3 style="margin: 0; font-size: 1rem; font-weight: 700;">Akun & API Key Info</h3></div><div style="padding: 4px 0;"><div class="pinfo-colon-row"><span class="pinfo-colon-label">Admin</span><span class="pinfo-colon-sep">:</span><span class="pinfo-colon-value" id="pinfo-admin">False</span></div><div class="pinfo-colon-row"><span class="pinfo-colon-label">Name</span><span class="pinfo-colon-sep">:</span><span class="pinfo-colon-value" id="pinfo-name">-</span></div><div class="pinfo-colon-row"><span class="pinfo-colon-label">Role</span><span class="pinfo-colon-sep">:</span><span class="pinfo-colon-value" id="pinfo-role">User</span></div><div class="pinfo-colon-row"><span class="pinfo-colon-label">Kredit</span><span class="pinfo-colon-sep">:</span><span class="pinfo-colon-value" id="pinfo-credits">-</span></div><div class="pinfo-colon-row"><span class="pinfo-colon-label">Apikey</span><span class="pinfo-colon-sep">:</span><span class="pinfo-colon-value pinfo-mono" id="pinfo-apikey" style="word-break: break-all;">-</span></div><div class="pinfo-colon-row"><span class="pinfo-colon-label">Limit</span><span class="pinfo-colon-sep">:</span><span class="pinfo-colon-value" id="pinfo-limit">-</span></div><div class="pinfo-colon-row"><span class="pinfo-colon-label">Masa Aktif</span><span class="pinfo-colon-sep">:</span><span class="pinfo-colon-value" id="pinfo-expired" style="color: #6b7280;">Lifetime</span></div></div></div><div class="glass-card animate-fade-in" id="profile-apikey-section" style="padding: 20px 24px;"><h3 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: var(--text-secondary);">API Key Anda</h3><p style="color: var(--text-secondary); margin-bottom: 14px; font-size: 0.78rem; line-height: 1.4;">Gunakan API Key ini untuk request dari bot NodeJS atau Python Anda.</p><div style="display: flex; gap: 8px; width: 100%; flex-wrap: wrap;"><div style="position: relative; flex: 1; min-width: 220px;"><i class="fa-solid fa-key input-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; z-index: 2;"></i><input type="text" id="api-key-input" readonly value="Belum ada API Key." style="cursor: text; width: 100%; padding: 11px 12px 11px 40px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.85rem; font-family: monospace; background: var(--bg-secondary);"/></div><div style="display: flex; gap: 8px;"><button class="btn btn-secondary" id="btn-copy-api" style="white-space: nowrap; padding: 0 14px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 6px; height: 44px; font-size: 0.82rem;"><i class="fa-regular fa-copy"></i> Copy</button><button class="btn btn-secondary" id="btn-reset-api" style="white-space: nowrap; padding: 0 14px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 6px; height: 44px; font-size: 0.82rem; border: 1px solid #ef4444; color: #ef4444; background: transparent; font-weight: 600;"><i class="fa-solid fa-arrows-rotate"></i> Reset</button></div></div></div></section><section id="screen-contributors" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-users-gear" style="color: var(--accent-primary);"></i> Kontributor Proyek</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Apresiasi bagi para pengembang dan kontributor utama di balik layanan AlightMotion Generator.</p></div><div class="animate-fade-in" style="max-width: 500px; margin: 0 auto;"><div class="glass-card plan-card" style="padding: 30px 24px; text-align: center; display: flex; flex-direction: column; align-items: center;"><div style="font-size: 5rem; color: #fb7185; margin-bottom: 20px;"><i class="fa-solid fa-store"></i></div><h3 style="margin: 0 0 5px 0; color: var(--text-primary); font-size: 1.4rem;">Alwayscodex</h3><span class="badge badge-owner" style="background: rgba(251, 113, 133, 0.1); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.2); margin-bottom: 20px; font-size: 0.85rem; padding: 6px 14px;">Project Owner & Base Store</span><p style="font-size: 0.92rem; line-height: 1.7; color: var(--text-secondary); margin: 0 0 25px 0;"> Pemilik proyek, penyedia layanan Codex Store, host server, integrasi pembayaran otomatis, serta pengelolaan sirkulasi API premium secara keseluruhan. </p><div style="display: flex; gap: 12px; width: 100%;"><a href="http://43.156.70.52/" target="_blank" class="btn btn-secondary" style="flex: 1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px;"><i class="fa-solid fa-globe"></i> Website Store </a><a href="https://whatsapp.com/channel/0029Vb8EfuN35fM5AX25AT1W" target="_blank" class="btn btn-primary" style="flex: 1; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: #25d366 !important; border-color: #25d366 !important; color: white !important;"><i class="fa-brands fa-whatsapp"></i> WA Channel </a></div></div></div></section><section id="screen-chat" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-comments" style="color: var(--accent-primary);"></i> Global Live Chat</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Berbagi informasi, berdiskusi, dan berinteraksi secara real-time dengan seluruh anggota komunitas.</p></div><div class="glass-card chat-container animate-fade-in" style="padding: 24px; display: flex; flex-direction: column; height: 550px;"><div class="chat-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-comments text-accent" style="color: var(--accent-primary); font-size: 1.2rem;"></i><span style="font-weight: 700; color: var(--text-primary);">Room Obrolan Global</span><span class="badge badge-normal" style="margin-left: auto;"><i class="fa-solid fa-users"></i> Live</span></div><div class="chat-messages-area" id="chat-messages-area" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; padding-right: 6px;"><p class="chat-empty-state" style="text-align: center; color: var(--text-muted); margin: auto; font-size: 0.85rem;">Memuat obrolan...</p></div><form id="form-chat-send" style="display: flex; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 16px;"><input type="text" id="chat-input-text" placeholder="Tulis pesan Anda disini... (maksimal 300 karakter)" required maxlength="300" style="flex-grow: 1; padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid #cbd5e1;"><button type="submit" class="btn btn-primary" style="flex-shrink: 0; min-width: 100px;"><i class="fa-regular fa-paper-plane"></i> Kirim </button></form></div></section><section id="screen-apiguide" class="screen hidden" style="max-width: 100%; padding: 0;"><div class="docs-container"><aside class="docs-sidebar"><button class="docs-back-btn" id="btn-docs-back"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button><button class="docs-toggle-btn" id="btn-docs-toggle"><span><i class="fa-solid fa-list-ul"></i> Daftar Isi Dokumentasi</span><i class="fa-solid fa-chevron-down arrow"></i></button><div class="docs-sidebar-menu" id="docs-sidebar-menu"><div class="docs-nav-group"><div class="docs-nav-title">GETTING STARTED</div><button class="docs-nav-link active" data-doc="doc-intro"><i class="fa-solid fa-play"></i> Pendahuluan</button><button class="docs-nav-link" data-doc="doc-auth"><i class="fa-solid fa-key"></i> Otentikasi API</button></div><div class="docs-nav-group"><div class="docs-nav-title">LISENSI ENDPOINTS</div><button class="docs-nav-link" data-doc="doc-sendlink"><span class="method-badge post">POST</span> Send Link</button><button class="docs-nav-link" data-doc="doc-activate"><span class="method-badge post">POST</span> Activate</button><button class="docs-nav-link" data-doc="doc-integration"><i class="fa-solid fa-code"></i> Contoh Script Bot</button></div></div></aside><main class="docs-content"><div class="doc-section active" id="doc-intro"><h1 class="docs-title">API Reference</h1><p class="docs-desc">Selamat datang di dokumentasi API AM Premium Creator. Gunakan endpoint kami untuk membangun otomasi pada bot WhatsApp, Telegram, atau Discord Anda sendiri.</p><div class="docs-info-block" style="display: flex; justify-content: space-between; align-items: center; gap: 15px;"><div style="flex: 1;"><span class="info-label">BASE URL</span><div class="info-url" id="docs-base-url" style="word-break: break-all;">http://43.156.70.52/api/v1/bot-premium?apikey=</div></div><button class="btn btn-secondary" id="btn-copy-base-url" style="padding: 6px 12px; font-size: 0.75rem; border-radius: var(--radius-sm); height: 35px; border: 1px solid #cbd5e1; white-space: nowrap;"><i class="fa-regular fa-copy"></i> Copy</button></div><h2>Alur Integrasi</h2><ol class="docs-steps-list"><li>Dapatkan API Key Anda di halaman <strong>Profil</strong>.</li><li>Gunakan endpoint <strong>Send Link</strong> untuk mengirimkan email verifikasi Alight Motion ke target.</li><li>Dapatkan tautan verifikasi dari email target, lalu kirimkan ke endpoint <strong>Activate</strong> untuk mengaktifkan status premium.</li></ol></div><div class="doc-section" id="doc-auth"><h1 class="docs-title">Otentikasi API</h1><p class="docs-desc">Semua request API wajib menyertakan autentikasi berbasis API Key. Jika key tidak valid atau masa aktif paket API Anda habis, server akan mengembalikan status error <code>401</code> atau <code>403</code>.</p><h2>Cara Pengiriman API Key</h2><p>Anda dapat mengirimkan API Key melalui tiga metode berikut (Metode Header sangat direkomendasikan):</p><table class="docs-params-table"><thead><tr><th>Metode</th><th>Key Parameter</th><th>Contoh Nilai</th></tr></thead><tbody><tr><td><strong>HTTP Header</strong></td><td><code>x-api-key</code></td><td><code>Codex_xxxxxx</code></td></tr><tr><td><strong>Query URL</strong></td><td><code>apikey</code></td><td><code>?apikey=Codex_xxxxxx</code></td></tr><tr><td><strong>JSON Body</strong></td><td><code>apikey</code></td><td><code>{"apikey": "Codex_xxxxxx"}</code></td></tr></tbody></table></div><div class="doc-section" id="doc-sendlink"><h1 class="docs-title">Send Verification Link</h1><p class="docs-desc">Endpoint ini digunakan untuk mengirimkan link verifikasi lisensi Alight Motion ke email target. Setiap pemanggilan berhasil dari user non-admin akan memotong kredit sebanyak <strong>1 Kredit</strong>.</p><h2>HTTP Request</h2><div class="docs-endpoint"><span class="method-badge post">POST</span><code class="endpoint-path">/api/v1/bot-premium/send-link</code></div><h2>Request Body (JSON)</h2><table class="docs-params-table"><thead><tr><th>Parameter</th><th>Tipe</th><th>Wajib</th><th>Deskripsi</th></tr></thead><tbody><tr><td><code>email</code></td><td><code>string</code></td><td>Ya</td><td>Alamat email akun Alight Motion target.</td></tr></tbody></table></div><div class="doc-section" id="doc-activate"><h1 class="docs-title">Activate Premium</h1><p class="docs-desc">Endpoint ini digunakan untuk menerapkan lisensi premium Alight Motion menggunakan email target dan link tautan verifikasi yang disalin dari inbox email target.</p><h2>HTTP Request</h2><div class="docs-endpoint"><span class="method-badge post">POST</span><code class="endpoint-path">/api/v1/bot-premium/activate</code></div><h2>Request Body (JSON)</h2><table class="docs-params-table"><thead><tr><th>Parameter</th><th>Tipe</th><th>Wajib</th><th>Deskripsi</th></tr></thead><tbody><tr><td><code>email</code></td><td><code>string</code></td><td>Ya</td><td>Alamat email akun Alight Motion target.</td></tr><tr><td><code>magicLink</code></td><td><code>string</code></td><td>Ya</td><td>Tautan tombol verifikasi (OOB code link) Alight Creative.</td></tr></tbody></table></div><div class="doc-section" id="doc-integration"><h1 class="docs-title">Contoh Script Bot</h1><p class="docs-desc">Berikut adalah contoh script integrasi untuk bot WhatsApp/Telegram Anda yang menggunakan API kami (untuk role <strong>Auto Generator</strong> atau API Key Premium).</p><h2>1. settings.js</h2><p class="mb-3">Konfigurasikan API Key dan domain default Anda pada file settings bot:</p><div style="position: relative; margin-bottom: 25px;"><button class="btn btn-copy-code" data-target="code-settings-content"><i class="fa-regular fa-copy"></i> Copy</button> <pre><code class="language-javascript" id="code-settings-content">// settings.js
+module.exports = {
+    apiKey: "MASUKKAN_API_KEY_ANDA_DISINI",
+    apiUrl: "http://43.156.70.52/api",
+    defaultDomain: "softbank.id"
+};</code></pre> </div><h2>2. index.js</h2><p class="mb-3">Contoh kode NodeJS untuk mengotomatiskan pemanggilan API Generator Otomatis:</p><div style="position: relative;"><button class="btn btn-copy-code" data-target="code-index-content"><i class="fa-regular fa-copy"></i> Copy</button> <pre><code class="language-javascript" id="code-index-content">// index.js
+const axios = require('axios');
+const config = require('./settings');
+
+async function generatePremiumAccount() {
+    try {
+        console.log("[Bot] Memulai batch generator otomatis...");
+        
+        // 1. Memulai batch 1 akun menggunakan domain pilihan
+        const startRes = await axios.post(`${config.apiUrl}/am/autogen/start-batch`, {
+            domain: config.defaultDomain,
+            count: 1
+        }, {
+            headers: { 'x-api-key': config.apiKey }
+        });
+
+        if (!startRes.data.success) {
+            throw new Error(startRes.data.error || "Gagal memulai batch.");
+        }
+
+        console.log("[Bot] Batch berhasil dimulai di server. Mulai memantau progres...");
+
+        // 2. Lakukan polling status setiap 3 detik hingga selesai
+        let completed = false;
+        while (!completed) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            const statusRes = await axios.get(`${config.apiUrl}/am/autogen/active-batch`, {
+                headers: { 'x-api-key': config.apiKey }
+            });
+
+            const job = statusRes.data.job;
+            if (!job) {
+                console.log("[Bot] Tidak ada batch aktif.");
+                break;
+            }
+
+            console.log(`[Bot] Status: ${job.status} | Berhasil: ${job.successfulCount}/${job.totalCount}`);
+
+            if (job.status === 'completed' || job.status === 'failed') {
+                completed = true;
+                if (job.results && job.results.length > 0) {
+                    const account = job.results[0];
+                    console.log(`\n[Bot] GENERATE SUKSES!`);
+                    console.log(`Email: ${account.email}`);
+                    console.log(`Inbox: ${account.inbox}\n`);
+                } else {
+                    console.log(`[Bot] Pembuatan akun gagal.`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error("[Bot] Eror:", error.response ? error.response.data : error.message);
+    }
+}
+
+generatePremiumAccount();</code></pre> </div></div></main><aside class="docs-code-panel"><div class="code-tabs"><button class="code-tab-btn active" data-lang="curl">cURL</button><button class="code-tab-btn" data-lang="nodejs">Node.js</button><button class="code-tab-btn" data-lang="python">Python</button><button class="code-tab-btn" data-lang="php">PHP</button></div><div class="code-content-wrapper"><div class="code-block-item active" id="code-curl" style="position: relative;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><span class="code-title">REQUEST • CURL</span><button class="btn btn-copy-code" data-target="code-curl-content"><i class="fa-regular fa-copy"></i> Copy</button></div> <pre><code class="language-bash" id="code-curl-content"># Contoh Request Send Link
+curl -X POST http://43.156.70.52/api/v1/bot-premium/send-link \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: __API_KEY__" \
+  -d '{"email": "user@email.com"}'
+
+# Contoh Request Activate Premium
+curl -X POST http://43.156.70.52/api/v1/bot-premium/activate \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: __API_KEY__" \
+  -d '{"email": "user@email.com", "magicLink": "https://alightcreative.com/..."}'</code></pre> </div><div class="code-block-item" id="code-nodejs" style="position: relative;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><span class="code-title">REQUEST • NODEJS</span><button class="btn btn-copy-code" data-target="code-nodejs-content"><i class="fa-regular fa-copy"></i> Copy</button></div> <pre><code class="language-javascript" id="code-nodejs-content">const axios = require('axios');
+const API_KEY = '__API_KEY__';
+const BASE_URL = 'http://43.156.70.52/api/v1/bot-premium';
+
+// 1. Mengirim Tautan Verifikasi
+axios.post(`${BASE_URL}/send-link`, {
+    email: 'target@email.com'
+}, {
+    headers: { 'x-api-key': API_KEY }
+})
+.then(res => console.log(res.data.message))
+.catch(err => console.error(err.response.data.error));
+
+// 2. Menerapkan Lisensi Premium
+axios.post(`${BASE_URL}/activate`, {
+    email: 'target@email.com',
+    magicLink: 'https://alightcreative.com/...'
+}, {
+    headers: { 'x-api-key': API_KEY }
+})
+.then(res => console.log('Sukses!', res.data))
+.catch(err => console.error(err.response.data.error));</code></pre> </div><div class="code-block-item" id="code-python" style="position: relative;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><span class="code-title">REQUEST • PYTHON</span><button class="btn btn-copy-code" data-target="code-python-content"><i class="fa-regular fa-copy"></i> Copy</button></div> <pre><code class="language-python" id="code-python-content">import requests
+
+API_KEY = '__API_KEY__'
+BASE_URL = 'http://43.156.70.52/api/v1/bot-premium'
+headers = {'x-api-key': API_KEY}
+
+# 1. Send Link
+res = requests.post(f"{BASE_URL}/send-link", 
+  json={"email": "target@email.com"}, 
+  headers=headers
+)
+print(res.json())
+
+# 2. Activate Lisensi
+res2 = requests.post(f"{BASE_URL}/activate", 
+  json={
+    "email": "target@email.com", 
+    "magicLink": "https://alightcreative.com/..."
+  }, 
+  headers=headers
+)
+print(res2.json())</code></pre> </div><div class="code-block-item" id="code-php" style="position: relative;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><span class="code-title">REQUEST • PHP</span><button class="btn btn-copy-code" data-target="code-php-content"><i class="fa-regular fa-copy"></i> Copy</button></div> <pre><code class="language-php" id="code-php-content">&lt;?php
+$apiKey = '__API_KEY__';
+$baseUrl = 'http://43.156.70.52/api/v1/bot-premium';
+
+// Send Link Request
+$ch = curl_init("$baseUrl/send-link");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Content-Type: application/json",
+    "x-api-key: $apiKey"
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "email" => "target@email.com"
+]));
+$response = curl_exec($ch);
+echo $response;
+curl_close($ch);
+?&gt;</code></pre> </div></div></aside></div></section><section id="screen-admin" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-screwdriver-wrench" style="color: var(--accent-primary);"></i> Dashboard Administrator</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Kelola anggota terdaftar, pantau log aktivitas sistem global, serta kelola transaksi pembayaran QRIS.</p></div><div class="admin-stats-grid"><div class="glass-card stat-card"><i class="fa-solid fa-users stat-icon text-white"></i><div><div class="stat-value" id="stat-admin-total-users">0</div><div class="stat-label">Total Anggota</div></div></div><div class="glass-card stat-card"><i class="fa-solid fa-chart-line stat-icon text-white"></i><div><div class="stat-value" id="stat-total-activations">0</div><div class="stat-label">Total Request</div></div></div><div class="glass-card stat-card"><i class="fa-solid fa-circle-check stat-icon text-white"></i><div><div class="stat-value" id="stat-success-activations">0</div><div class="stat-label">Berhasil</div></div></div><div class="glass-card stat-card"><i class="fa-solid fa-circle-xmark stat-icon text-white"></i><div><div class="stat-value" id="stat-failed-activations">0</div><div class="stat-label">Gagal</div></div></div></div><div class="admin-grid mt-4"><div class="glass-card table-card" id="admin-users-card"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;"><h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-users-gear"></i> Daftar Anggota</h3><div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;"><button id="btn-admin-reset-credits" class="btn btn-warning btn-sm" style="font-size: 0.82rem; font-weight: 600; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-rotate"></i> Reset Semua Kredit (50)</button><div style="position: relative; width: 100%; max-width: 180px;"><i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i><input type="text" id="admin-search-users" placeholder="Cari username..." style="width: 100%; padding: 6px 10px 6px 34px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.82rem; font-family: var(--font-primary); background: transparent; color: var(--text-primary);"></div></div></div><div class="table-responsive"><table><thead><tr><th>Username</th><th>Level</th><th>Kredit</th><th>OS / Perangkat</th><th>Status</th><th>Tindakan</th></tr></thead><tbody id="admin-users-table-body"><tr><td colspan="5" class="text-center">Memuat pengguna...</td></tr></tbody></table></div><div id="admin-users-pagination" class="pagination-container mt-3"></div></div><div class="glass-card table-card" id="admin-logs-card"><h3 class="card-title"><i class="fa-solid fa-list-check"></i> Log Aktivasi Global</h3><div class="table-responsive"><table><thead><tr><th>Waktu</th><th>Operator</th><th>Target Email</th><th>Status</th><th>Keterangan</th></tr></thead><tbody id="admin-logs-table-body"><tr><td colspan="5" class="text-center">Memuat data log global...</td></tr></tbody></table></div><div id="admin-logs-pagination" class="pagination-container mt-3"></div></div></div><div class="glass-card table-card mt-4" id="admin-transactions-card"><h3 class="card-title"><i class="fa-solid fa-receipt"></i> Transaksi QRIS & Pembayaran</h3><div class="table-responsive"><table><thead><tr><th>Tanggal & Waktu</th><th>Username</th><th>Referensi (Ref No)</th><th>Nominal</th><th>Plan</th><th>Status</th><th>Tindakan</th></tr></thead><tbody id="admin-transactions-table-body"><tr><td colspan="7" class="text-center">Memuat transaksi pembayaran...</td></tr></tbody></table></div><div id="admin-transactions-pagination" class="pagination-container mt-3"></div></div><div class="admin-grid mt-4"><div class="glass-card table-card" id="admin-ips-card"><h3 class="card-title"><i class="fa-solid fa-network-wired"></i> IP Anggota & Pembersihan</h3><p style="margin: 6px 0 0 0; font-size: 0.78rem; color: var(--text-secondary);">Maksimal 3 akun per IP. Registrasi ke-4 dari IP yang sama otomatis ditolak.</p><div style="margin-bottom: 15px;"><button class="btn btn-danger btn-sm" id="btn-cleanup-ry-users"><i class="fa-solid fa-broom"></i> Bersihkan Akun ry_ </button></div><div class="table-responsive"><table><thead><tr><th>Username</th><th>Level</th><th>Alamat IP</th><th>Perangkat</th><th>Jumlah Akun</th><th>Tindakan</th></tr></thead><tbody id="admin-ips-table-body"><tr><td colspan="5" class="text-center">Memuat alamat IP dan perangkat...</td></tr></tbody></table></div><div id="admin-ips-pagination" class="pagination-container mt-3"></div></div><div class="glass-card table-card" id="admin-banned-ips-card"><h3 class="card-title"><i class="fa-solid fa-ban"></i> IP Terblokir</h3><div style="margin-bottom: 15px; display: flex; gap: 8px;"><input type="text" id="input-ban-ip" placeholder="Masukkan IP untuk diblokir..." style="flex: 1; padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.85rem; background: transparent; color: var(--text-primary);"><button class="btn btn-danger" id="btn-ban-ip-submit" style="padding: 6px 15px; font-size: 0.85rem;">Ban IP</button></div><div class="table-responsive"><table><thead><tr><th>IP Terblokir</th><th>Tanggal Blokir</th><th>Tindakan</th></tr></thead><tbody id="admin-banned-ips-table-body"><tr><td colspan="3" class="text-center">Memuat IP terblokir...</td></tr></tbody></table></div></div></div><div class="glass-card table-card mt-4 animate-fade-in" id="admin-duplicates-card"><h3 class="card-title"><i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i> Monitor Upaya Kloning Akun (Duplicate Attempt Logs)</h3><div class="console-box" style="background: #0f172a; border-radius: var(--radius-md); padding: 16px; font-family: monospace; font-size: 0.85rem; line-height: 1.6; color: #38bdf8; max-height: 250px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);"><div id="duplicate-logs-container" style="display: flex; flex-direction: column; gap: 8px;"><div style="color: #64748b;">Memuat log percobaan duplikasi...</div></div></div></div></section><section id="screen-settings" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-gears" style="color: var(--accent-primary);"></i> Pengaturan Fitur & Pemberitahuan</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Kelola status pemeliharaan (maintenance) fitur utama dan atur pengumuman/notifikasi sistem global secara real-time.</p></div><div class="admin-grid animate-fade-in" style="gap: 24px;"><div class="glass-card table-card" style="padding: 24px;"><h3 class="card-title" style="margin-bottom: 20px;"><i class="fa-solid fa-screwdriver-wrench"></i> Status Pemeliharaan Fitur</h3><form id="form-maintenance-settings" style="display: flex; flex-direction: column; gap: 20px;"><div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 12px;"><div><h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 0.95rem;">Alight Motion Generator</h4><p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);">Blokir request pembuatan/aktivasi premium Alight Motion.</p></div><label class="switch-toggle" style="position: relative; display: inline-block; width: 44px; height: 22px;"><input type="checkbox" id="maint-generator" style="opacity: 0; width: 0; height: 0;"><span class="slider-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .3s; border-radius: 22px;"></span></label></div><div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 12px;"><div><h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 0.95rem;">Netflix Crack</h4><p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);">Blokir request pengambilan akun Netflix premium gratis.</p></div><label class="switch-toggle" style="position: relative; display: inline-block; width: 44px; height: 22px;"><input type="checkbox" id="maint-netflix" style="opacity: 0; width: 0; height: 0;"><span class="slider-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .3s; border-radius: 22px;"></span></label></div><div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 12px;"><div><h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 0.95rem;">Global Chat Panel</h4><p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);">Nonaktifkan fitur mengirim dan membaca pesan chat global.</p></div><label class="switch-toggle" style="position: relative; display: inline-block; width: 44px; height: 22px;"><input type="checkbox" id="maint-chat" style="opacity: 0; width: 0; height: 0;"><span class="slider-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .3s; border-radius: 22px;"></span></label></div><div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 12px;"><div><h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 0.95rem;">Pembelian API Key</h4><p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);">Nonaktifkan QRIS payment gateway untuk pembelian lisensi.</p></div><label class="switch-toggle" style="position: relative; display: inline-block; width: 44px; height: 22px;"><input type="checkbox" id="maint-purchase" style="opacity: 0; width: 0; height: 0;"><span class="slider-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .3s; border-radius: 22px;"></span></label></div><div style="display: flex; justify-content: flex-end; margin-top: 10px;"><button type="button" class="btn btn-primary" id="btn-save-maintenance" style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;"><i class="fa-solid fa-circle-check"></i> Simpan Pengaturan </button></div></form></div><div class="glass-card table-card" style="padding: 24px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;"><h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-bullhorn"></i> Pengumuman & Notifikasi</h3><button class="btn btn-primary btn-sm" id="btn-admin-add-notif" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-plus"></i> Tambah Baru </button></div><div class="table-responsive"><table><thead><tr><th>Judul / Tipe</th><th>Isi Pengumuman</th><th>Status</th><th>Tindakan</th></tr></thead><tbody id="admin-notifications-table-body"><tr><td colspan="4" class="text-center">Memuat pengumuman...</td></tr></tbody></table></div></div></div></section><section id="screen-reviews" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Rating & Ulasan Layanan</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Apa kata pengguna lain tentang website generator dan layanan kami? Bagikan pengalaman berharga Anda di sini.</p></div><div class="admin-grid animate-fade-in" style="gap: 24px;"><div class="glass-card table-card" style="padding: 24px; height: fit-content;"><h3 class="card-title" style="margin-bottom: 20px;"><i class="fa-solid fa-pen-to-square"></i> Kirim Ulasan Anda</h3><div id="review-unauthenticated-notice" class="hidden text-center" style="padding: 20px 0; color: var(--text-secondary);"><i class="fa-solid fa-lock" style="font-size: 2.5rem; margin-bottom: 12px; color: var(--text-muted);"></i><p style="margin: 0; font-size: 0.9rem;">Anda harus masuk ke akun Anda untuk dapat mengirimkan ulasan.</p></div><form id="form-submit-review" style="display: flex; flex-direction: column; gap: 20px;"><div><label style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Rating Bintang</label><div class="rating-stars-interactive" style="display: flex; gap: 8px; font-size: 1.8rem; color: #475569;"><i class="fa-solid fa-star star-btn" data-value="1" style="cursor: pointer; transition: all 0.2s ease;"></i><i class="fa-solid fa-star star-btn" data-value="2" style="cursor: pointer; transition: all 0.2s ease;"></i><i class="fa-solid fa-star star-btn" data-value="3" style="cursor: pointer; transition: all 0.2s ease;"></i><i class="fa-solid fa-star star-btn" data-value="4" style="cursor: pointer; transition: all 0.2s ease;"></i><i class="fa-solid fa-star star-btn" data-value="5" style="cursor: pointer; transition: all 0.2s ease;"></i></div><input type="hidden" id="input-review-rating" value="0"></div><div><label for="input-review-comment" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Ulasan Anda</label><textarea id="input-review-comment" placeholder="Tuliskan pendapat, kritik, atau saran Anda..." style="width: 100%; height: 110px; background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; color: var(--text-primary); font-size: 0.88rem; resize: none; outline: none; transition: border-color 0.2s ease;" required></textarea></div><div style="display: flex; justify-content: flex-end;"><button type="submit" class="btn btn-primary" style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;"><i class="fa-solid fa-paper-plane"></i> Kirim Ulasan </button></div></form></div><div class="glass-card table-card" style="padding: 24px; display: flex; flex-direction: column; gap: 24px;"><div style="display: flex; align-items: center; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap;"><div style="text-align: center; min-width: 100px;"><h4 id="review-avg-rating" style="font-size: 3rem; font-weight: 800; margin: 0; color: var(--text-primary); line-height: 1;">0.0</h4><div class="avg-stars" style="color: #f59e0b; font-size: 0.9rem; margin-top: 6px;" id="review-avg-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div><p style="margin: 4px 0 0 0; font-size: 0.75rem; color: var(--text-secondary);" id="review-total-count">0 Ulasan</p></div><div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px;"><div style="display: flex; align-items: center; gap: 10px; font-size: 0.78rem;"><span style="min-width: 35px; color: var(--text-secondary);">5 Bintang</span><div style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;"><div id="bar-5-star" style="width: 0%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div><span id="count-5-star" style="color: var(--text-secondary);">0%</span></div><div style="display: flex; align-items: center; gap: 10px; font-size: 0.78rem;"><span style="min-width: 35px; color: var(--text-secondary);">4 Bintang</span><div style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;"><div id="bar-4-star" style="width: 0%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div><span id="count-4-star" style="color: var(--text-secondary);">0%</span></div><div style="display: flex; align-items: center; gap: 10px; font-size: 0.78rem;"><span style="min-width: 35px; color: var(--text-secondary);">3 Bintang</span><div style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;"><div id="bar-3-star" style="width: 0%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div><span id="count-3-star" style="color: var(--text-secondary);">0%</span></div><div style="display: flex; align-items: center; gap: 10px; font-size: 0.78rem;"><span style="min-width: 35px; color: var(--text-secondary);">2 Bintang</span><div style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;"><div id="bar-2-star" style="width: 0%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div><span id="count-2-star" style="color: var(--text-secondary);">0%</span></div><div style="display: flex; align-items: center; gap: 10px; font-size: 0.78rem;"><span style="min-width: 35px; color: var(--text-secondary);">1 Bintang</span><div style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;"><div id="bar-1-star" style="width: 0%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div><span id="count-1-star" style="color: var(--text-secondary);">0%</span></div></div></div><div id="reviews-list-container" style="display: flex; flex-direction: column; gap: 16px; max-height: 400px; overflow-y: auto; padding-right: 4px;"><div style="color: var(--text-secondary);" class="text-center">Memuat ulasan...</div></div></div></div></section><footer class="main-footer"><p>&copy; 2026 AM Premium By Alwayscodex Project & <a href="https://whatsapp.com/channel/0029Vb8EfuN35fM5AX25AT1W" target="_blank" style="color: var(--accent-color); text-decoration: underline; font-weight: 600;">join channel Whatsapp</a></p></footer></main></div><div class="sidebar-overlay" id="sidebar-overlay"></div> <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script> <script src="/js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Dependencies — diinstall ulang di dalam image
+node_modules
+npm-debug.log*
+
+# State runtime — jangan ikut ter-copy ke image
+data
+
+# Backup & file kerja lain yang tidak dibutuhkan saat runtime
+backup-public-preupdate-20260806-151322.tar.gz
+public2
+ryezen-decoded.html
+agent.md
+
+# Git & editor
+.git
+.gitignore
+*.md~
+*~

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "msh539xi5064e5",
+    "username": "alwayscodex",
+    "role": "owner",
+    "rating": 5,
+    "comment": "Bagus",
+    "createdAt": "2026-08-06 21:15:37"
+  },
+  {
+    "id": "msh6l8li9e50fa",
+    "username": "...",
+    "role": "user",
+    "rating": 4,
+    "comment": "Bagus, tapi tolong api key nya ada versi enterprise nya, kayak: api ini diperbolehkan untuk keperluan bisnis usaha dengan catatan pelaku usaha am premium wajib bayar lisensi ke Anda.",
+    "createdAt": "2026-08-06 15:15:09"
+  },
+  {
+    "id": "mshs8mgk3021c5",
+    "username": "faqih",
+    "role": "user",
+    "rating": 5,
+    "comment": "baguss inii",
+    "createdAt": "2026-08-07 01:21:12"
+  },
+  {
+    "id": "msi3osd9a55250",
+    "username": "apaweh",
+    "role": "user",
+    "rating": 1,
+    "comment": "tipi",
+    "createdAt": "2026-08-07 06:41:42"
+  }
+]

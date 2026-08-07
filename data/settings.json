@@ -1,0 +1,8 @@
+{
+  "maintenance": {
+    "generator": false,
+    "netflix": true,
+    "chat": false,
+    "purchase": false
+  }
+}

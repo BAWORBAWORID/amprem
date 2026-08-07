@@ -1,0 +1,333 @@
+/* ============================================================================
+   AM Premium Creator — Responsive Layout Layer
+   Loaded after the base page styles and redesign.css.
+   Breakpoints: mobile <= 768px, tablet 769px-1199px, desktop >= 1200px.
+   ============================================================================ */
+
+/* Shared sizing and overflow guards */
+html,
+body {
+    min-width: 320px;
+    overflow-x: hidden;
+}
+
+.app-layout.sidebar-active {
+    min-height: 100dvh;
+    align-items: stretch;
+}
+
+.main-content,
+.screen,
+.glass-card,
+.flow-box,
+.table-card,
+.generator-box,
+.docs-content,
+.docs-code-panel {
+    min-width: 0;
+}
+
+.main-content {
+    width: 100%;
+    max-width: none;
+}
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+    max-width: 100%;
+}
+
+input,
+select,
+textarea {
+    min-width: 0;
+}
+
+.table-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+    min-width: 640px;
+}
+
+/* Tablet: keep the full navigation visible and use the available width well. */
+@media (min-width: 769px) and (max-width: 1199px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .app-layout.sidebar-active {
+        display: grid;
+        grid-template-columns: 232px minmax(0, 1fr);
+        flex-direction: initial;
+    }
+
+    .app-sidebar {
+        position: sticky;
+        inset: 0 auto auto 0;
+        width: 232px;
+        min-width: 232px;
+        height: 100dvh;
+        padding: 22px 14px;
+        overflow: hidden;
+    }
+
+    .sidebar-nav {
+        min-height: 0;
+    }
+
+    .sidebar-link {
+        margin-inline: 0 !important;
+        padding: 10px 11px !important;
+        font-size: 0.8rem;
+        gap: 9px;
+    }
+
+    .nav-category {
+        padding-inline: 10px !important;
+        font-size: 0.6rem !important;
+    }
+
+    .sidebar-close-btn,
+    .mobile-top-bar,
+    .sidebar-overlay {
+        display: none !important;
+    }
+
+    .main-content {
+        padding: 28px clamp(22px, 3vw, 42px);
+        min-width: 0;
+        min-height: 100dvh;
+        overflow-x: clip;
+    }
+
+    .dashboard-header .section-title {
+        font-size: clamp(1.5rem, 2.3vw, 1.85rem) !important;
+    }
+
+    .stats-grid,
+    .admin-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .purchase-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 18px !important;
+    }
+
+    .admin-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .admin-grid > .table-card:only-child,
+    .admin-grid > .table-card:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
+    .glass-card {
+        border-radius: 18px !important;
+    }
+
+    .generator-box,
+    .table-card {
+        padding: 22px !important;
+    }
+
+    .panel-header-desc {
+        align-items: flex-start;
+    }
+
+    .docs-container {
+        grid-template-columns: 220px minmax(0, 1fr) !important;
+        grid-template-rows: minmax(420px, auto) minmax(360px, auto) !important;
+        height: auto !important;
+        min-height: 780px;
+        overflow: visible !important;
+    }
+
+    .docs-sidebar,
+    .docs-content {
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .docs-sidebar {
+        padding: 16px !important;
+    }
+
+    .docs-toggle-btn {
+        display: none !important;
+    }
+
+    .docs-sidebar-menu {
+        display: flex !important;
+    }
+
+    .docs-content {
+        min-width: 0;
+        padding: 28px 24px;
+    }
+
+    .docs-code-panel {
+        grid-column: 1 / -1;
+        min-height: 360px;
+        max-height: 440px;
+        border-left: none;
+        border-top: 1px solid #1e293b;
+    }
+
+    .apk-banner {
+        flex-wrap: wrap;
+    }
+
+    .apk-banner-content {
+        min-width: 0;
+        flex: 1 1 320px;
+    }
+
+    .apk-banner-btn {
+        flex: 0 0 auto;
+    }
+
+    .profile-info-row {
+        gap: 16px;
+    }
+
+    .chat-message-bubble {
+        max-width: min(75%, 560px);
+    }
+}
+
+/* Desktop: wider, calm grids with a contained reading measure. */
+@media (min-width: 1200px) {
+    .app-layout.sidebar-active {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        flex-direction: initial;
+    }
+
+    .app-sidebar {
+        width: 260px;
+        min-width: 260px;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .sidebar-close-btn,
+    .mobile-top-bar,
+    .sidebar-overlay {
+        display: none !important;
+    }
+
+    .main-content {
+        padding: 36px clamp(34px, 4vw, 64px);
+        min-width: 0;
+        min-height: 100dvh;
+        overflow-x: clip;
+    }
+
+    .screen {
+        width: 100%;
+        max-width: 1480px;
+        margin-inline: auto;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+
+    .purchase-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+
+    .admin-stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+
+    .admin-grid {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    }
+
+    .docs-container {
+        grid-template-columns: 240px minmax(0, 1fr) minmax(300px, 400px) !important;
+        height: min(860px, calc(100dvh - 120px)) !important;
+    }
+
+    .docs-content {
+        min-width: 0;
+        padding: 42px clamp(28px, 3vw, 48px);
+    }
+
+    .docs-code-panel {
+        min-width: 0;
+    }
+
+    .generator-box,
+    .table-card {
+        padding: 28px !important;
+    }
+
+    .chat-message-bubble {
+        max-width: min(70%, 680px);
+    }
+}
+
+/* Keep the existing mobile drawer rules authoritative. */
+@media (max-width: 768px) {
+    .app-layout.sidebar-active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .app-sidebar {
+        position: fixed;
+        left: -300px;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        min-width: 0;
+        height: 100dvh;
+    }
+
+    .app-sidebar.active {
+        left: 0;
+    }
+
+    .main-content {
+        min-width: 0;
+        overflow-x: hidden;
+    }
+
+    .table-responsive table {
+        min-width: 650px;
+    }
+
+    .apk-banner-content,
+    .apk-banner-btn {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-sidebar,
+    .glass-card,
+    .btn,
+    .sidebar-link {
+        transition: none !important;
+    }
+}

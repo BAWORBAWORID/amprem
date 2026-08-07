@@ -1,0 +1,16 @@
+{
+  "name": "am-premium-creator",
+  "version": "1.0.0",
+  "description": "AM Premium Creator - clone lokal ryezenstore.online",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
+    "puppeteer-core": "^25.5.0"
+  }
+}
