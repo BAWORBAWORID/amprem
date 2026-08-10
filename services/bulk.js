@@ -38,15 +38,31 @@ function resolveChrome() {
 }
 
 let browserInstance = null;
+let browserPromise = null;
 
 async function getBrowser() {
-    if (browserInstance) return browserInstance;
-    browserInstance = await puppeteer.launch({
-        executablePath: resolveChrome(),
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
-    });
-    return browserInstance;
+    // Chrome bisa mati/stale (mis. setelah batch sebelumnya atau proses di-kill).
+    // Selalu cek koneksi — kalau putus, relaunch agar batch berikutnya tidak gagal
+    // dengan 'Connection closed'. Single-flight: panggilan paralel memakai 1 instance.
+    if (browserPromise) return browserPromise;
+    browserPromise = (async () => {
+        if (browserInstance && browserInstance.isConnected && browserInstance.isConnected()) return browserInstance;
+        if (browserInstance) {
+            try { await browserInstance.close(); } catch (e) { /* abaikan */ }
+            browserInstance = null;
+        }
+        browserInstance = await puppeteer.launch({
+            executablePath: resolveChrome(),
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+        });
+        return browserInstance;
+    })();
+    try {
+        return await browserPromise;
+    } finally {
+        browserPromise = null;
+    }
 }
 
 export async function closeBrowser() {
@@ -62,18 +78,30 @@ function sleep(ms) {
 
 /* ---------- Generator email ---------- */
 
-function renderName(template, i) {
-    const s = String(i);
-    return String(template).replace(/\{n\}/g, s).replace(/\{n2\}/g, s.padStart(2, '0'));
+function randomLocalPart(len) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let s = '';
+    for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
 }
 
-function normalizeTemplate(template) {
-    const t = String(template || '');
-    return t.includes('{n}') ? t : (t || 'am') + '{n}';
-}
-
+/**
+ * Bangun daftar email untuk batch.
+ * Nama (local-part) & domain dipilih ACAK agar tidak bertabrakan dengan
+ * email lama di inbox publik generator.email (inbox persistent antar batch).
+ *
+ * opts:
+ *   name     -> prefix custom (misal "codex"), opsional. {n}/{n2} dibuang.
+ *   domains  -> daftar domain; dipilih acak per email. Default DEFAULT_DOMAINS.
+ *   count    -> jumlah email
+ *   startIndex -> index awal (dipakai untuk hitung jumlah, bukan untuk nama)
+ */
 export function buildEmailList(opts) {
-    const template = normalizeTemplate(opts.name || 'am{n}');
+    // Prefix custom (buang placeholder nomor), bersihkan karakter aneh, max 12.
+    const prefix = String(opts.name || '')
+        .replace(/\{n\}/g, '').replace(/\{n2\}/g, '')
+        .replace(/[^a-z0-9_.-]/gi, '')
+        .slice(0, 12) || 'am';
     const domains = (opts.domains && opts.domains.length ? opts.domains : DEFAULT_DOMAINS)
         .map((d) => String(d).trim().toLowerCase())
         .filter(Boolean);
@@ -81,9 +109,18 @@ export function buildEmailList(opts) {
     const startIndex = Math.max(1, parseInt(opts.startIndex, 10) || 1);
     const end = startIndex + count - 1;
     const list = [];
+    const seen = new Set();
     for (let i = startIndex; i <= end; i++) {
-        const dom = domains[(i - 1) % domains.length];
-        list.push(renderName(template, i) + '@' + dom);
+        let email = '';
+        // Loop sampai dapat kombinasi nama+domain unik (anti-duplikat).
+        for (let t = 0; t < 25; t++) {
+            const name = prefix + randomLocalPart(7);
+            const dom = domains[Math.floor(Math.random() * domains.length)];
+            email = name + '@' + dom;
+            if (!seen.has(email)) break;
+        }
+        seen.add(email);
+        list.push(email);
     }
     return list;
 }
@@ -93,7 +130,7 @@ export function buildEmailList(opts) {
 async function openInbox(page, email) {
     const [user, dom] = email.split('@');
     const url = `https://generator.email/${dom}/${user}`;
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
     // tunggu data email aktif ter-load (client-side render)
     for (let i = 0; i < 12; i++) {
         const ready = await page.evaluate(() => {
@@ -126,37 +163,35 @@ async function readInboxMessages(page) {
     });
 }
 
-/** Polling reload inbox sampai link verifikasi Alight Motion muncul. */
-async function findVerifyLink(page, email, maxTries, onLog) {
-    for (let i = 0; i < maxTries; i++) {
-        await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-        await sleep(3500);
-        const link = await page.evaluate(() => {
-            const a = document.querySelector("a[href*='alight-creative.firebaseapp.com']");
-            if (a) return a.href;
-            const a2 = document.querySelector("a[href*='firebaseapp.com']");
-            if (a2) return a2.href;
-            const a3 = document.querySelector("a[href*='alight']");
-            if (a3) return a3.href;
-            const allText = document.body.innerText || '';
-            const m = allText.match(/https:\/\/alight-creative\.firebaseapp\.com\/__\/auth\/links\?link=[^\s]+/);
-            if (m) return m[0];
-            return null;
-        });
-        if (link) return link;
-        if (onLog) onLog(`waiting link ${i + 1}/${maxTries}...`);
-        await sleep(5000);
-    }
-    return null;
+/**
+ * Kumpulkan SEMUA link verifikasi Alight Motion di inbox (bukan hanya yang pertama).
+ * Inbox generator.email bersifat publik & persistent: email lama dengan oobCode yang
+ * sudah terpakai/kadaluarsa masih tersimpan. Dengan mengumpulkan semua link, kita bisa
+ * mencoba satu per satu sampai menemukan yang valid (baru dari kiriman terakhir).
+ */
+async function findAllVerifyLinks(page) {
+    return page.evaluate(() => {
+        const out = [];
+        const isVerifyLink = (href) => {
+            // Hanya link verifikasi Firebase AM (mengandung oobCode / firebaseapp.com) —
+            // hindari link footer biasa (mis. alightcreative.com) yang sia-sia dicoba.
+            return href && (href.indexOf('oobCode') !== -1 || href.indexOf('firebaseapp.com') !== -1) && out.indexOf(href) === -1;
+        };
+        const push = (href) => { if (isVerifyLink(href)) out.push(href); };
+        document.querySelectorAll("a[href*='firebaseapp.com']").forEach((a) => push(a.href));
+        document.querySelectorAll("a[href*='alight']").forEach((a) => push(a.href));
+        const allText = document.body.innerText || '';
+        const re = /https:\/\/alight-creative\.firebaseapp\.com\/__\/auth\/links\?link=[^\s"<]+/g;
+        let m;
+        while ((m = re.exec(allText)) !== null) push(m[0]);
+        return out;
+    });
 }
 
 /* ---------- Proses satu akun ---------- */
 
 async function processOne(email, opts) {
     const auth = new AMAuth();
-    const page = await (await getBrowser()).newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
-
     const result = {
         email,
         inboxUrl: `https://generator.email/${email}`,
@@ -164,9 +199,41 @@ async function processOne(email, opts) {
         messages: [],
     };
 
+    let page = null;
     try {
-        await openInbox(page, email);
-        if (opts.onLog) opts.onLog(`inbox opened`);
+        page = await (await getBrowser()).newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
+
+        // Retry anti-timeout: bila inbox domain awal gagal dibuka (domain mati /
+        // generator.email fluktuatif), coba email alternatif dgn domain lain
+        // dari daftar hingga ada yang berhasil (maks 3 kandidat).
+        const prefix = String(opts.name || '').replace(/\{n\}/g, '').replace(/\{n2\}/g, '');
+        const altDomains = (opts.domains && opts.domains.length ? opts.domains : DEFAULT_DOMAINS);
+        const candidates = [email];
+        for (let k = 0; k < 2; k++) {
+            const dom = altDomains[Math.floor(Math.random() * altDomains.length)];
+            candidates.push((prefix || 'am') + randomLocalPart(7) + '@' + dom);
+        }
+        let opened = null;
+        for (const cand of candidates) {
+            try {
+                await openInbox(page, cand);
+                opened = cand;
+                break;
+            } catch (e) {
+                if (opts.onLog) opts.onLog(`inbox gagal ${cand}: ${String(e.message || e).slice(0, 60)}`);
+            }
+        }
+        if (!opened) {
+            result.error = 'inbox: semua domain tidak bisa dibuka';
+            if (opts.onLog) opts.onLog(result.error);
+            return result;
+        }
+        // Pakai email yang inbox-nya benar-benar terbuka.
+        email = opened;
+        result.email = opened;
+        result.inboxUrl = `https://generator.email/${opened}`;
+        if (opts.onLog) opts.onLog(`inbox opened: ${opened}`);
 
         const sendRes = await auth.sendMagicLink(email);
         if (!sendRes.success) {
@@ -176,21 +243,38 @@ async function processOne(email, opts) {
         }
         if (opts.onLog) opts.onLog('magic link terkirim');
 
-        const link = await findVerifyLink(page, email, opts.maxTries || 20, opts.onLog);
-        if (!link) {
-            result.error = 'link verifikasi tidak ditemukan';
-            if (opts.onLog) opts.onLog(result.error);
-            return result;
+        // Polling inbox: kumpulkan semua link, coba verifikasi satu per satu.
+        // Link lama/basi di inbox publik akan gagal (INVALID_OOB_CODE) — lewati,
+        // lanjut ke link lain sampai ada yang valid (kiriman terbaru).
+        const maxTries = opts.maxTries || 20;
+        const tried = new Set();
+        let verifyRes = null;
+        for (let i = 0; i < maxTries; i++) {
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+            await sleep(3500);
+            const links = await findAllVerifyLinks(page);
+            if (links.length && opts.onLog) opts.onLog(`ditemukan ${links.length} link, mencoba verifikasi...`);
+            for (const link of links) {
+                if (tried.has(link)) continue;
+                tried.add(link);
+                result.verifyLink = link;
+                verifyRes = await auth.verifyAndFetchProfile(email, link);
+                if (verifyRes.success) break;
+                if (opts.onLog) opts.onLog(`link #${tried.size} gagal: ${String(verifyRes.error || '').slice(0, 70)}`);
+                // Batasi total percobaan unik agar tidak memicu rate-limit Firebase
+                // (TOO_MANY_ATTEMPTS) saat inbox publik penuh link basi.
+                if (tried.size >= 15) break;
+            }
+            if (verifyRes && verifyRes.success) break;
+            if (opts.onLog) opts.onLog(`belum ada link valid (putaran ${i + 1}/${maxTries}), reload inbox...`);
+            await sleep(5000);
         }
-        result.verifyLink = link;
-        if (opts.onLog) opts.onLog('link verifikasi DITEMUKAN');
-
-        const verifyRes = await auth.verifyAndFetchProfile(email, link);
-        if (!verifyRes.success) {
-            result.error = 'verify: ' + (verifyRes.error || 'gagal verifikasi');
+        if (!verifyRes || !verifyRes.success) {
+            result.error = 'verify: ' + (verifyRes ? (verifyRes.error || 'gagal verifikasi') : 'link verifikasi tidak ditemukan');
             if (opts.onLog) opts.onLog(`verify failed: ${result.error}`);
             return result;
         }
+        result.verifyLink = verifyRes.link || result.verifyLink;
         if (opts.onLog) opts.onLog('verifikasi OK');
 
         const premiumRes = await auth.applyPremium(verifyRes.idToken);
@@ -206,8 +290,14 @@ async function processOne(email, opts) {
         result.status = 'error';
         result.error = err.message;
         if (opts.onLog) opts.onLog(`error: ${err.message}`);
+        // Koneksi browser putus -> tutup instance agar batch berikutnya relaunch.
+        // Cek langsung status koneksi (bukan substring pesan) karena pesan error
+        // puppeteer bisa 'Protocol error ... Target closed' tanpa kata 'connection'.
+        if (browserInstance && browserInstance.isConnected && !browserInstance.isConnected()) {
+            try { await closeBrowser(); } catch (e) { /* abaikan */ }
+        }
     } finally {
-        try { await page.close(); } catch (e) { /* abaikan */ }
+        if (page) { try { await page.close(); } catch (e) { /* abaikan */ } }
     }
     return result;
 }
@@ -219,7 +309,10 @@ async function processOne(email, opts) {
  * @param {object} opts { name, domains, count, maxTries, onLog, onResult, onDone }
  */
 export async function runBulk(opts) {
-    const emails = buildEmailList(opts);
+    // Bila daftar email sudah dibuat saat batch dimulai (agar API bisa langsung
+    // mengembalikan daftarnya ke user), pakai itu — jangan buat ulang supaya
+    // email yang diproses sama persis dengan yang ditampilkan.
+    const emails = opts.emails && opts.emails.length ? opts.emails : buildEmailList(opts);
     const results = [];
     const started = Date.now();
 
@@ -227,7 +320,15 @@ export async function runBulk(opts) {
 
     for (let i = 0; i < emails.length; i++) {
         if (opts.onLog) opts.onLog(`[${i + 1}/${emails.length}] ${emails[i]}`);
-        const r = await processOne(emails[i], opts);
+        let r;
+        try {
+            r = await processOne(emails[i], opts);
+        } catch (err) {
+            // Satu akun error tidak boleh membunuh seluruh batch.
+            r = { email: emails[i], inboxUrl: `https://generator.email/${emails[i]}`, status: 'error', error: err.message, messages: [] };
+            if (opts.onLog) opts.onLog(`error: ${err.message}`);
+            try { await closeBrowser(); } catch (e) { /* abaikan */ }
+        }
         results.push(r);
         if (opts.onResult) opts.onResult(r, i + 1, emails.length);
         await sleep(3000);

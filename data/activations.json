@@ -382,5 +382,2149 @@
     "status": "success",
     "note": "send-link: tautan dikirim",
     "createdAt": "2026-08-07 12:14:58"
+  },
+  {
+    "id": "msipzhql9ce759",
+    "operator": "kienzy",
+    "email": "auzia012@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 17:05:53"
+  },
+  {
+    "id": "msiq07h5f9b4f9",
+    "operator": "kienzy",
+    "email": "auzia012@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-07 17:06:26"
+  },
+  {
+    "id": "msiymkru55eb0d",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: {\"error\":{\"code\":400,\"message\":\"INVALID_OOB_CODE\",\"errors\":[{\"message\":\"INVALID_OOB_CODE\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-07 21:07:46"
+  },
+  {
+    "id": "msiyoe7k0dfc12",
+    "operator": "alwayscodex",
+    "email": "gdqgw9@bwmyga.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 21:09:11"
+  },
+  {
+    "id": "msiyqbq32570dc",
+    "operator": "alwayscodex",
+    "email": "gdqgw9@bwmyga.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-07 21:10:41"
+  },
+  {
+    "id": "msiz8vt2277b71",
+    "operator": "lidd",
+    "email": "secondly0703@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 21:25:07"
+  },
+  {
+    "id": "msiz9clu6a9de5",
+    "operator": "alwayscodex",
+    "email": "codexbulktest1@softbank.id",
+    "status": "success",
+    "note": "autogen: 10107",
+    "createdAt": "2026-08-07 21:25:29"
+  },
+  {
+    "id": "msiz9jhga40626",
+    "operator": "lidd",
+    "email": "secondly0703@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-07 21:25:38"
+  },
+  {
+    "id": "msiza01842dee5",
+    "operator": "alwayscodex",
+    "email": "codexbulktest2@softbank.id",
+    "status": "success",
+    "note": "autogen: 45814",
+    "createdAt": "2026-08-07 21:25:59"
+  },
+  {
+    "id": "msizdqsh134ada",
+    "operator": "alwayscodex",
+    "email": "cx093091@softbank.id",
+    "status": "success",
+    "note": "autogen: 76496",
+    "createdAt": "2026-08-07 21:28:54"
+  },
+  {
+    "id": "msizeae69404f0",
+    "operator": "alwayscodex",
+    "email": "cx093092@softbank.id",
+    "status": "success",
+    "note": "autogen: 44751",
+    "createdAt": "2026-08-07 21:29:19"
+  },
+  {
+    "id": "msizh565290a6b",
+    "operator": "alwayscodex",
+    "email": "c2094651@softbank.id",
+    "status": "success",
+    "note": "autogen: 26556",
+    "createdAt": "2026-08-07 21:31:33"
+  },
+  {
+    "id": "msizhpobbd5cf1",
+    "operator": "alwayscodex",
+    "email": "c2094652@softbank.id",
+    "status": "success",
+    "note": "autogen: 29397",
+    "createdAt": "2026-08-07 21:31:59"
+  },
+  {
+    "id": "msizlii7a4e3df",
+    "operator": "jalhensem",
+    "email": "alokyteam6@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 21:34:57"
+  },
+  {
+    "id": "msizp6t9775609",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-07 21:37:48"
+  },
+  {
+    "id": "msizpqbg6b77ab",
+    "operator": "ggg",
+    "email": "oeghaa@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 21:38:13"
+  },
+  {
+    "id": "msizrxdb581513",
+    "operator": "jalhensem",
+    "email": "alokyteam6@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-07 21:39:56"
+  },
+  {
+    "id": "msizu0zta809ca",
+    "operator": "alwayscodex",
+    "email": "am2@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: {\"error\":{\"code\":400,\"message\":\"INVALID_OOB_CODE\",\"errors\":[{\"message\":\"INVALID_OOB_CODE\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-07 21:41:34"
+  },
+  {
+    "id": "msizzw2nf2ade1",
+    "operator": "ggg",
+    "email": "oeghaa@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 21:46:07"
+  },
+  {
+    "id": "msj02gbaa17367",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-07 21:48:07"
+  },
+  {
+    "id": "msj0539y1641f1",
+    "operator": "alwayscodex",
+    "email": "cxfix1@softbank.id",
+    "status": "success",
+    "note": "autogen: 11583",
+    "createdAt": "2026-08-07 21:50:10"
+  },
+  {
+    "id": "msj05mqraa28eb",
+    "operator": "alwayscodex",
+    "email": "cxfix2@softbank.id",
+    "status": "success",
+    "note": "autogen: 90539",
+    "createdAt": "2026-08-07 21:50:35"
+  },
+  {
+    "id": "msj08ex3a5bf9f",
+    "operator": "ggg",
+    "email": "mengke4boy@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 21:52:45"
+  },
+  {
+    "id": "msj08xtt94a564",
+    "operator": "ggg",
+    "email": "mengke4boy@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-07 21:53:09"
+  },
+  {
+    "id": "msj0a23p5494a0",
+    "operator": "alwayscodex",
+    "email": "cf08351@softbank.id",
+    "status": "failed",
+    "note": "autogen: Attempted to use detached Frame 'DB0C4879B2010EE5FD57E0DE68A8050C'.",
+    "createdAt": "2026-08-07 21:54:02"
+  },
+  {
+    "id": "msj0aky73691b7",
+    "operator": "alwayscodex",
+    "email": "cf08352@softbank.id",
+    "status": "success",
+    "note": "autogen: 54536",
+    "createdAt": "2026-08-07 21:54:26"
+  },
+  {
+    "id": "msj0g96if97ca0",
+    "operator": "alwayscodex",
+    "email": "cz11041@softbank.id",
+    "status": "success",
+    "note": "autogen: 45832",
+    "createdAt": "2026-08-07 21:58:51"
+  },
+  {
+    "id": "msj0lkfh843136",
+    "operator": "xxx",
+    "email": "kikipingdeple@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 22:02:59"
+  },
+  {
+    "id": "msj0rh8p8bd9dd",
+    "operator": "alwayscodex",
+    "email": "cidex1@1win.life",
+    "status": "success",
+    "note": "autogen: 23924",
+    "createdAt": "2026-08-07 22:07:34"
+  },
+  {
+    "id": "msj0syvc5987b6",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: Protocol error (Runtime.callFunctionOn): Target closed",
+    "createdAt": "2026-08-07 22:08:44"
+  },
+  {
+    "id": "msj350om51486e",
+    "operator": "alwayscodex",
+    "email": "df56131@softbank.id",
+    "status": "success",
+    "note": "autogen: 77046",
+    "createdAt": "2026-08-07 23:14:05"
+  },
+  {
+    "id": "msj35njvfd84f8",
+    "operator": "alwayscodex",
+    "email": "df56132@softbank.id",
+    "status": "success",
+    "note": "autogen: 49501",
+    "createdAt": "2026-08-07 23:14:35"
+  },
+  {
+    "id": "msj35w9e8d3a97",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 23:14:46"
+  },
+  {
+    "id": "msj3ctntab4893",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 23:20:10"
+  },
+  {
+    "id": "msj3e39cb20c24",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-07 23:21:09"
+  },
+  {
+    "id": "msj3e9gmf7518a",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-07 23:21:17"
+  },
+  {
+    "id": "msj3jgua6c8006",
+    "operator": "alwayscodex",
+    "email": "tg62931@softbank.id",
+    "status": "success",
+    "note": "autogen: 28999",
+    "createdAt": "2026-08-07 23:25:19"
+  },
+  {
+    "id": "msj3k81zdcb78e",
+    "operator": "alwayscodex",
+    "email": "tg62932@softbank.id",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-07 23:25:55"
+  },
+  {
+    "id": "msj3xy3011379b",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-07 23:36:35"
+  },
+  {
+    "id": "msj47q92534510",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-07 23:44:11"
+  },
+  {
+    "id": "msj4ccfnb6a6a3",
+    "operator": "alwayscodex",
+    "email": "am1@softbank.id",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-07 23:47:47"
+  },
+  {
+    "id": "msj4gl7mad1de4",
+    "operator": "alwayscodex",
+    "email": "0olp9@lnovic.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-07 23:51:05"
+  },
+  {
+    "id": "msj4hecv2f356a",
+    "operator": "alwayscodex",
+    "email": "0olp9@lnovic.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-07 23:51:43"
+  },
+  {
+    "id": "msj4p32086a860",
+    "operator": "alwayscodex",
+    "email": "rd8227ewhndnl@cipcup.site",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-07 23:57:41"
+  },
+  {
+    "id": "msj4px4523dccf",
+    "operator": "alwayscodex",
+    "email": "rd8227vuvjkjf@binancepools.cloud",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-07 23:58:20"
+  },
+  {
+    "id": "msj4qpw482692c",
+    "operator": "alwayscodex",
+    "email": "rd8227b7d7e5u@nanopools.info",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-07 23:58:57"
+  },
+  {
+    "id": "msj4tgmzc9ef62",
+    "operator": "alwayscodex",
+    "email": "am4ql7euy@softbank.id",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-08 00:01:05"
+  },
+  {
+    "id": "msj4zschfa5732",
+    "operator": "alwayscodex",
+    "email": "amwyqrdv6@softbank.id",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-08 00:06:01"
+  },
+  {
+    "id": "msj56eye5a92e3",
+    "operator": "alwayscodex",
+    "email": "rv9035mfdmy4j@gmailxsn.site",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-08 00:11:10"
+  },
+  {
+    "id": "msj576xpb4bfa1",
+    "operator": "alwayscodex",
+    "email": "rv9035rkgklne@1win.life",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-08 00:11:46"
+  },
+  {
+    "id": "msj57yg8d794ce",
+    "operator": "alwayscodex",
+    "email": "rv9035b55yfd6@gmail-xsniper.space",
+    "status": "failed",
+    "note": "autogen: Navigation timeout of 30000 ms exceeded",
+    "createdAt": "2026-08-08 00:12:22"
+  },
+  {
+    "id": "msj5goxfe0754f",
+    "operator": "alwayscodex",
+    "email": "rx9521fpirxn4@softbank.id",
+    "status": "success",
+    "note": "autogen: 21920",
+    "createdAt": "2026-08-08 00:19:09"
+  },
+  {
+    "id": "msj5lnyrd4ce58",
+    "operator": "alwayscodex",
+    "email": "rx9521r8mct5n@lnovic.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 00:23:01"
+  },
+  {
+    "id": "msj5z26wf9c90e",
+    "operator": "alwayscodex",
+    "email": "fn0181i15r4tf@gocoiny.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 00:33:26"
+  },
+  {
+    "id": "msj63rqi8e71d1",
+    "operator": "alwayscodex",
+    "email": "fn018165lt17e@copawoke.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 00:37:06"
+  },
+  {
+    "id": "msj6lqlu10f949",
+    "operator": "alwayscodex",
+    "email": "bfaga@yzcalo.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 00:51:04"
+  },
+  {
+    "id": "msj6mhwg9cf0d4",
+    "operator": "alwayscodex",
+    "email": "bfaga@yzcalo.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 00:51:40"
+  },
+  {
+    "id": "msj6p7bq65f602",
+    "operator": "alwayscodex",
+    "email": "amh79ltph@mfeva.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 00:53:46"
+  },
+  {
+    "id": "msjjwexff0c641",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:03:17"
+  },
+  {
+    "id": "msjjx4e9955088",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 07:03:50"
+  },
+  {
+    "id": "msjkmtqz96095c",
+    "operator": "apinnn",
+    "email": "semewo1925@sureido.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:23:50"
+  },
+  {
+    "id": "msjkn87p7687ea",
+    "operator": "apinnn",
+    "email": "semewo1925@sureido.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 07:24:08"
+  },
+  {
+    "id": "msjlkexf80348a",
+    "operator": "branndeveloper",
+    "email": "ampro4372jj36ln@tempestme.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:49:57"
+  },
+  {
+    "id": "msjlkwlx8b5298",
+    "operator": "branndeveloper",
+    "email": "ampro8444dahxuj@tempestme.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:50:20"
+  },
+  {
+    "id": "msjllsmi20fdec",
+    "operator": "branndeveloper",
+    "email": "ampro8152t4cofj@tempestme.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:51:01"
+  },
+  {
+    "id": "msjllsqd34150f",
+    "operator": "branndeveloper",
+    "email": "ampro8148o7b3cz@tempestme.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:51:01"
+  },
+  {
+    "id": "msjlmcpg13da98",
+    "operator": "branndeveloper",
+    "email": "ampro54571gdtlb@tempestme.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:51:27"
+  },
+  {
+    "id": "msjlphye0074bc",
+    "operator": "branndeveloper",
+    "email": "ampro2174wk5u3k@tempestme.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 07:53:54"
+  },
+  {
+    "id": "msjrfnwi8ea669",
+    "operator": "alwayscodex",
+    "email": "amgpkoxgm@kedaiqq.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 10:34:13"
+  },
+  {
+    "id": "msjtjh4732d29a",
+    "operator": "alwayscodex",
+    "email": "c15998459@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 11:33:10"
+  },
+  {
+    "id": "msjtlqbsf9c524",
+    "operator": "alwayscodex",
+    "email": "c15998459@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 11:34:55"
+  },
+  {
+    "id": "msju181pe599b2",
+    "operator": "usergen99",
+    "email": "x@y.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 11:46:58"
+  },
+  {
+    "id": "msju1ezv9c25b4",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 11:47:07"
+  },
+  {
+    "id": "msju2optb57b26",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 11:48:06"
+  },
+  {
+    "id": "msjybsdm7ca467",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 13:47:09"
+  },
+  {
+    "id": "msjycyd1a549b2",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 13:48:04"
+  },
+  {
+    "id": "msjzjejw97c5da",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 14:21:04"
+  },
+  {
+    "id": "msjzjtrzc33589",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 14:21:24"
+  },
+  {
+    "id": "msjzn5ul26d687",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 14:24:00"
+  },
+  {
+    "id": "msjznpvd69469f",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 14:24:26"
+  },
+  {
+    "id": "msjzwsig936f7a",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 14:31:29"
+  },
+  {
+    "id": "msjzxgj9e6680e",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-08 14:32:00"
+  },
+  {
+    "id": "msk04sric6a88d",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 14:37:42"
+  },
+  {
+    "id": "msk0lul02624e7",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 14:50:58"
+  },
+  {
+    "id": "msk5dbjs0aab3e",
+    "operator": "alwayscodex",
+    "email": "am4eu6oqe@jagomail.com",
+    "status": "success",
+    "note": "autogen: 76061",
+    "createdAt": "2026-08-08 17:04:18"
+  },
+  {
+    "id": "msk5dtvb08e135",
+    "operator": "alwayscodex",
+    "email": "amdzh0khz@jagomail.com",
+    "status": "success",
+    "note": "autogen: 88766",
+    "createdAt": "2026-08-08 17:04:42"
+  },
+  {
+    "id": "msk94jgb3cf504",
+    "operator": "alwayscodex",
+    "email": "fif86@olipii.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 18:49:27"
+  },
+  {
+    "id": "msk94ze30fcfa1",
+    "operator": "alwayscodex",
+    "email": "4mdyv@yzcalo.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 18:49:48"
+  },
+  {
+    "id": "mskfgpmpc602ff",
+    "operator": "apaweh",
+    "email": "afifrfsyaa@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-08 21:46:52"
+  },
+  {
+    "id": "mskheotuef9d7b",
+    "operator": "alwayscodex",
+    "email": "coper5z4iuza@gmail-xsniper.site",
+    "status": "success",
+    "note": "autogen: 49654",
+    "createdAt": "2026-08-08 22:41:17"
+  },
+  {
+    "id": "mskhfcpm2459f2",
+    "operator": "alwayscodex",
+    "email": "coper507jidl@gmail-xsniper.site",
+    "status": "success",
+    "note": "autogen: 78994",
+    "createdAt": "2026-08-08 22:41:48"
+  },
+  {
+    "id": "mskhfvgh789c2a",
+    "operator": "alwayscodex",
+    "email": "coper7ary7x0@gmail-xsniper.site",
+    "status": "success",
+    "note": "autogen: 65421",
+    "createdAt": "2026-08-08 22:42:13"
+  },
+  {
+    "id": "mskhgeibe385e3",
+    "operator": "alwayscodex",
+    "email": "copermnzbg51@gmail-xsniper.site",
+    "status": "success",
+    "note": "autogen: 80924",
+    "createdAt": "2026-08-08 22:42:37"
+  },
+  {
+    "id": "mskhgz775b5338",
+    "operator": "alwayscodex",
+    "email": "coperjdnykgt@gmail-xsniper.site",
+    "status": "success",
+    "note": "autogen: 64937",
+    "createdAt": "2026-08-08 22:43:04"
+  },
+  {
+    "id": "mskifi9jb62697",
+    "operator": "alwayscodex",
+    "email": "codexqdri58h@softbank.id",
+    "status": "success",
+    "note": "autogen: 86438",
+    "createdAt": "2026-08-08 23:09:55"
+  },
+  {
+    "id": "mskijptv9f8835",
+    "operator": "alwayscodex",
+    "email": "codexgya40yb@mfeva.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 23:13:12"
+  },
+  {
+    "id": "mskikbvs8c6ef6",
+    "operator": "alwayscodex",
+    "email": "codexurc5j71@softbank.id",
+    "status": "success",
+    "note": "autogen: 23465",
+    "createdAt": "2026-08-08 23:13:40"
+  },
+  {
+    "id": "mskiojmi17be23",
+    "operator": "alwayscodex",
+    "email": "codexktvu4e7@bwmyga.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 23:16:57"
+  },
+  {
+    "id": "mskip44sb67039",
+    "operator": "alwayscodex",
+    "email": "codexlwhlm1v@softbank.id",
+    "status": "success",
+    "note": "autogen: 48810",
+    "createdAt": "2026-08-08 23:17:23"
+  },
+  {
+    "id": "mskizsfje21054",
+    "operator": "alwayscodex",
+    "email": "amio8bksq@softbank.id",
+    "status": "success",
+    "note": "autogen: 30081",
+    "createdAt": "2026-08-08 23:25:41"
+  },
+  {
+    "id": "mskj0me63ab1b1",
+    "operator": "alwayscodex",
+    "email": "amyg24808@1win.life",
+    "status": "success",
+    "note": "autogen: 43703",
+    "createdAt": "2026-08-08 23:26:20"
+  },
+  {
+    "id": "mskjjzyfe8ebe0",
+    "operator": "alwayscodex",
+    "email": "amw6darmk@1win.life",
+    "status": "success",
+    "note": "autogen: 14764",
+    "createdAt": "2026-08-08 23:41:24"
+  },
+  {
+    "id": "mskjki6k1d8f37",
+    "operator": "alwayscodex",
+    "email": "codexx1fmy4h@bwmyga.com",
+    "status": "failed",
+    "note": "autogen: inbox: semua domain tidak bisa dibuka",
+    "createdAt": "2026-08-08 23:41:48"
+  },
+  {
+    "id": "mskjl2hz90a021",
+    "operator": "alwayscodex",
+    "email": "codexqbei418@1win.life",
+    "status": "success",
+    "note": "autogen: 74872",
+    "createdAt": "2026-08-08 23:42:14"
+  },
+  {
+    "id": "mskjlowa15dfe1",
+    "operator": "alwayscodex",
+    "email": "codexw9fqqbv@gmail-xsniper.site",
+    "status": "success",
+    "note": "autogen: 12532",
+    "createdAt": "2026-08-08 23:42:43"
+  },
+  {
+    "id": "mskjma9w9d3751",
+    "operator": "alwayscodex",
+    "email": "codexavk8ant@softbank.id",
+    "status": "success",
+    "note": "autogen: 36854",
+    "createdAt": "2026-08-08 23:43:11"
+  },
+  {
+    "id": "mskjqw2gfc8986",
+    "operator": "alwayscodex",
+    "email": "codexatozdn9@bwmyga.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 23:46:46"
+  },
+  {
+    "id": "mskjw26j462013",
+    "operator": "alwayscodex",
+    "email": "am4he56yl@softbank.id",
+    "status": "success",
+    "note": "autogen: 61361",
+    "createdAt": "2026-08-08 23:50:47"
+  },
+  {
+    "id": "mskk0jdqe40798",
+    "operator": "alwayscodex",
+    "email": "amdq4gxf3@copawoke.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-08 23:54:16"
+  },
+  {
+    "id": "mskk1cwe6aca62",
+    "operator": "alwayscodex",
+    "email": "amvwfayh3@jagomail.com",
+    "status": "success",
+    "note": "autogen: 38924",
+    "createdAt": "2026-08-08 23:54:54"
+  },
+  {
+    "id": "mskk248ddd3667",
+    "operator": "alwayscodex",
+    "email": "amog98ios@jagomail.com",
+    "status": "success",
+    "note": "autogen: 87468",
+    "createdAt": "2026-08-08 23:55:30"
+  },
+  {
+    "id": "mskzqwdh11edcc",
+    "operator": "prabowo",
+    "email": "pokoma3772@skyprofy.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 07:14:40"
+  },
+  {
+    "id": "mskzrlgn913b71",
+    "operator": "prabowo",
+    "email": "pokoma3772@skyprofy.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 07:15:13"
+  },
+  {
+    "id": "msl3q5k208037b",
+    "operator": "apaweh",
+    "email": "afifrfsyaa@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 09:06:04"
+  },
+  {
+    "id": "msl5pak08ab4f9",
+    "operator": "alwayscodex",
+    "email": "am76phl28@softbank.id",
+    "status": "success",
+    "note": "autogen: 60705",
+    "createdAt": "2026-08-09 10:01:23"
+  },
+  {
+    "id": "msl5qepk4ba190",
+    "operator": "alwayscodex",
+    "email": "amweukbhq@softbank.id",
+    "status": "success",
+    "note": "autogen: 76927",
+    "createdAt": "2026-08-09 10:02:15"
+  },
+  {
+    "id": "msl5u1d1b5bb6a",
+    "operator": "apaweh",
+    "email": "hkumve@meituy.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 10:05:04"
+  },
+  {
+    "id": "mslbi4wg44aef8",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 12:43:47"
+  },
+  {
+    "id": "mslclsukb2bf4c",
+    "operator": "branndeveloper",
+    "email": "codexhpdy2xg@mfeva.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-09 13:14:37"
+  },
+  {
+    "id": "mslcqsoo95f1c9",
+    "operator": "amjay_nzvktgqi",
+    "email": "um8qu96rwo@bwmyga.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 13:18:30"
+  },
+  {
+    "id": "mslcr0bz11f587",
+    "operator": "amjay_nzvktgqi",
+    "email": "4x11njpbg5@gmeenramy.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 13:18:40"
+  },
+  {
+    "id": "mslcs8pe4db2ab",
+    "operator": "branndeveloper",
+    "email": "codexsh0djv9@lnovic.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-09 13:19:38"
+  },
+  {
+    "id": "mslcsssncb3978",
+    "operator": "branndeveloper",
+    "email": "codex0u5ow8z@softbank.id",
+    "status": "success",
+    "note": "autogen: 40061",
+    "createdAt": "2026-08-09 13:20:04"
+  },
+  {
+    "id": "mslcwyz890f6aa",
+    "operator": "branndeveloper",
+    "email": "codexghi7bt1@lnovic.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-09 13:23:18"
+  },
+  {
+    "id": "mslcxiz58b6d3b",
+    "operator": "branndeveloper",
+    "email": "codexh8t31dg@jagomail.com",
+    "status": "success",
+    "note": "autogen: 88163",
+    "createdAt": "2026-08-09 13:23:44"
+  },
+  {
+    "id": "mslfnjt16d9992",
+    "operator": "dycoders",
+    "email": "mrauddyauddy@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 14:39:58"
+  },
+  {
+    "id": "mslfs8140080d3",
+    "operator": "bota",
+    "email": "amc5k4htd@softbank.id",
+    "status": "success",
+    "note": "autogen: 34955",
+    "createdAt": "2026-08-09 14:43:36"
+  },
+  {
+    "id": "mslgd8oj161c39",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 14:59:56"
+  },
+  {
+    "id": "mslge6lt3d403b",
+    "operator": "branndeveloper",
+    "email": "ismailmz0505@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 15:00:40"
+  },
+  {
+    "id": "mslhwr1dcf3d20",
+    "operator": "ell",
+    "email": "lyell200722@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 15:43:06"
+  },
+  {
+    "id": "mslhylk6f08f53",
+    "operator": "ell",
+    "email": "lyell200722@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 15:44:32"
+  },
+  {
+    "id": "msljk5533c8f95",
+    "operator": "daya",
+    "email": "datadayatu@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 16:29:17"
+  },
+  {
+    "id": "msljl2sb37a668",
+    "operator": "daya",
+    "email": "datadayatu@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 16:30:01"
+  },
+  {
+    "id": "mslk7al7db9028",
+    "operator": "phg",
+    "email": "hayolojjj@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 16:47:17"
+  },
+  {
+    "id": "mslkab354baea5",
+    "operator": "phg",
+    "email": "hayolojjj@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 16:49:38"
+  },
+  {
+    "id": "mslkepfv2ea7e1",
+    "operator": "phg",
+    "email": "hayolojjjj@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 16:53:03"
+  },
+  {
+    "id": "mslkg1cbaa5e7c",
+    "operator": "phg",
+    "email": "hayolojjjj@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 16:54:05"
+  },
+  {
+    "id": "msll73yoaa1836",
+    "operator": "fdlns",
+    "email": "vhabl3ep1l@fdlnstore.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 17:15:08"
+  },
+  {
+    "id": "msll7gx8c69c7c",
+    "operator": "fdlns",
+    "email": "vhabl3ep1l@fdlnstore.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 17:15:25"
+  },
+  {
+    "id": "mslmnsvt33f5fe",
+    "operator": "alwayscodex",
+    "email": "target@email.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 17:56:07"
+  },
+  {
+    "id": "mslmoomac2fd92",
+    "operator": "alwayscodex",
+    "email": "codex7t8oav2@gmail-xsniper.site",
+    "status": "success",
+    "note": "autogen: 41382",
+    "createdAt": "2026-08-09 17:56:48"
+  },
+  {
+    "id": "mslmu0589a3a61",
+    "operator": "alwayscodex",
+    "email": "codexjv67ut2@mfeva.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-09 18:00:56"
+  },
+  {
+    "id": "mslmz15f02c068",
+    "operator": "alwayscodex",
+    "email": "codexridbqia@bwmyga.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-09 18:04:51"
+  },
+  {
+    "id": "msln1qt320c2a2",
+    "operator": "dapa",
+    "email": "butterfieldnek@xxvd.net",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:06:57"
+  },
+  {
+    "id": "msln2w7lb2c749",
+    "operator": "seiyaloness1",
+    "email": "keziizass@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:07:51"
+  },
+  {
+    "id": "msln2zifcc9b92",
+    "operator": "dapa",
+    "email": "butterfieldnek@xxvd.net",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:07:55"
+  },
+  {
+    "id": "msln3y48ca7cef",
+    "operator": "alwayscodex",
+    "email": "codexsm9dma3@gocoiny.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-09 18:08:40"
+  },
+  {
+    "id": "msln3zaode0be2",
+    "operator": "mustafamohamadsultan",
+    "email": "akunorkut0987@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:08:42"
+  },
+  {
+    "id": "msln4vjl5b99db",
+    "operator": "seiyaloness1",
+    "email": "keziizass@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:09:23"
+  },
+  {
+    "id": "msln4wdw96d2dd",
+    "operator": "mustafamohamadsultan",
+    "email": "akunorkut0987@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:09:24"
+  },
+  {
+    "id": "msln68ol95b7e7",
+    "operator": "dapa",
+    "email": "nross@gmail-xsniper.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:10:27"
+  },
+  {
+    "id": "msln6nj86d8d0f",
+    "operator": "seiyaloness1",
+    "email": "keziizass@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:10:46"
+  },
+  {
+    "id": "msln6vop4e7884",
+    "operator": "dapa",
+    "email": "nross@gmail-xsniper.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:10:57"
+  },
+  {
+    "id": "msln81ra54a38b",
+    "operator": "dapa",
+    "email": "romanivanovih@ship79.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:11:51"
+  },
+  {
+    "id": "msln85z6b3b5bc",
+    "operator": "seiyaloness1",
+    "email": "keziizass@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:11:57"
+  },
+  {
+    "id": "msln8m7v6efb96",
+    "operator": "dapa",
+    "email": "romanivanovih@ship79.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:12:18"
+  },
+  {
+    "id": "msln8mvxf75484",
+    "operator": "alwayscodex",
+    "email": "codexitbdocx@gmeenramy.com",
+    "status": "failed",
+    "note": "autogen: verify: link verifikasi tidak ditemukan",
+    "createdAt": "2026-08-09 18:12:19"
+  },
+  {
+    "id": "msln9ags5be506",
+    "operator": "seiyaloness1",
+    "email": "keziizass@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:12:49"
+  },
+  {
+    "id": "msln9bcbb553b6",
+    "operator": "dapa",
+    "email": "dsellars@runcubesapps.id",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:12:50"
+  },
+  {
+    "id": "msln9rrp7c5af8",
+    "operator": "dapa",
+    "email": "dsellars@runcubesapps.id",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:13:12"
+  },
+  {
+    "id": "mslna92acc58ed",
+    "operator": "seiyaloness1",
+    "email": "keziizass@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:13:34"
+  },
+  {
+    "id": "mslnb0z709eff6",
+    "operator": "dapa",
+    "email": "loicsekli@88cloud.cc",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:14:10"
+  },
+  {
+    "id": "mslnbj4z2e3161",
+    "operator": "dapa",
+    "email": "loicsekli@88cloud.cc",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:14:34"
+  },
+  {
+    "id": "mslnbyvj091927",
+    "operator": "awenk",
+    "email": "mitawer447@sureido.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:14:54"
+  },
+  {
+    "id": "mslncdhf32f9b3",
+    "operator": "awenk",
+    "email": "mitawer447@sureido.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:15:13"
+  },
+  {
+    "id": "mslncj7q9505ef",
+    "operator": "jeypreset",
+    "email": "reyyreibianji@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:15:21"
+  },
+  {
+    "id": "mslncpzf5fb434",
+    "operator": "dapa",
+    "email": "kiry05167@hitbtcpool.cloud",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:15:29"
+  },
+  {
+    "id": "mslndbnya4e6af",
+    "operator": "dapa",
+    "email": "kiry05167@hitbtcpool.cloud",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:15:58"
+  },
+  {
+    "id": "mslndbxk035224",
+    "operator": "jeypreset",
+    "email": "reyyreibianji@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:15:58"
+  },
+  {
+    "id": "mslndhc5c3f553",
+    "operator": "jeypreset",
+    "email": "reyyreibianji@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:16:05"
+  },
+  {
+    "id": "mslnegnh2be43c",
+    "operator": "dapa",
+    "email": "aloneoutlaw@shortweb.live",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:16:51"
+  },
+  {
+    "id": "mslneogg8e7012",
+    "operator": "awenk",
+    "email": "wafove5006@sureido.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:17:01"
+  },
+  {
+    "id": "mslnfcaj90543b",
+    "operator": "dapa",
+    "email": "aloneoutlaw@shortweb.live",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:17:32"
+  },
+  {
+    "id": "mslnhd257e5f7a",
+    "operator": "dapa",
+    "email": "mat872@book4money.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:19:06"
+  },
+  {
+    "id": "mslnhi4sdffc09",
+    "operator": "awenk",
+    "email": "warad71362@sureido.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:19:13"
+  },
+  {
+    "id": "mslnhxqs143fe2",
+    "operator": "dapa",
+    "email": "mat872@book4money.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:19:33"
+  },
+  {
+    "id": "mslniea90a6c3e",
+    "operator": "awenk",
+    "email": "warad71362@sureido.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:19:54"
+  },
+  {
+    "id": "mslnj2cq0dc979",
+    "operator": "dapa",
+    "email": "kotikliliana@reclameaqui.services",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:20:25"
+  },
+  {
+    "id": "mslnjnt1685d70",
+    "operator": "dapa",
+    "email": "kotikliliana@reclameaqui.services",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:20:53"
+  },
+  {
+    "id": "mslnkjoof35f31",
+    "operator": "dapa",
+    "email": "soblil@himacreative.id",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:21:35"
+  },
+  {
+    "id": "mslnl4kx9a73cc",
+    "operator": "dapa",
+    "email": "soblil@himacreative.id",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:22:02"
+  },
+  {
+    "id": "mslnn0yu993496",
+    "operator": "dapa",
+    "email": "arbeitskollege@btcmod.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:23:30"
+  },
+  {
+    "id": "mslnnkczb52a12",
+    "operator": "dapa",
+    "email": "arbeitskollege@btcmod.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:23:55"
+  },
+  {
+    "id": "mslnojerd747b2",
+    "operator": "dapa",
+    "email": "enfmgb@sentra-premium.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:24:41"
+  },
+  {
+    "id": "mslnp3i86f8db9",
+    "operator": "dapa",
+    "email": "enfmgb@sentra-premium.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:25:07"
+  },
+  {
+    "id": "mslnq1q74de801",
+    "operator": "dapa",
+    "email": "spitfire4511791@maxseeding.vn",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:25:51"
+  },
+  {
+    "id": "mslnr0thd8129e",
+    "operator": "dapa",
+    "email": "spitfire4511791@maxseeding.vn",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:26:37"
+  },
+  {
+    "id": "mslns78i6b8773",
+    "operator": "dapa",
+    "email": "mgw193@mmo365.store",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:27:32"
+  },
+  {
+    "id": "mslnsrhwaa21cd",
+    "operator": "dapa",
+    "email": "mgw193@mmo365.store",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:27:58"
+  },
+  {
+    "id": "mslnvs2l5eef5d",
+    "operator": "dapa",
+    "email": "tanyoushka@emailjps.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:30:19"
+  },
+  {
+    "id": "mslnwc3e86c371",
+    "operator": "ranz",
+    "email": "rangudlukingg@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:30:45"
+  },
+  {
+    "id": "mslnx1d9d9f993",
+    "operator": "dapa",
+    "email": "tanyoushka@emailjps.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:31:17"
+  },
+  {
+    "id": "mslnxi4n844466",
+    "operator": "dapa",
+    "email": "bobczaj@webpiko.top",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:31:39"
+  },
+  {
+    "id": "mslnxikzd22a6e",
+    "operator": "ranz",
+    "email": "rangudlukingg@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:31:40"
+  },
+  {
+    "id": "mslo0xsh5d043f",
+    "operator": "dapa",
+    "email": "evgeniaexstasy@xazymarcie.space",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:34:19"
+  },
+  {
+    "id": "mslo1kldd5b4dc",
+    "operator": "dapa",
+    "email": "evgeniaexstasy@xazymarcie.space",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:34:49"
+  },
+  {
+    "id": "mslo2m1md83468",
+    "operator": "dapa",
+    "email": "jamesbphrfe@softbank.id",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:35:37"
+  },
+  {
+    "id": "mslo365x3702dc",
+    "operator": "dapa",
+    "email": "jamesbphrfe@softbank.id",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:36:03"
+  },
+  {
+    "id": "mslo3tnd23b9ee",
+    "operator": "dapa",
+    "email": "srt4chris401@habitnestguide.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:36:34"
+  },
+  {
+    "id": "mslo49d1201197",
+    "operator": "dapa",
+    "email": "srt4chris401@habitnestguide.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:36:54"
+  },
+  {
+    "id": "mslo5dwp472f35",
+    "operator": "dapa",
+    "email": "flaver@cangcud.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:37:47"
+  },
+  {
+    "id": "mslo5vp3e24adf",
+    "operator": "dapa",
+    "email": "flaver@cangcud.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:38:10"
+  },
+  {
+    "id": "mslo6o66ba7dba",
+    "operator": "ranz",
+    "email": "rangudlukingg@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 18:38:47"
+  },
+  {
+    "id": "mslo7nks4ecdbd",
+    "operator": "ranz",
+    "email": "rangudlukingg@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 18:39:33"
+  },
+  {
+    "id": "mslp109m6b0a7f",
+    "operator": "madzy",
+    "email": "madzymadzy27@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:02:22"
+  },
+  {
+    "id": "mslp1omafdcf23",
+    "operator": "madzy",
+    "email": "madzymadzy27@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:02:54"
+  },
+  {
+    "id": "mslq0552a37e32",
+    "operator": "ranz",
+    "email": "azahra@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:29:41"
+  },
+  {
+    "id": "mslqcvc79ad31a",
+    "operator": "mnk",
+    "email": "nikyunost@angiiidayyy.click",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:39:35"
+  },
+  {
+    "id": "mslqdf1w1a3438",
+    "operator": "mnk",
+    "email": "nikyunost@angiiidayyy.click",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:40:01"
+  },
+  {
+    "id": "mslqe4a9b76e25",
+    "operator": "mnk",
+    "email": "vladimirsvekolkin@xxx-tower.net",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:40:33"
+  },
+  {
+    "id": "mslqepondaff5e",
+    "operator": "mnk",
+    "email": "vladimirsvekolkin@xxx-tower.net",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:41:01"
+  },
+  {
+    "id": "mslqfesw4e6f05",
+    "operator": "mnk",
+    "email": "hrdsoldier@gdqoe.net",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:41:34"
+  },
+  {
+    "id": "mslqftwq257bf0",
+    "operator": "mnk",
+    "email": "hrdsoldier@gdqoe.net",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:41:53"
+  },
+  {
+    "id": "mslqgicue6f5b4",
+    "operator": "mnk",
+    "email": "slavikok@mengundang.live",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:42:25"
+  },
+  {
+    "id": "mslqgy9s8bdf86",
+    "operator": "mnk",
+    "email": "slavikok@mengundang.live",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:42:46"
+  },
+  {
+    "id": "mslqi1k111f0b7",
+    "operator": "mnk",
+    "email": "renerd@docash.app",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:43:37"
+  },
+  {
+    "id": "mslqie3y6208b6",
+    "operator": "mnk",
+    "email": "renerd@docash.app",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:43:53"
+  },
+  {
+    "id": "mslqiwr019e50e",
+    "operator": "mnk",
+    "email": "ajwild90@j3r8qd.site",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:44:17"
+  },
+  {
+    "id": "mslqjf1t07e956",
+    "operator": "mnk",
+    "email": "ajwild90@j3r8qd.site",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:44:41"
+  },
+  {
+    "id": "mslqk0sv7a7658",
+    "operator": "mnk",
+    "email": "kma69@cloudyourfast.net",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:45:09"
+  },
+  {
+    "id": "mslqkmmz3206d7",
+    "operator": "true",
+    "email": "vsploit@tidaksuka.cfd",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:45:37"
+  },
+  {
+    "id": "mslqlyyy2337d0",
+    "operator": "mnk",
+    "email": "kma69@cloudyourfast.net",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:46:40"
+  },
+  {
+    "id": "mslqmwqtf64c40",
+    "operator": "mnk",
+    "email": "dfry12@cuaks.fun",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:47:24"
+  },
+  {
+    "id": "mslqnw29abce28",
+    "operator": "mnk",
+    "email": "dfry12@cuaks.fun",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:48:09"
+  },
+  {
+    "id": "mslqo633018bc3",
+    "operator": "true",
+    "email": "truehour@alightmotion.top",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:48:22"
+  },
+  {
+    "id": "mslqoglg7e85f4",
+    "operator": "mnk",
+    "email": "sjsj086@tiendadezapasok.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:48:36"
+  },
+  {
+    "id": "mslqppiv6872be",
+    "operator": "mnk",
+    "email": "sjsj086@tiendadezapasok.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 19:49:34"
+  },
+  {
+    "id": "mslqq9331772be",
+    "operator": "mnk",
+    "email": "ashtonblaze@evilgodshop1.uk",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:50:00"
+  },
+  {
+    "id": "mslqv53bbafac3",
+    "operator": "true",
+    "email": "truehour@alightmotion.top",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:53:48"
+  },
+  {
+    "id": "mslqyb80a76869",
+    "operator": "true",
+    "email": "truehour@alightmotion.top",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 19:56:16"
+  },
+  {
+    "id": "mslr4rupf5c30d",
+    "operator": "hanzo",
+    "email": "dapabuatam1thn@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 20:01:17"
+  },
+  {
+    "id": "mslr6hkn0a42f7",
+    "operator": "admin",
+    "email": "ajaha.gtps@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-09 20:02:37"
+  },
+  {
+    "id": "mslr7hjic52603",
+    "operator": "admin",
+    "email": "ajaha.gtps@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-09 20:03:24"
+  },
+  {
+    "id": "msm50lkgfab311",
+    "operator": "prabowo",
+    "email": "ligocoh543@vemzite.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 02:29:57"
+  },
+  {
+    "id": "msm52xjg8fd619",
+    "operator": "prabowo",
+    "email": "ligocoh543@vemzite.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 02:31:46"
+  },
+  {
+    "id": "msm53kw3c1eb54",
+    "operator": "prabowo",
+    "email": "ligocoh543@vemzite.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 02:32:16"
+  },
+  {
+    "id": "msm59x8a9199cd",
+    "operator": "prabowo",
+    "email": "meline2420@vitreu.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 02:37:12"
+  },
+  {
+    "id": "msm5b99a15f91d",
+    "operator": "prabowo",
+    "email": "meline2420@vitreu.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 02:38:14"
+  },
+  {
+    "id": "msm5dbxia75339",
+    "operator": "prabowo",
+    "email": "meline2420@vitreu.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-10 02:39:51"
+  },
+  {
+    "id": "msmg8l71e29171",
+    "operator": "apinnn",
+    "email": "molive5016@skyprofy.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 07:44:05"
+  },
+  {
+    "id": "msmg9lvl5f053e",
+    "operator": "apinnn",
+    "email": "molive5016@skyprofy.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-10 07:44:53"
+  },
+  {
+    "id": "msmgfapkc84c0a",
+    "operator": "apinnn",
+    "email": "am2xfj3os@ampremfree@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:49:18"
+  },
+  {
+    "id": "msmgfgl1a78737",
+    "operator": "apinnn",
+    "email": "amsjuqklq@ampremfree@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:49:26"
+  },
+  {
+    "id": "msmgfmku46df17",
+    "operator": "apinnn",
+    "email": "ambxeqi3j@ampremfree@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:49:34"
+  },
+  {
+    "id": "msmgfsnl21b72e",
+    "operator": "apinnn",
+    "email": "am71ve7d9@ampremfree@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:49:42"
+  },
+  {
+    "id": "msmgfyq411c908",
+    "operator": "apinnn",
+    "email": "amon68d62@ampremfree@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:49:50"
+  },
+  {
+    "id": "msmgheflb1c606",
+    "operator": "apinnn",
+    "email": "aml7agj2v@ronaldosuippp@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:50:57"
+  },
+  {
+    "id": "msmghkdm5e3f78",
+    "operator": "apinnn",
+    "email": "am04lyept@ronaldosuippp@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:51:04"
+  },
+  {
+    "id": "msmghqkjd60176",
+    "operator": "apinnn",
+    "email": "amwayh321@ronaldosuippp@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:51:12"
+  },
+  {
+    "id": "msmghwl2d4cae0",
+    "operator": "apinnn",
+    "email": "am4tflufn@ronaldosuippp@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:51:20"
+  },
+  {
+    "id": "msmgi2febbf4f5",
+    "operator": "apinnn",
+    "email": "amlfsutyq@ronaldosuippp@gmail.com",
+    "status": "failed",
+    "note": "autogen: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "createdAt": "2026-08-10 07:51:28"
+  },
+  {
+    "id": "msmhffledc86e1",
+    "operator": "ranz",
+    "email": "0bxso9w1r@mozmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 08:17:24"
+  },
+  {
+    "id": "msmj64cy7eb50b",
+    "operator": "ranz",
+    "email": "0bxso9w1r@mozmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 09:06:09"
+  },
+  {
+    "id": "msmjgf59006f40",
+    "operator": "ranz",
+    "email": "idleeerey@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 09:14:10"
+  },
+  {
+    "id": "msmjhuh02b8187",
+    "operator": "ranz",
+    "email": "idleeerey@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 09:15:16"
+  },
+  {
+    "id": "msmjiuhf620f5c",
+    "operator": "ranz",
+    "email": "idleeerey@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 09:16:03"
+  },
+  {
+    "id": "msmjn5zg0bc66c",
+    "operator": "ranz",
+    "email": "idleeerey@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 09:19:24"
+  },
+  {
+    "id": "msmjopsg4b7b54",
+    "operator": "ranz",
+    "email": "idleeerey@gmail.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-10 09:20:37"
+  },
+  {
+    "id": "msmotgor736459",
+    "operator": "octa",
+    "email": "confirm3@pawgpt.nl",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 11:44:16"
+  },
+  {
+    "id": "msmou9ik9f26ba",
+    "operator": "octa",
+    "email": "confirm3@pawgpt.nl",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-10 11:44:54"
+  },
+  {
+    "id": "msmp6hcg73b851",
+    "operator": "octa",
+    "email": "jeffedwong@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 11:54:24"
+  },
+  {
+    "id": "msmr40ws3373ed",
+    "operator": "awenk",
+    "email": "lohifar862@skyprofy.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 12:48:28"
+  },
+  {
+    "id": "msmr4j7a0ce0dd",
+    "operator": "awenk",
+    "email": "lohifar862@skyprofy.com",
+    "status": "success",
+    "note": "claim-premium: lisensi aktif",
+    "createdAt": "2026-08-10 12:48:52"
+  },
+  {
+    "id": "msmwloja099e04",
+    "operator": "branndeveloper",
+    "email": "brannsmurf@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 15:22:10"
+  },
+  {
+    "id": "msmwmkwpa08a07",
+    "operator": "branndeveloper",
+    "email": "brannsmurf@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 15:22:52"
+  },
+  {
+    "id": "msmwq5rv057d54",
+    "operator": "branndeveloper",
+    "email": "brannsmurf@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 15:25:39"
+  },
+  {
+    "id": "msmwu78tfaa631",
+    "operator": "branndeveloper",
+    "email": "brannsmurf@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 15:28:48"
+  },
+  {
+    "id": "msmwxfku9e421a",
+    "operator": "branndeveloper",
+    "email": "brannsmurf@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-10 15:31:18"
   }
 ]

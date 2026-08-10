@@ -1,0 +1,36 @@
+[
+  {
+    "id": "mslo5tf929303b",
+    "name": "apinnn Bot",
+    "token": "8775256334:AAGOT3mcSoRenEbu9pVPW95VZbnD9KS9lkE",
+    "ownerId": "8916857020",
+    "apiKey": "Codex06a64a4aae268e1a989a372cbbb7ff8",
+    "deployedBy": "apinnn",
+    "me": {
+      "id": 8775256334,
+      "username": "amApin_bot",
+      "first_name": "Am ApinMD - AlwayCodex"
+    },
+    "status": "online",
+    "error": null,
+    "createdAt": "2026-08-09T10:38:07.427Z",
+    "startedAt": "2026-08-09T10:38:07.428Z"
+  },
+  {
+    "id": "msloftlt7fcee4",
+    "name": "alwayscodex Bot",
+    "token": "8672100802:AAHnS-_MwAhk7w2G7PyI_N7ILlby9UayxYw",
+    "ownerId": "5323386592",
+    "apiKey": "Codex70b1489071f98ca4c6ca5165ba7b25d",
+    "deployedBy": "alwayscodex",
+    "me": {
+      "id": 8672100802,
+      "username": "alightmotion_ac_bot",
+      "first_name": "alightmotionbot"
+    },
+    "status": "online",
+    "error": null,
+    "createdAt": "2026-08-09T10:45:54.212Z",
+    "startedAt": "2026-08-09T16:43:24.873Z"
+  }
+]

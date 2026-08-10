@@ -28,8 +28,8 @@
     "username": "apaweh",
     "role": "user",
     "rating": 1,
-    "comment": "tipi",
-    "createdAt": "2026-08-07 06:41:42"
+    "comment": "penipi",
+    "createdAt": "2026-08-09 09:06:29"
   },
   {
     "id": "msifj8ko6b856b",
@@ -38,5 +38,13 @@
     "rating": 5,
     "comment": "Bagus",
     "createdAt": "2026-08-07 12:13:18"
+  },
+  {
+    "id": "mslosl7309b2b8",
+    "username": "ranz",
+    "role": "user",
+    "rating": 5,
+    "comment": "mantap ,kalo wibuku sih enak ni🗿",
+    "createdAt": "2026-08-10 09:32:55"
   }
 ]

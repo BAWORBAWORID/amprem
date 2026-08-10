@@ -1,36 +1,89 @@
 {
-  "id": "msifczrl6889cf",
-  "operator": "alwayscodex",
-  "domain": "1win.life",
-  "count": 1,
+  "id": "msmghax1753b47",
+  "operator": "apinnn",
+  "domain": "ronaldosuippp@gmail.com",
+  "domains": [
+    "ronaldosuippp@gmail.com"
+  ],
+  "count": 5,
   "prefix": "",
-  "done": 1,
+  "done": 5,
   "status": "completed",
   "results": [
     {
-      "email": "am1@1win.life",
-      "inboxUrl": "https://generator.email/am1@1win.life",
-      "status": "success",
+      "email": "aml7agj2v@ronaldosuippp@gmail.com",
+      "inboxUrl": "https://generator.email/aml7agj2v@ronaldosuippp@gmail.com",
+      "status": "failed",
       "messages": [],
-      "verifyLink": "https://alight-creative.firebaseapp.com/__/auth/links?link=https://alightcreative.com/auth_action/?apiKey%3DAIzaSyDrZ9jr_Y16ltSBqsQR5IH6I04FRga6Ki0%26mode%3DsignIn%26oobCode%3Dyk756I6inzc3x_c8sbWoU2XslMscPx9v9kbF-14q-40AAAGf2miRhQ%26continueUrl%3Dhttps://alightcreative.com?ui_sid%253D0366624874%2526ui_sd%253D0%26lang%3Den",
-      "codeorder": "48791"
+      "error": "send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}"
+    },
+    {
+      "email": "am04lyept@ronaldosuippp@gmail.com",
+      "inboxUrl": "https://generator.email/am04lyept@ronaldosuippp@gmail.com",
+      "status": "failed",
+      "messages": [],
+      "error": "send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}"
+    },
+    {
+      "email": "amwayh321@ronaldosuippp@gmail.com",
+      "inboxUrl": "https://generator.email/amwayh321@ronaldosuippp@gmail.com",
+      "status": "failed",
+      "messages": [],
+      "error": "send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}"
+    },
+    {
+      "email": "am4tflufn@ronaldosuippp@gmail.com",
+      "inboxUrl": "https://generator.email/am4tflufn@ronaldosuippp@gmail.com",
+      "status": "failed",
+      "messages": [],
+      "error": "send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}"
+    },
+    {
+      "email": "amlfsutyq@ronaldosuippp@gmail.com",
+      "inboxUrl": "https://generator.email/amlfsutyq@ronaldosuippp@gmail.com",
+      "status": "failed",
+      "messages": [],
+      "error": "send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}"
     }
   ],
   "logs": [
     "[SYSTEM] Logger diinisialisasi...",
-    "[SYSTEM] Batch dimulai oleh alwayscodex",
-    "[SYSTEM] Target: 1 akun @1win.life",
-    "[2026-08-07 12:08:27] Batch: 1 email (am1@1win.life ...)",
-    "[2026-08-07 12:08:27] [1/1] am1@1win.life",
-    "[2026-08-07 12:08:33] inbox opened",
-    "[2026-08-07 12:08:34] magic link terkirim",
-    "[2026-08-07 12:08:38] waiting link 1/20...",
-    "[2026-08-07 12:08:49] link verifikasi DITEMUKAN",
-    "[2026-08-07 12:08:50] verifikasi OK",
-    "[2026-08-07 12:08:51] PREMIUM AKTIF (codeorder 48791)",
-    "[2026-08-07 12:08:51] OK #1 am1@1win.life -> Alwayscodex 48791",
-    "[SYSTEM] Selesai! 1/1 akun sukses."
+    "[SYSTEM] Batch dimulai oleh apinnn",
+    "[SYSTEM] Target: 5 akun @ronaldosuippp@gmail.com",
+    "[2026-08-10 07:50:52] Batch: 5 email (aml7agj2v@ronaldosuippp@gmail.com ...)",
+    "[2026-08-10 07:50:52] [1/5] aml7agj2v@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:50:56] inbox opened: aml7agj2v@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:50:56] send failed: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "[2026-08-10 07:50:57] GAGAL #1 aml7agj2v@ronaldosuippp@gmail.com (send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}})",
+    "[2026-08-10 07:51:00] [2/5] am04lyept@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:04] inbox opened: am04lyept@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:04] send failed: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "[2026-08-10 07:51:04] GAGAL #2 am04lyept@ronaldosuippp@gmail.com (send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}})",
+    "[2026-08-10 07:51:07] [3/5] amwayh321@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:12] inbox opened: amwayh321@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:12] send failed: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "[2026-08-10 07:51:12] GAGAL #3 amwayh321@ronaldosuippp@gmail.com (send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}})",
+    "[2026-08-10 07:51:15] [4/5] am4tflufn@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:20] inbox opened: am4tflufn@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:20] send failed: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "[2026-08-10 07:51:20] GAGAL #4 am4tflufn@ronaldosuippp@gmail.com (send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}})",
+    "[2026-08-10 07:51:23] [5/5] amlfsutyq@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:27] inbox opened: amlfsutyq@ronaldosuippp@gmail.com",
+    "[2026-08-10 07:51:28] send failed: send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}}",
+    "[2026-08-10 07:51:28] GAGAL #5 amlfsutyq@ronaldosuippp@gmail.com (send: {\"error\":{\"code\":400,\"message\":\"INVALID_IDENTIFIER\",\"errors\":[{\"message\":\"INVALID_IDENTIFIER\",\"domain\":\"global\",\"reason\":\"invalid\"}]}})",
+    "[SYSTEM] Selesai! 0/5 akun sukses."
   ],
-  "createdAt": "2026-08-07T04:08:27.163Z",
-  "startedAt": 1786075707163
+  "createdAt": "2026-08-09T23:50:52.549Z",
+  "startedAt": 1786319452549,
+  "notify": {
+    "tgBotId": "mslo5tf929303b",
+    "tgChatId": "8916857020"
+  },
+  "emails": [
+    "aml7agj2v@ronaldosuippp@gmail.com",
+    "am04lyept@ronaldosuippp@gmail.com",
+    "amwayh321@ronaldosuippp@gmail.com",
+    "am4tflufn@ronaldosuippp@gmail.com",
+    "amlfsutyq@ronaldosuippp@gmail.com"
+  ]
 }

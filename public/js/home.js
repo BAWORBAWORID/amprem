@@ -11,9 +11,106 @@
             opts.body = JSON.stringify(opts.body);
         }
         return fetch(API_BASE + path, opts).then(function (res) {
-            return res.json().catch(function () { return {}; });
+            return res.json().catch(function () { return {}; }).then(function (data) {
+                if (!res.ok && !(data && data.success)) {
+                    var err = new Error((data && (data.message || data.error)) || ('HTTP ' + res.status));
+                    err.status = res.status;
+                    throw err;
+                }
+                return data;
+            });
         });
     }
+
+    // Pesan error dari api() yang bisa dibaca user; fallback ke teks generik
+    // bila koneksi gagal (Failed to fetch) atau tidak ada pesan jelas.
+    function errMsg(err) {
+        var m = err && err.message;
+        if (m && m !== 'Failed to fetch' && m.indexOf('Load failed') === -1) return m;
+        return 'Gagal terhubung ke server.';
+    }
+
+    // ==== Validasi kode referal (banner atas + status inline di bawah field) ====
+    // state: idle | checking | valid | invalid | error
+    function setReferralUI(state, opts) {
+        opts = opts || {};
+        var banner = $('invite-banner');
+        var status = $('referral-status');
+        var icon = state === 'checking' ? '<i class="fa-solid fa-spinner fa-spin icon"></i>'
+            : state === 'valid' ? '<i class="fa-solid fa-circle-check icon"></i>'
+            : state === 'invalid' ? '<i class="fa-solid fa-circle-xmark icon"></i>'
+            : state === 'error' ? '<i class="fa-solid fa-circle-exclamation icon"></i>'
+            : '<i class="fa-solid fa-gift icon" style="opacity:.55"></i>';
+        var text = opts.text || '';
+        if (status) {
+            if (state === 'idle') {
+                status.className = 'referral-status idle';
+                status.innerHTML = icon + '<span>Kode referral opsional</span>';
+            } else {
+                status.className = 'referral-status ' + state;
+                status.innerHTML = icon + '<span>' + text + '</span>';
+            }
+        }
+        if (banner) {
+            if (state === 'idle') {
+                banner.classList.add('hidden');
+            } else {
+                banner.classList.remove('hidden');
+                banner.className = 'invite-banner ' + (state === 'error' ? 'error' : state);
+                banner.innerHTML = icon + '<div>' + text + '</div>';
+            }
+        }
+    }
+    // Ambil kode referal dari URL: /invite?code= / ?ref= / #referal?ref= / #register?ref=
+    function getReferralFromUrl() {
+        try {
+            var code = '';
+            var hash = window.location.hash || '';
+            var hi = hash.indexOf('?');
+            if (hi !== -1) {
+                var hq = new URLSearchParams(hash.substring(hi + 1));
+                code = hq.get('ref') || hq.get('referral') || hq.get('invite') || hq.get('code') || '';
+            }
+            if (code) return code;
+            var q = new URLSearchParams(window.location.search);
+            return q.get('code') || q.get('ref') || q.get('referral') || q.get('invite') || '';
+        } catch (e) { return ''; }
+    }
+    // Check kode ke backend. Bedakan NETWORK ERROR (⚠) vs INVALID (✕).
+    function checkReferral(code) {
+        code = String(code || '').trim();
+        if (!code) { setReferralUI('idle'); return; }
+        setReferralUI('checking', { text: 'Mengecek kode referral <b>' + esc(code) + '</b>...' });
+        api('/api/invite/check?code=' + encodeURIComponent(code))
+            .then(function (data) {
+                // Anti race condition: abaikan respons lama bila field sudah berubah
+                var now = $('register-referral');
+                if (!now || now.value.trim() !== code) return;
+                if (data && data.valid) {
+                    setReferralUI('valid', { text: '<b>Kode referral valid</b>' + (data.username ? ' — dari <b>@' + esc(data.username) + '</b>' : '') + '. Daftar dengan kode ini dan dapatkan <b>10 kredit gratis</b>.' });
+                } else {
+                    setReferralUI('invalid', { text: '<b>Kode referral tidak valid</b>. Kamu tetap bisa daftar, tapi tanpa bonus kredit.' });
+                }
+            })
+            .catch(function () {
+                var now = $('register-referral');
+                if (!now || now.value.trim() !== code) return;
+                // Jangan bilang "kode salah" — server tidak memberi jawaban.
+                setReferralUI('error', { text: '<b>Tidak dapat memeriksa kode referral.</b> Silakan coba lagi. Register tetap bisa dilanjutkan.' });
+            });
+    }
+
+    var currentScreen = null;
+
+    // Alias hash kanonik: #referal (canonical) ≡ #referral (compat)
+    var SCREEN_ALIASES = { referal: 'referral' };
+    function normalizeScreen(name) { return SCREEN_ALIASES[name] || name; }
+
+    // api() dapat melempar untuk error HTTP asli (401/500/dll). Tangani di satu
+    // tempat agar tidak jadi unhandled rejection yang berisik di konsol.
+    window.addEventListener('unhandledrejection', function (e) {
+        try { e.preventDefault(); } catch (err) {}
+    });
 
     var currentUser = null;
     var chatPollTimer = null;
@@ -23,6 +120,8 @@
     var historyCache = [];
     var adminUsersCache = [];
     var adminLogsCache = [];
+    var adminIpsCache = [];
+    var adminBannedIpsCache = [];
 
     var ROLE_BADGE = {
         owner: 'badge-owner', admin: 'badge-admin', premium: 'badge-premium',
@@ -31,7 +130,7 @@
     var ROLE_LABEL = { owner: 'Owner', admin: 'Admin', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
     var PROFILE_ROLE = { owner: 'Owner', admin: 'Administrator', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'Anggota' };
 
-    var VALID_SCREENS = ['dashboard', 'generator', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'admin', 'contributors', 'history', 'settings', 'reviews'];
+    var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews'];
 
     function setLastScreenCookie(name) {
         try { document.cookie = 'last_page=' + encodeURIComponent(name) + '; Path=/; Max-Age=2592000; SameSite=Lax'; } catch (e) {}
@@ -92,8 +191,12 @@
     }
 
     function showScreen(name) {
+        name = normalizeScreen(name);
         if (name === 'auth') {
-            window.location.hash = '';
+            currentScreen = 'auth';
+            // Hapus hash agar URL bersih; simpan niat (intended) agar direct-access #referal/#lifetime
+            // tetap pulih setelah login (lihat handler login).
+            if (!window.location.hash) setLastScreenCookie('');
             document.querySelectorAll('.screen').forEach(function (s) { s.classList.add('hidden'); });
             $('screen-auth').classList.remove('hidden');
             $('app-sidebar').classList.add('hidden');
@@ -110,18 +213,24 @@
         if (name !== 'chat') closeChatStream();
 
         if (name !== 'auth') setLastScreenCookie(name);
-        window.location.hash = name;
+        // Hash kanonik: referral → #referal (tetap terima #referral saat masuk)
+        window.location.hash = (name === 'referral') ? 'referal' : name;
         document.querySelectorAll('.screen').forEach(function (s) { s.classList.add('hidden'); });
         $('screen-' + name).classList.remove('hidden');
         document.querySelectorAll('.sidebar-link').forEach(function (b) { b.classList.remove('active'); });
         var btn = $('btn-' + name + '-view');
-        if (btn) btn.classList.add('active');
+        if (btn) {
+            btn.classList.add('active');
+            // Pastikan item menu aktif selalu terlihat (anti-tertutup footer di layar pendek)
+            try { btn.scrollIntoView({ block: 'nearest' }); } catch (e) { btn.scrollIntoView(); }
+        }
+        currentScreen = name;
         closeSidebar();
 
         var loader = {
-            dashboard: loadDashboard, generator: loadGenerator, netflix: loadNetflix,
+            dashboard: loadDashboard, generator: loadGenerator, lifetime: loadLifetimeScreen, netflix: loadNetflix,
             purchase: loadAPIPanel, chat: loadChatPanel, apiguide: loadAPIGuide,
-            profile: loadProfile, admin: loadAdminPanel, history: loadHistoryScreen,
+            profile: loadProfile, referral: loadReferralScreen, admin: loadAdminPanel, history: loadHistoryScreen,
             settings: loadAdminSettings, reviews: loadReviewsScreen
         }[name];
         if (loader) loader();
@@ -166,8 +275,8 @@
                     applyThemePreference(readThemePreference());
                     revealThemePage();
                     updateNavbar();
-                    var hash = window.location.hash.replace('#', '');
-                    var last = hash || getLastScreenCookie();
+                    var hash = normalizeScreen(window.location.hash.replace('#', ''));
+                    var last = hash || normalizeScreen(getLastScreenCookie());
                     showScreen(last && VALID_SCREENS.indexOf(last) !== -1 ? last : 'dashboard');
                 } else {
                     revealThemePage();
@@ -219,14 +328,58 @@
         btn.classList.toggle('btn-loading', loading);
     }
 
+    // ==== Persistensi halaman auth (refresh tetap di view login/register + draft form) ====
+    function saveAuthDraft() {
+        try {
+            var un = $('register-username').value, pw = $('register-password').value, rf = $('register-referral').value;
+            if (un || pw || rf) sessionStorage.setItem('am_reg_draft', JSON.stringify({ username: un || '', password: pw || '', referral: rf || '' }));
+            var lu = $('login-username').value, lp = $('login-password').value;
+            if (lu || lp) sessionStorage.setItem('am_login_draft', JSON.stringify({ username: lu || '', password: lp || '' }));
+        } catch (e) {}
+    }
+    function clearAuthDrafts() {
+        try { sessionStorage.removeItem('am_reg_draft'); sessionStorage.removeItem('am_login_draft'); } catch (e) {}
+    }
+    function setAuthView(v) {
+        try { localStorage.setItem('am_auth_view', v === 'register' ? 'register' : 'login'); } catch (e) {}
+    }
+    function restoreAuthView() {
+        try {
+            var regView = $('auth-register-view'), logView = $('auth-login-view');
+            if (!regView || !logView) return;
+            var av = localStorage.getItem('am_auth_view') || 'login';
+            if (av === 'register') {
+                logView.classList.add('hidden');
+                regView.classList.remove('hidden');
+                var d = JSON.parse(sessionStorage.getItem('am_reg_draft') || '{}');
+                if (d.username) $('register-username').value = d.username;
+                if (d.password) $('register-password').value = d.password;
+                if (d.referral) $('register-referral').value = d.referral;
+            } else {
+                regView.classList.add('hidden');
+                logView.classList.remove('hidden');
+                var ld = JSON.parse(sessionStorage.getItem('am_login_draft') || '{}');
+                if (ld.username) $('login-username').value = ld.username;
+                if (ld.password) $('login-password').value = ld.password;
+            }
+        } catch (e) {}
+    }
+
     function bindAuth() {
         $('link-to-register').addEventListener('click', function () {
             $('auth-login-view').classList.add('hidden');
             $('auth-register-view').classList.remove('hidden');
+            setAuthView('register');
         });
         $('link-to-login').addEventListener('click', function () {
             $('auth-register-view').classList.add('hidden');
             $('auth-login-view').classList.remove('hidden');
+            setAuthView('login');
+        });
+        // Simpan draft isian saat mengetik agar tidak hilang saat refresh
+        ['register-username', 'register-password', 'register-referral', 'login-username', 'login-password'].forEach(function (id) {
+            var el = $(id);
+            if (el) el.addEventListener('input', saveAuthDraft);
         });
 
         $('form-login').addEventListener('submit', function (e) {
@@ -235,6 +388,8 @@
             api('/api/auth/login', { method: 'POST', body: { username: $('login-username').value.trim(), password: $('login-password').value } })
                 .then(function (data) {
                     if (data.success) {
+                        clearAuthDrafts();
+                        setAuthView('login');
                         Swal.fire({ icon: 'success', title: 'BERHASIL!', text: 'Login berhasil.', timer: 1500, showConfirmButton: false });
                         document.documentElement.classList.add('theme-pending');
                         themeGateTimer = setTimeout(revealThemePage, 5000);
@@ -242,21 +397,32 @@
                         applyThemePreference(readThemePreference());
                         revealThemePage();
                         updateNavbar();
-                        showScreen('dashboard');
+                        // Restore halaman yang dituju (mis. #referal / #lifetime) setelah login
+                        var intended = normalizeScreen(window.location.hash.replace('#', '').split('?')[0]);
+                        showScreen(intended && VALID_SCREENS.indexOf(intended) !== -1 ? intended : 'dashboard');
                     } else {
                         Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Username atau password salah.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () { setAuthLoading(e.target, false); });
         });
 
         $('form-register').addEventListener('submit', function (e) {
             e.preventDefault();
             setAuthLoading(e.target, true);
-            api('/api/auth/register', { method: 'POST', body: { username: $('register-username').value.trim(), password: $('register-password').value } })
+            var refField = $('register-referral');
+            var refCode = (refField && refField.value.trim()) || '';
+            if (!refCode) { try { refCode = localStorage.getItem('pendingReferral') || ''; } catch (err) {} }
+            var regBody = { username: $('register-username').value.trim(), password: $('register-password').value };
+            if (refCode) regBody.referralCode = refCode;
+            api('/api/auth/register', { method: 'POST', body: regBody })
                 .then(function (data) {
                     if (data.success) {
+                        try { localStorage.removeItem('pendingReferral'); } catch (err) {}
+                        clearAuthDrafts();
+                        setAuthView('login');
+                        setReferralUI('idle');
                         Swal.fire({ icon: 'success', title: 'REGISTRASI SUKSES!', text: 'Silakan login dengan akun baru Anda.', timer: 1800, showConfirmButton: false });
                         e.target.reset();
                         setTimeout(function () {
@@ -267,7 +433,7 @@
                         Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Registrasi gagal.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () { setAuthLoading(e.target, false); });
         });
     }
@@ -431,7 +597,7 @@
                         Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Gagal mengirim tautan.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () {
                     btn.disabled = false;
                     btn.innerHTML = 'Lanjutkan <i class="fa-solid fa-arrow-right"></i>';
@@ -458,7 +624,7 @@
                         Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Tautan verifikasi tidak valid.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () {
                     abtn.disabled = false;
                     abtn.innerHTML = 'Terapkan Lisensi Premium <i class="fa-solid fa-bolt"></i>';
@@ -517,7 +683,7 @@
                             Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal memulai batch.' });
                         }
                     })
-                    .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                    .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                     .finally(function () {
                         runBtn.disabled = false;
                         runBtn.innerHTML = '<i class="fa-solid fa-play"></i> Mulai Generate';
@@ -614,7 +780,7 @@
                             Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Gagal mengambil token Netflix.' });
                         }
                     })
-                    .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                    .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                     .finally(function () {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fa-solid fa-play"></i> Generate Token Netflix';
@@ -683,12 +849,49 @@
             '<span style="font-weight:600;font-size:0.9rem;">' + method + '</span></button>';
     }
 
+    var PLAN_PRICES = {
+        reseller: { 3: 7000, 7: 12000, 14: 18000, 30: 25000 },
+        premium: { 3: 9000, 7: 15000, 14: 20000, 30: 28000 },
+        autogen: { 3: 12000, 7: 20000, 14: 28000, 30: 38000 },
+        admin: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 }
+    };
+
     function loadAPIPanel() {
+        Object.keys(PLAN_PRICES).forEach(function (role) {
+            var activeBtn = document.querySelector('.plan-duration-options[data-role="' + role + '"] .duration-btn.active');
+            var days = activeBtn ? parseInt(activeBtn.dataset.days, 10) : 30;
+            var priceEl = document.getElementById('price-' + role);
+            if (priceEl && PLAN_PRICES[role] && PLAN_PRICES[role][days]) {
+                priceEl.innerHTML = 'Rp ' + PLAN_PRICES[role][days].toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
+            }
+            document.querySelectorAll('.plan-duration-options[data-role="' + role + '"] .duration-btn').forEach(function (b) {
+                b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+            });
+        });
+        document.querySelectorAll('.plan-duration-options .duration-btn').forEach(function (btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function () {
+                var role = btn.closest('.plan-duration-options').dataset.role;
+                document.querySelectorAll('.plan-duration-options[data-role="' + role + '"] .duration-btn').forEach(function (b) {
+                    b.classList.toggle('active', b === btn);
+                    b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+                });
+                var days = parseInt(btn.dataset.days, 10);
+                var price = (PLAN_PRICES[role] && PLAN_PRICES[role][days]) ? PLAN_PRICES[role][days] : 0;
+                var priceEl = document.getElementById('price-' + role);
+                if (priceEl) priceEl.innerHTML = 'Rp ' + price.toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
+            });
+        });
         document.querySelectorAll('.btn-purchase-plan').forEach(function (btn) {
             if (btn.dataset.bound) return;
             btn.dataset.bound = '1';
             btn.addEventListener('click', function () {
-                var price = btn.dataset.price, name = btn.dataset.name;
+                var role = btn.dataset.role;
+                var name = btn.dataset.name || 'Paket';
+                var activeBtn = document.querySelector('.plan-duration-options[data-role="' + role + '"] .duration-btn.active');
+                var days = activeBtn ? parseInt(activeBtn.dataset.days, 10) : 30;
+                var price = (PLAN_PRICES[role] && PLAN_PRICES[role][days]) ? PLAN_PRICES[role][days] : 0;
                 var paymentMethod = null;
                 Swal.fire({
                     title: '<span style="font-weight:700;color:var(--text-primary);">Pilih Metode Pembayaran</span>',
@@ -696,7 +899,8 @@
                         '<div style="text-align:center;margin-bottom:20px;">' +
                         '<p style="color:var(--text-secondary);margin-bottom:4px;font-size:0.9rem;">Anda memilih paket:</p>' +
                         '<h4 style="color:var(--accent-primary);font-size:1.15rem;font-weight:700;margin-bottom:4px;">' + esc(name) + '</h4>' +
-                        '<p style="color:var(--text-primary);font-weight:600;font-size:1.1rem;">Rp ' + parseInt(price).toLocaleString('id-ID') + '</p>' +
+                        '<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:4px;">Durasi: <strong>' + days + ' Hari</strong></p>' +
+                        '<p style="color:var(--text-primary);font-weight:600;font-size:1.1rem;">Rp ' + price.toLocaleString('id-ID') + '</p>' +
                         '</div>' +
                         '<div class="payment-methods-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:15px;">' +
                         paymentMethodBtn('DANA', 'fa-wallet', '#008cff') +
@@ -728,7 +932,7 @@
                         timer: 2000,
                         showConfirmButton: false
                     });
-                    var msg = 'Halo Owner, saya ingin membeli paket *' + name + '* seharga *Rp ' + parseInt(price).toLocaleString('id-ID') + '* via *' + paymentMethod + '*.\n' +
+                    var msg = 'Halo Owner, saya ingin membeli *' + name + '* durasi *' + days + ' Hari* seharga *Rp ' + price.toLocaleString('id-ID') + '* via *' + paymentMethod + '*.\n' +
                         'Detail Akun:\n- Username: ' + (currentUser ? currentUser.username : '-') + '\n- ID Pengguna: ' + (currentUser ? (currentUser.id || '-') : '-') +
                         '\nMohon instruksi pembayaran selanjutnya. Terima kasih!';
                     setTimeout(function () {
@@ -952,15 +1156,12 @@
         var u = currentUser;
         $('profile-username').textContent = u.username;
 
-        // FITUR BARU MULAI DI SINI - Centang Biru (Verified Badge) Khusus Premium / Admin / AutoGen / Owner
-        var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span[title="Terverifikasi"]');
+        // Verified Badge ala Meta AI (rosette) — hanya untuk role terverifikasi
+        var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span.profile-verified-badge');
         if (profileCheckBadge) {
-            var isVerifiedRole = ['premium', 'admin', 'owner', 'autogen', 'reseller'].indexOf(u.role) !== -1;
+            var isVerifiedRole = ['owner', 'admin', 'premium', 'autogen', 'reseller'].indexOf(u.role) !== -1;
             profileCheckBadge.style.display = isVerifiedRole ? 'inline-flex' : 'none';
-            profileCheckBadge.style.background = '#0095f6'; // Warna Biru Khas Meta AI / Verified
-            profileCheckBadge.innerHTML = '<i class="fa-solid fa-check"></i>';
         }
-        // FITUR BARU SELESAI DI SINI
 
         $('profile-role-label').textContent = PROFILE_ROLE[u.role] || 'Anggota';
         $('profile-join-date-label').textContent = u.createdAt ? 'Since: ' + new Date(u.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Since: -';
@@ -1068,11 +1269,11 @@
             resetBtn.dataset.bound = '1';
             resetBtn.addEventListener('click', function () {
                 Swal.fire({
-                    title: 'Ganti API Key sekarang?',
-                    text: 'Key lama akan langsung dicabut dan tidak bisa digunakan lagi.',
+                    title: 'Reset API Key?',
+                    text: 'API Key lama Anda tidak akan bisa digunakan lagi setelah di-reset!',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Ya, buat key baru',
+                    confirmButtonText: 'Ya, Reset!',
                     cancelButtonText: 'Batal',
                     confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--ds-danger').trim()
                 }).then(function (result) {
@@ -1087,10 +1288,10 @@
                         }
                         currentUser.apiKey = data.apiKey;
                         currentUser.apiActive = true;
-                        Swal.fire({ icon: 'success', title: 'API Key berhasil diperbarui', text: 'Key lama sudah dicabut. Simpan atau copy key baru Anda.', timer: 2200, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'API Key berhasil diperbarui', text: 'Key lama sudah dicabut. Simpan atau copy key baru Anda.', confirmButtonText: 'OK' });
                         loadProfile();
                     }).catch(function (error) {
-                        Swal.fire({ icon: 'error', title: 'Gagal memperbarui API Key', text: error.message || 'Gagal terhubung ke server.' });
+                        Swal.fire({ icon: 'error', title: 'KESALAHAN', text: error.message || 'Gagal terhubung ke server.', confirmButtonText: 'OK' });
                     }).finally(function () {
                         resetBtn.disabled = false;
                         resetBtn.removeAttribute('aria-busy');
@@ -1100,6 +1301,426 @@
                 });
             });
         }
+
+    }
+
+    /* ============================== LIFETIME (Layanan Lifetime) ============================== */
+
+    function loadLifetimeScreen() {
+        if (!currentUser) return;
+        var st = $('lifetime-plan-status');
+        if (st) {
+            if (currentUser.apiPlan === 'lifetime' || currentUser.role === 'owner') {
+                st.textContent = 'Lifetime';
+            } else if (currentUser.apiPlan) {
+                st.textContent = String(currentUser.apiPlan).charAt(0).toUpperCase() + String(currentUser.apiPlan).slice(1);
+            } else {
+                st.textContent = '-'; // belum punya paket
+            }
+        }
+        // ===== Telegram Bot Deploy (khusus Admin/Owner) =====
+        var tgSection = $('telegram-deploy-section');
+        if (tgSection) {
+            var canDeploy = isAdminOrOwner();
+            tgSection.classList.toggle('hidden', !canDeploy);
+            if (canDeploy) {
+                bindTelegramDeploy();
+                loadTelegramBots();
+            }
+        }
+    }
+
+    /* ============================== PROGRAM REFERAL ============================== */
+
+    var refData = null;
+    var refClaiming = false;
+
+    function copyTextHelper(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise(function (resolve, reject) {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try {
+                if (!document.execCommand('copy')) throw new Error('Copy command failed');
+                resolve();
+            } catch (err) {
+                reject(err);
+            } finally {
+                document.body.removeChild(area);
+            }
+        });
+    }
+
+    function refToast(icon, title, text) {
+        return Swal.fire({ icon: icon, title: title, text: text || '', timer: 2000, showConfirmButton: false, toast: true, position: 'top-end', timerProgressBar: true });
+    }
+
+    function renderRefList(status) {
+        var key = status === 'claimed' ? 'claimed' : 'pending';
+        var listEl = $('ref-' + key + '-list');
+        var emptyEl = $('ref-' + key + '-empty');
+        if (!listEl) return;
+        var items = (refData && refData.referrals || []).filter(function (r) {
+            return (r.status === 'claimed') === (status === 'claimed');
+        });
+        if (!items.length) {
+            listEl.innerHTML = '';
+            if (emptyEl) emptyEl.classList.remove('hidden');
+            return;
+        }
+        if (emptyEl) emptyEl.classList.add('hidden');
+        listEl.innerHTML = items.map(function (r) {
+            var date = r.joinedAt ? new Date(r.joinedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+            return '<div class="ref-acc-item"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><i class="fa-solid fa-user" style="color: var(--accent-primary);"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.username) + '</span></span><span style="display:flex;align-items:center;gap:8px;flex-shrink:0;"><span style="font-size:.72rem;color:var(--text-muted);">' + date + '</span><span class="ref-badge">+' + esc(r.reward) + '</span></span></div>';
+        }).join('');
+    }
+
+    function refUpdateClaimButton() {
+        var btn = $('btn-claim-reward');
+        if (!btn) return;
+        var reward = refData ? (parseInt(refData.pendingReward, 10) || 0) : 0;
+        var textEl = btn.querySelector('.ref-claim-btn-text');
+        if (reward <= 0) {
+            btn.disabled = true;
+            if (textEl) textEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> TIDAK ADA REWARD UNTUK DIKLAIM';
+        } else {
+            btn.disabled = false;
+            if (textEl) textEl.innerHTML = '<i class="fa-solid fa-bolt"></i> KLAIM KREDIT SEKARANG';
+        }
+    }
+
+    function renderReferral(payload) {
+        var d = payload && payload.data ? payload.data : payload;
+        if (!d) return;
+        refData = d;
+        var link = $('ref-url-input');
+        if (link) link.value = d.referralUrl || '';
+        var invited = $('ref-stat-invited');
+        if (invited) invited.textContent = d.totalInvited != null ? d.totalInvited : 0;
+        var pending = $('ref-stat-pending');
+        if (pending) pending.textContent = d.pendingReward != null ? d.pendingReward : 0;
+        var pc = $('ref-pending-count');
+        if (pc) pc.textContent = (d.referrals || []).filter(function (r) { return r.status !== 'claimed'; }).length;
+        var cc = $('ref-claimed-count');
+        if (cc) cc.textContent = (d.referrals || []).filter(function (r) { return r.status === 'claimed'; }).length;
+        var badge = $('ref-reward-badge');
+        if (badge && d.rewardPerReferral) badge.textContent = '+' + d.rewardPerReferral + ' KREDIT / REFERRAL';
+        renderRefList('pending');
+        renderRefList('claimed');
+        refUpdateClaimButton();
+    }
+
+    function bindReferralActions() {
+        var copyBtn = $('btn-copy-ref-link');
+        if (copyBtn && !copyBtn.dataset.bound) {
+            copyBtn.dataset.bound = '1';
+            copyBtn.addEventListener('click', function () {
+                var link = $('ref-url-input');
+                copyTextHelper(link ? link.value : '').then(function () {
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check"></i><span>TERSALIN</span>';
+                    setTimeout(function () { copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i><span>Salin</span>'; }, 2000);
+                    refToast('success', 'Berhasil', 'Link referral berhasil disalin.');
+                }).catch(function () {
+                    refToast('error', 'Gagal', 'Tidak dapat menyalin link.');
+                });
+            });
+        }
+        var shareCopy = $('btn-share-copy');
+        if (shareCopy && !shareCopy.dataset.bound) {
+            shareCopy.dataset.bound = '1';
+            shareCopy.addEventListener('click', function () {
+                var link = $('ref-url-input');
+                copyTextHelper(link ? link.value : '').then(function () {
+                    refToast('success', 'Berhasil', 'Link referral berhasil disalin.');
+                }).catch(function () {
+                    refToast('error', 'Gagal', 'Tidak dapat menyalin link.');
+                });
+            });
+        }
+        var shareNative = $('btn-share-native');
+        if (shareNative && !shareNative.dataset.bound) {
+            shareNative.dataset.bound = '1';
+            shareNative.addEventListener('click', function () {
+                var link = $('ref-url-input');
+                var url = link ? link.value : '';
+                if (navigator.share) {
+                    navigator.share({ title: 'Program Referal', text: 'Gabung dan dapatkan kredit gratis! Pakai kode referral saya.', url: url }).catch(function () { });
+                } else {
+                    copyTextHelper(url).then(function () {
+                        refToast('success', 'Berhasil', 'Link referral berhasil disalin.');
+                    });
+                }
+            });
+        }
+        var claimBtn = $('btn-claim-reward');
+        if (claimBtn && !claimBtn.dataset.bound) {
+            claimBtn.dataset.bound = '1';
+            claimBtn.addEventListener('click', function () {
+                if (refClaiming) return;
+                var reward = refData ? (parseInt(refData.pendingReward, 10) || 0) : 0;
+                if (reward <= 0) return refUpdateClaimButton();
+                refClaiming = true;
+                claimBtn.disabled = true;
+                var spinner = claimBtn.querySelector('.ref-claim-btn-spinner');
+                var text = claimBtn.querySelector('.ref-claim-btn-text');
+                if (spinner) spinner.classList.remove('hidden');
+                if (text) text.classList.add('hidden');
+                api('/api/referral/claim', { method: 'POST' }).then(function (data) {
+                    if (data && data.success) {
+                        if (currentUser && data.credits != null) currentUser.credits = data.credits;
+                        var pc = $('pinfo-credits');
+                        if (pc) pc.textContent = creditsDisplay() + ' Credits';
+                        refData.pendingReward = 0;
+                        (refData.referrals || []).forEach(function (r) { if (r.status === 'pending') r.status = 'claimed'; });
+                        renderReferral(refData);
+                        refToast('success', 'Referral berhasil diklaim!', '+' + data.claimedReward + ' kredit telah ditambahkan.');
+                    } else {
+                        refToast('error', 'Terjadi kesalahan', (data && data.message) || 'Silakan coba lagi.');
+                        refUpdateClaimButton();
+                    }
+                }).catch(function () {
+                    refToast('error', 'Terjadi kesalahan', 'Silakan coba lagi.');
+                    refUpdateClaimButton();
+                }).finally(function () {
+                    refClaiming = false;
+                    claimBtn.disabled = false;
+                    if (spinner) spinner.classList.add('hidden');
+                    if (text) text.classList.remove('hidden');
+                    refUpdateClaimButton();
+                });
+            });
+        }
+        var retry = $('btn-ref-retry');
+        if (retry && !retry.dataset.bound) {
+            retry.dataset.bound = '1';
+            retry.addEventListener('click', loadReferralScreen);
+        }
+        ['pending', 'claimed'].forEach(function (k) {
+            var head = $('ref-acc-head-' + k);
+            if (head && !head.dataset.bound) {
+                head.dataset.bound = '1';
+                head.addEventListener('click', function () {
+                    var open = head.getAttribute('aria-expanded') === 'true';
+                    head.setAttribute('aria-expanded', String(!open));
+                    head.parentElement.setAttribute('data-open', open ? '0' : '1');
+                    var body = $('ref-' + k + '-body');
+                    if (body) body.classList.toggle('hidden', open);
+                });
+            }
+        });
+    }
+
+    function loadReferralScreen() {
+        var loading = $('ref-loading');
+        var errorEl = $('ref-error');
+        var contentEl = $('ref-content');
+        if (loading) loading.classList.remove('hidden');
+        if (errorEl) errorEl.classList.add('hidden');
+        if (contentEl) contentEl.classList.add('hidden');
+        api('/api/referral').then(function (data) {
+            if (!data || !data.success || !data.data) throw new Error((data && data.message) || 'Gagal memuat data referral');
+            renderReferral(data);
+            if (loading) loading.classList.add('hidden');
+            if (contentEl) contentEl.classList.remove('hidden');
+            bindReferralActions();
+        }).catch(function (err) {
+            if (loading) loading.classList.add('hidden');
+            if (errorEl) errorEl.classList.remove('hidden');
+            var t = $('ref-error-text');
+            if (t) t.textContent = (err && err.message) || 'Silakan coba lagi.';
+        });
+    }
+
+    /* ============================== TELEGRAM BOT DEPLOY ============================== */
+
+    function telegramStatusBadge(status) {
+        if (status === 'online') return '<span class="badge badge-normal" style="background: rgba(16,185,129,.15); color: #10b981; border: 1px solid rgba(16,185,129,.35);"><i class="fa-solid fa-circle"></i> Online</span>';
+        if (status === 'error') return '<span class="badge badge-normal" style="background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.35);"><i class="fa-solid fa-triangle-exclamation"></i> Error</span>';
+        return '<span class="badge badge-normal" style="background: rgba(148,163,184,.15); color: #94a3b8; border: 1px solid rgba(148,163,184,.3);"><i class="fa-solid fa-circle"></i> Offline</span>';
+    }
+
+    function renderTelegramBots(bots) {
+        var listEl = $('telegram-bots-list');
+        if (!listEl) return;
+        if (!bots.length) {
+            listEl.innerHTML = '<div style="padding: 16px; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); text-align: center; color: var(--text-muted); font-size: .88rem;"><i class="fa-brands fa-telegram"></i> Belum ada bot ter-deploy. Isi form di atas lalu klik Deploy Bot.</div>';
+            return;
+        }
+        listEl.innerHTML = bots.map(function (b) {
+            var username = b.me && b.me.username ? '@' + esc(b.me.username) : 'belum tersedia';
+            var err = b.error ? '<div style="font-size: .78rem; color: #ef4444; margin-top: 6px;"><i class="fa-solid fa-triangle-exclamation"></i> ' + esc(b.error) + '</div>' : '';
+            var actions = '';
+            if (b.status === 'online') {
+                actions += '<button class="btn btn-secondary tg-action" data-action="stop" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem;"><i class="fa-solid fa-stop"></i> Stop</button>';
+            } else {
+                actions += '<button class="btn btn-secondary tg-action" data-action="start" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem; color: #10b981; border-color: rgba(16,185,129,.4);"><i class="fa-solid fa-play"></i> Start</button>';
+            }
+            actions += '<button class="btn btn-secondary tg-action" data-action="restart" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem;"><i class="fa-solid fa-rotate-right"></i> Restart</button>';
+            actions += '<button class="btn btn-secondary tg-action" data-action="delete" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem; color: var(--ds-danger); border-color: var(--ds-danger); background: transparent;"><i class="fa-solid fa-trash-can"></i> Hapus</button>';
+            return '<div class="tg-bot-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; background: var(--surface-2);">' +
+                '<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">' +
+                '<i class="fa-brands fa-telegram" style="color: #229ED9; font-size: 1.2rem;"></i>' +
+                '<strong style="font-size: .95rem;">' + esc(b.name) + '</strong>' +
+                '<span style="font-size: .78rem; color: var(--text-muted);">' + username + '</span>' +
+                telegramStatusBadge(b.status) +
+                '</div>' +
+                '<div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: .82rem; color: var(--text-secondary); margin-bottom: 10px;">' +
+                '<span><i class="fa-solid fa-user-gear"></i> Owner ID: <code>' + esc(b.ownerId) + '</code></span>' +
+                '<span><i class="fa-solid fa-key"></i> Token: <code>' + esc(b.tokenMasked) + '</code></span>' +
+                '</div>' + err +
+                '<div style="display: flex; gap: 8px; flex-wrap: wrap;">' + actions + '</div>' +
+                '</div>';
+        }).join('');
+
+        listEl.querySelectorAll('.tg-action').forEach(function (btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function () { telegramAction(btn.dataset.action, btn.dataset.id); });
+        });
+    }
+
+    function updateTelegramBotStatus(bots) {
+        var badge = $('telegram-bot-status-badge');
+        var pm2 = $('telegram-bot-pm2-info');
+        if (!badge) return;
+        var online = 0, total = (bots || []).length;
+        (bots || []).forEach(function (b) { if (b.status === 'online') online++; });
+        if (!total) {
+            badge.innerHTML = '<i class="fa-solid fa-circle"></i> Belum Deploy';
+            badge.style.background = '#64748b';
+            badge.style.color = 'white';
+            badge.style.border = '';
+            if (pm2) pm2.textContent = 'Belum ada bot ter-deploy di VPS.';
+            return;
+        }
+        if (online === total) {
+            badge.innerHTML = '<i class="fa-solid fa-circle"></i> Online';
+            badge.style.background = 'rgba(16,185,129,.15)';
+            badge.style.color = '#10b981';
+            badge.style.border = '1px solid rgba(16,185,129,.35)';
+        } else if (online > 0) {
+            badge.innerHTML = '<i class="fa-solid fa-circle-half-stroke"></i> ' + online + '/' + total + ' Online';
+            badge.style.background = 'rgba(245,158,11,.15)';
+            badge.style.color = '#f59e0b';
+            badge.style.border = '1px solid rgba(245,158,11,.35)';
+        } else {
+            badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Offline';
+            badge.style.background = 'rgba(239,68,68,.12)';
+            badge.style.color = '#ef4444';
+            badge.style.border = '1px solid rgba(239,68,68,.35)';
+        }
+        if (pm2) pm2.textContent = total + ' bot terdaftar · ' + online + ' aktif · PM2 managed';
+    }
+
+    function loadTelegramBots() {
+        api('/api/telegram/bots').then(function (data) {
+            if (data && data.success) {
+                renderTelegramBots(data.bots || []);
+                updateTelegramBotStatus(data.bots || []);
+            }
+        }).catch(function () {
+            var badge = $('telegram-bot-status-badge');
+            if (badge) {
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Gagal Terhubung';
+                badge.style.background = 'rgba(148,163,184,.15)';
+                badge.style.color = '#94a3b8';
+                badge.style.border = '1px solid rgba(148,163,184,.3)';
+            }
+        });
+    }
+
+    function telegramAction(action, id) {
+        if (action === 'delete') {
+            Swal.fire({
+                title: 'Hapus bot ini?',
+                text: 'Bot akan dihentikan dan dihapus dari daftar deploy.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, hapus',
+                cancelButtonText: 'Batal'
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                sendTelegramAction(action, id);
+            });
+            return;
+        }
+        sendTelegramAction(action, id);
+    }
+
+    function sendTelegramAction(action, id) {
+        api('/api/telegram/' + action, { method: 'POST', body: { id: id } }).then(function (data) {
+            Swal.fire({
+                icon: data && data.success ? 'success' : 'error',
+                title: data && data.success ? 'Berhasil' : 'Gagal',
+                text: (data && data.message) || 'Terjadi kesalahan.',
+                timer: data && data.success ? 1600 : 3200,
+                showConfirmButton: false
+            });
+            if (data && data.bots) { renderTelegramBots(data.bots); updateTelegramBotStatus(data.bots); }
+            else loadTelegramBots();
+        }).catch(function () {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Tidak dapat terhubung ke server.', timer: 2500, showConfirmButton: false });
+        });
+    }
+
+    function bindTelegramDeploy() {
+        var form = $('form-telegram-deploy');
+        if (!form || form.dataset.bound) return;
+        form.dataset.bound = '1';
+        var checkBtn = $('btn-check-lifetime-bot');
+        if (checkBtn) {
+            checkBtn.addEventListener('click', function () {
+                var badge = $('telegram-bot-status-badge');
+                if (badge) { badge.innerHTML = '<i class="fa-solid fa-circle"></i> Memuat...'; badge.style.background = '#64748b'; badge.style.color = 'white'; }
+                loadTelegramBots();
+            });
+        }
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var name = $('telegram-bot-name');
+            var token = $('telegram-bot-token');
+            var ownerId = $('telegram-owner-id');
+            if (!token.value.trim() || !ownerId.value.trim()) {
+                Swal.fire({ icon: 'warning', title: 'Lengkapi form', text: 'Bot Token dan Telegram Owner ID wajib diisi.', timer: 2200, showConfirmButton: false });
+                return;
+            }
+            if (!name.value.trim()) {
+                name.value = (currentUser ? currentUser.username : 'AM') + ' Bot';
+            }
+            var btn = $('btn-telegram-deploy');
+            var btnText = btn.querySelector('.btn-text');
+            var btnSpinner = btn.querySelector('.btn-spinner');
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnSpinner.classList.remove('hidden');
+            api('/api/telegram/deploy', { method: 'POST', body: { name: name.value.trim(), token: token.value.trim(), ownerId: ownerId.value.trim() } }).then(function (data) {
+                Swal.fire({
+                    icon: data && data.success ? 'success' : 'error',
+                    title: data && data.success ? 'Bot Deployed!' : 'Gagal Deploy',
+                    text: (data && data.message) || 'Terjadi kesalahan.',
+                    timer: data && data.success ? 1800 : 3500,
+                    showConfirmButton: false
+                });
+                if (data && data.success) {
+                    name.value = ''; token.value = ''; ownerId.value = '';
+                }
+                if (data && data.bots) { renderTelegramBots(data.bots); updateTelegramBotStatus(data.bots); }
+                else loadTelegramBots();
+            }).catch(function () {
+                Swal.fire({ icon: 'error', title: 'Gagal Deploy', text: 'Tidak dapat terhubung ke server.', timer: 2500, showConfirmButton: false });
+            }).finally(function () {
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnSpinner.classList.add('hidden');
+            });
+        });
     }
 
     /* ============================== REVIEWS ============================== */
@@ -1191,6 +1812,7 @@
     function loadAdminPanel() {
         if (!isAdminOrOwner()) return;
         loadAdminStats();
+        loadAdminH2hProfile();
         loadAdminUsers();
         loadAdminLogs();
         loadAdminTransactions();
@@ -1205,6 +1827,33 @@
             if (data.totalRequests != null) $('stat-total-activations').textContent = data.totalRequests;
             if (data.success != null) $('stat-success-activations').textContent = data.success;
             if (data.failed != null) $('stat-failed-activations').textContent = data.failed;
+        });
+    }
+
+    function loadAdminH2hProfile() {
+        var name = $('h2h-name'), status = $('h2h-status');
+        if (!name || !status) return;
+        api('/api/admin/h2h/profile').then(function (data) {
+            var bal = $('h2h-balance'), settle = $('h2h-settlement');
+            if (data && data.success) {
+                name.textContent = data.name || '--';
+                if (bal) bal.textContent = data.balance != null ? Number(data.balance).toLocaleString('id-ID') : '--';
+                if (settle) settle.textContent = data.settlementBalance != null ? Number(data.settlementBalance).toLocaleString('id-ID') : '--';
+                status.textContent = data.status || '--';
+                status.className = 'h2h-value h2h-status ' + (data.status === 'active' ? 'is-active' : 'is-inactive');
+            } else {
+                name.textContent = '--';
+                if (bal) bal.textContent = '--';
+                if (settle) settle.textContent = '--';
+                status.textContent = (data && data.message) ? data.message : 'Gagal memuat';
+                status.className = 'h2h-value h2h-status is-inactive';
+            }
+        }).catch(function () {
+            name.textContent = '--';
+            if ($('h2h-balance')) $('h2h-balance').textContent = '--';
+            if ($('h2h-settlement')) $('h2h-settlement').textContent = '--';
+            status.textContent = 'Gagal terhubung';
+            status.className = 'h2h-value h2h-status is-inactive';
         });
     }
 
@@ -1387,50 +2036,135 @@
         });
     }
 
-    function loadAdminIps() {
+    function loadAdminIps(page) {
+        /* IP card telah dihapus — tidak ada yang perlu dimuat */
+        if (!$('admin-ips-table-body')) return;
+        var tbody = $('admin-ips-table-body');
+        setAdminTableState(tbody, 5, 'Memuat alamat IP dan perangkat...', 'loading');
         api('/api/admin/ips').then(function (data) {
-            var users = data.users || [];
-            var tbody = $('admin-ips-table-body');
-            if (!users.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Belum ada data IP.</td></tr>';
-            } else {
-                tbody.innerHTML = users.map(function (u) {
-                    var over = u.ipCount > 3;
-                    return '<tr><td><strong>' + esc(u.username) + '</strong></td>' +
-                        '<td><span class="badge ' + (ROLE_BADGE[u.role] || 'badge-normal') + '">' + esc(ROLE_LABEL[u.role] || u.role) + '</span></td>' +
-                        '<td>' + esc(u.ip || '-') + '</td><td>' + esc(u.device || u.os || '-') + '</td>' +
-                        '<td><span class="badge ' + (over ? 'badge-admin' : 'badge-normal') + '" style="' + (over ? 'background:#ef4444;color:#fff;' : '') + '">' + (u.ipCount || 0) + '</span></td>' +
-                        '<td><button class="btn ' + (u.banned ? 'btn-success' : 'btn-danger') + ' btn-sm ban-ip-btn" data-ip="' + esc(u.ip) + '" data-banned="' + (u.banned ? 1 : 0) + '">' + (u.banned ? 'Unban' : 'Ban') + '</button></td></tr>';
-                }).join('');
-            }
-            tbody.querySelectorAll('.ban-ip-btn').forEach(function (b) {
-                b.addEventListener('click', function () {
-                    var banned = b.dataset.banned === '1';
-                    api('/api/admin/ip/' + (banned ? 'unban' : 'ban'), { method: 'POST', body: { ip: b.dataset.ip } }).then(function (d) {
-                        Swal.fire({ icon: 'success', title: 'OK', text: d.message, timer: 1200, showConfirmButton: false });
-                        loadAdminIps();
-                    });
-                });
-            });
-            var banned = data.bannedIps || [];
-            var btbody = $('admin-banned-ips-table-body');
-            if (!banned.length) {
-                btbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px;">Tidak ada IP terblokir.</td></tr>';
-            } else {
-                btbody.innerHTML = banned.map(function (b) {
-                    return '<tr><td>' + esc(b.ip) + '</td><td>' + esc(b.createdAt) + '</td>' +
-                        '<td><button class="btn btn-success btn-sm unban-ip-btn" data-ip="' + esc(b.ip) + '">Unban</button></td></tr>';
-                }).join('');
-            }
-            btbody.querySelectorAll('.unban-ip-btn').forEach(function (b) {
-                b.addEventListener('click', function () {
-                    api('/api/admin/ip/unban', { method: 'POST', body: { ip: b.dataset.ip } }).then(function (d) {
-                        Swal.fire({ icon: 'success', title: 'OK', text: d.message, timer: 1200, showConfirmButton: false });
-                        loadAdminIps();
-                    });
+            adminIpsCache = data.users || [];
+            adminBannedIpsCache = data.bannedIps || [];
+            var countEl = $('admin-ips-result-count');
+            if (countEl) countEl.textContent = adminIpsCache.length + ' data IP ditemukan';
+            renderAdminIpsTab(page || 1);
+            renderAdminCleanupTab(1);
+        }).catch(function () {
+            setAdminTableState(tbody, 5, 'Gagal terhubung ke server.', 'error');
+            var pagination = $('admin-ips-pagination');
+            if (pagination) pagination.innerHTML = '';
+        });
+    }
+
+    function groupAdminIps(users) {
+        var groups = {};
+        users.forEach(function (u) {
+            var ip = String(u.ip || 'Tidak diketahui');
+            if (!groups[ip]) groups[ip] = { ip: ip, users: [], count: 0, blocked: false };
+            groups[ip].users.push(u);
+            groups[ip].count += 1;
+            groups[ip].blocked = groups[ip].blocked || !!u.bannedIp;
+        });
+        return Object.keys(groups).map(function (ip) { return groups[ip]; });
+    }
+
+    function renderAdminIPMember(u) {
+        var blocked = !!u.bannedIp;
+        var ip = String(u.ip || '').trim();
+        var action = ip
+            ? '<button class="btn ' + (blocked ? 'btn-success' : 'btn-danger') + ' btn-sm ban-ip-btn" data-ip="' + esc(ip) + '" data-banned="' + (blocked ? 1 : 0) + '">' + (blocked ? 'Unban IP' : 'Ban IP') + '</button>'
+            : '<span class="admin-no-action"><i class="fa-solid fa-minus"></i> IP tidak tersedia</span>';
+        return '<div class="ip-member-detail"><div class="ip-member-identity"><strong>' + esc(u.username) + '</strong><span class="badge ' + (ROLE_BADGE[u.role] || 'badge-normal') + '">' + esc(ROLE_LABEL[u.role] || u.role) + '</span></div><span class="ip-member-device"><i class="fa-solid fa-desktop"></i> ' + esc(u.device || u.os || 'Tidak diketahui') + '</span>' + action + '</div>';
+    }
+
+    function bindAdminIPActions(container, page) {
+        container.querySelectorAll('.ban-ip-btn').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var blocked = b.dataset.banned === '1';
+                api('/api/admin/ip/' + (blocked ? 'unban' : 'ban'), { method: 'POST', body: { ip: b.dataset.ip } }).then(function (d) {
+                    Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'OK' : 'GAGAL', text: d.message, timer: 1200, showConfirmButton: false });
+                    if (d.success) loadAdminIps(page);
                 });
             });
         });
+        container.querySelectorAll('.ip-detail-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var ip = button.dataset.ip;
+                container.querySelectorAll('[data-detail-ip]').forEach(function (detail) {
+                    if (detail.dataset.detailIp === ip) detail.classList.toggle('hidden');
+                });
+                button.classList.toggle('is-open');
+                button.innerHTML = button.classList.contains('is-open') ? '<i class="fa-solid fa-chevron-up"></i> Tutup' : '<i class="fa-solid fa-list"></i> Detail';
+            });
+        });
+    }
+
+    function renderAdminIpsTab(page) {
+        var query = ($('admin-search-ips') ? $('admin-search-ips').value : '').trim().toLowerCase();
+        var filter = $('admin-filter-ips') ? $('admin-filter-ips').value : 'all';
+        var groups = groupAdminIps(adminIpsCache).filter(function (group) {
+            var haystack = [group.ip].concat(group.users.map(function (u) {
+                return [u.username, u.device, u.os, u.role, ROLE_LABEL[u.role] || ''].join(' ');
+            })).join(' ').toLowerCase();
+            var matchesQuery = !query || haystack.indexOf(query) !== -1;
+            var matchesFilter = filter === 'all' || (filter === 'over' ? group.count > 3 : group.count === parseInt(filter, 10));
+            return matchesQuery && matchesFilter;
+        });
+        var perPage = 10;
+        var totalPages = Math.max(1, Math.ceil(groups.length / perPage));
+        var current = Math.min(Math.max(1, page || 1), totalPages);
+        var visibleGroups = groups.slice((current - 1) * perPage, current * perPage);
+        var resultCount = $('admin-ips-result-count');
+        if (resultCount) resultCount.textContent = groups.length + ' grup IP ditemukan';
+        var tbody = $('admin-ips-table-body');
+        var mobile = $('admin-ips-mobile-list');
+        if (!groups.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="ip-list-state"><i class="fa-solid fa-network-wired"></i><span>Tidak ada data IP yang cocok.</span></td></tr>';
+            if (mobile) mobile.innerHTML = '<div class="ip-list-state ip-empty-state"><i class="fa-solid fa-network-wired"></i><span>Tidak ada data IP yang cocok.</span></div>';
+        } else {
+            var desktop = [];
+            var mobileHtml = [];
+            visibleGroups.forEach(function (group) {
+                var over = group.count > 3;
+                var status = over ? '<span class="status-failed"><i class="fa-solid fa-triangle-exclamation"></i> Melebihi batas</span>' : group.blocked ? '<span class="status-failed"><i class="fa-solid fa-ban"></i> Blocked</span>' : '<span class="status-success"><i class="fa-solid fa-circle-check"></i> Normal</span>';
+                var names = group.users.map(function (u) { return '<span class="ip-user-chip">' + esc(u.username) + '</span>'; }).join('');
+                var members = group.users.map(renderAdminIPMember).join('');
+                desktop.push('<tr class="ip-group-row"><td><strong class="ip-address-cell"><i class="fa-solid fa-globe"></i> ' + esc(group.ip) + '</strong></td><td><span class="badge ' + (over ? 'badge-admin' : 'badge-normal') + '">' + (over ? '⚠️ ' : '') + group.count + ' akun</span></td><td><div class="ip-user-chips">' + names + '</div></td><td>' + status + '</td><td><button class="btn btn-secondary btn-sm ip-detail-btn" data-ip="' + esc(group.ip) + '"><i class="fa-solid fa-list"></i> Detail</button></td></tr><tr class="ip-detail-row hidden" data-detail-ip="' + esc(group.ip) + '"><td colspan="5"><div class="ip-members-panel"><strong>Daftar akun dari ' + esc(group.ip) + '</strong>' + members + '</div></td></tr>');
+                mobileHtml.push('<article class="ip-group-card"><div class="ip-group-card-head"><strong class="ip-address-cell"><i class="fa-solid fa-globe"></i> ' + esc(group.ip) + '</strong>' + status + '</div><div class="ip-group-card-count">' + (over ? '⚠️ ' : '') + group.count + ' akun terdaftar</div><div class="ip-user-chips">' + names + '</div><button class="btn btn-secondary btn-sm ip-detail-btn" data-ip="' + esc(group.ip) + '"><i class="fa-solid fa-list"></i> Detail akun</button><div class="ip-detail-row hidden" data-detail-ip="' + esc(group.ip) + '"><div class="ip-members-panel">' + members + '</div></div></article>');
+            });
+            tbody.innerHTML = desktop.join('');
+            if (mobile) mobile.innerHTML = mobileHtml.join('');
+        }
+        renderPagination($('admin-ips-pagination'), totalPages, current, function (p) { renderAdminIpsTab(p); });
+        bindAdminIPActions(document.getElementById('admin-ips-card'), current);
+    }
+
+    function renderAdminCleanupTab(page) {
+        var banned = adminBannedIpsCache;
+        var perPage = 10;
+        var totalPages = Math.max(1, Math.ceil(banned.length / perPage));
+        var current = Math.min(Math.max(1, page || 1), totalPages);
+        var visible = banned.slice((current - 1) * perPage, current * perPage);
+        var countEl = $('admin-banned-result-count');
+        if (countEl) countEl.textContent = banned.length + ' IP terblokir';
+        var btbody = $('admin-banned-ips-table-body');
+        if (!banned.length) {
+            setAdminTableState(btbody, 3, 'Tidak ada IP terblokir.', 'empty');
+        } else {
+            btbody.innerHTML = visible.map(function (entry) {
+                var ip = typeof entry === 'string' ? entry : (entry && entry.ip) || '';
+                var createdAt = typeof entry === 'string' ? '-' : (entry && entry.createdAt) || '-';
+                return '<tr><td><code>' + esc(ip) + '</code></td><td>' + esc(createdAt) + '</td><td><button class="btn btn-success btn-sm unban-ip-btn" data-ip="' + esc(ip) + '">Unban</button></td></tr>';
+            }).join('');
+            btbody.querySelectorAll('.unban-ip-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    api('/api/admin/ip/unban', { method: 'POST', body: { ip: b.dataset.ip } }).then(function (d) {
+                        Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'OK' : 'GAGAL', text: d.message, timer: 1200, showConfirmButton: false });
+                        if (d.success) loadAdminIps(1);
+                    });
+                });
+            });
+        }
+        renderPagination($('admin-banned-pagination'), totalPages, current, function (p) { renderAdminCleanupTab(p); });
     }
 
     function loadDuplicateLogs() {
@@ -1463,13 +2197,14 @@
                     });
             });
             $('btn-cleanup-ry-users').addEventListener('click', function () {
-                Swal.fire({ title: 'Bersihkan Akun ry_?', text: 'Semua akun berawalan "ry_" beserta log & transaksinya akan dihapus.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan', cancelButtonText: 'Batal' })
+                Swal.fire({ title: 'Bersihkan Akun ry_?', text: 'Cleanup ini menggunakan proses existing dan berlaku global untuk semua akun berawalan "ry_", beserta log dan transaksi terkait.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan Global', cancelButtonText: 'Batal' })
                     .then(function (r) {
                         if (!r.isConfirmed) return;
                         api('/api/admin/cleanup-ry', { method: 'POST' }).then(function (d) {
                             Swal.fire({ icon: 'success', title: 'BERSIH!', text: d.message, timer: 1500, showConfirmButton: false });
                             loadAdminUsers();
                             loadAdminStats();
+                            loadAdminIps(1);
                         });
                     });
             });
@@ -1479,7 +2214,7 @@
                 api('/api/admin/ip/ban', { method: 'POST', body: { ip: ip } }).then(function (d) {
                     Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'DI-BLOKIR!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
                     $('input-ban-ip').value = '';
-                    loadAdminIps();
+                    loadAdminIps(1);
                 });
             });
             var userFilterControls = ['admin-search-users', 'admin-filter-role', 'admin-filter-status'];
@@ -1505,10 +2240,43 @@
                 refreshUsers.dataset.bound = '1';
                 refreshUsers.addEventListener('click', function () { loadAdminUsers(); });
             }
+            var refreshIps = $('btn-admin-refresh-ips');
+            if (refreshIps && !refreshIps.dataset.bound) {
+                refreshIps.dataset.bound = '1';
+                refreshIps.addEventListener('click', function () { loadAdminIps(1); });
+            }
+            ['admin-search-ips', 'admin-filter-ips'].forEach(function (id) {
+                var control = $(id);
+                if (control && !control.dataset.bound) {
+                    control.dataset.bound = '1';
+                    control.addEventListener('input', function () { renderAdminIpsTab(1); });
+                    control.addEventListener('change', function () { renderAdminIpsTab(1); });
+                }
+            });
+            /* Tab switching: IP Anggota | Pembersihan */
+            var ipTabs = $('admin-ip-tabs');
+            if (ipTabs && !ipTabs.dataset.bound) {
+                ipTabs.dataset.bound = '1';
+                ipTabs.querySelectorAll('.admin-tab-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        ipTabs.querySelectorAll('.admin-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+                        btn.classList.add('active');
+                        var tabId = btn.dataset.tab;
+                        document.querySelectorAll('#admin-ips-card .admin-tab-content').forEach(function (c) { c.classList.add('hidden'); });
+                        var target = document.getElementById(tabId);
+                        if (target) target.classList.remove('hidden');
+                    });
+                });
+            }
             var refreshLogs = $('btn-admin-refresh-logs');
             if (refreshLogs && !refreshLogs.dataset.bound) {
                 refreshLogs.dataset.bound = '1';
                 refreshLogs.addEventListener('click', function () { loadAdminLogs(); });
+            }
+            var refreshH2h = $('btn-admin-refresh-h2h');
+            if (refreshH2h && !refreshH2h.dataset.bound) {
+                refreshH2h.dataset.bound = '1';
+                refreshH2h.addEventListener('click', function () { loadAdminH2hProfile(); });
             }
         }
 
@@ -1715,8 +2483,13 @@
             try { readSet = JSON.parse(localStorage.getItem('read_notifications') || '[]'); } catch (e) {}
             var unread = list.filter(function (n) { return n.isActive && readSet.indexOf(n.id) === -1; }).length;
             if (badge) {
-                badge.textContent = unread;
-                badge.style.display = unread ? 'flex' : 'none';
+                if (unread) {
+                    badge.textContent = unread;
+                    badge.style.cssText = 'display:flex;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;min-width:16px;width:auto;height:16px;padding:0 4px;border-radius:50%;align-items:center;justify-content:center;position:absolute;top:-2px;right:-2px;';
+                } else {
+                    badge.textContent = '';
+                    badge.style.display = 'none';
+                }
             }
             var listEl = $('notifications-list');
             if (!list.length) {
@@ -1915,9 +2688,55 @@
     document.addEventListener('DOMContentLoaded', function () {
         bindNav();
         bindAuth();
+        restoreAuthView(); // Refresh tetap di view login/register + draft form dipulihkan
         bindNotifications();
         checkAppVersion();
         initThemeToggle(); // FITUR BARU - Pemanggilan Switch Theme
+        // Referral dari link (format /invite?code=, /?ref=, /#referal?ref=, /#register?ref=)
+        // → simpan & isi form register (opsional)
+        try {
+            var inviteCode = getReferralFromUrl();
+            if (inviteCode) localStorage.setItem('pendingReferral', inviteCode);
+            var refField = $('register-referral');
+            if (refField) {
+                var saved = ''; try { saved = localStorage.getItem('pendingReferral') || ''; } catch (err) {}
+                // Jangan timpa kode yang sudah diketik user (draft dari refresh)
+                if (saved && !refField.value) refField.value = saved;
+                // Validasi kode referral live dengan debounce 600ms (anti-spam API)
+                var refDebounce = null;
+                refField.addEventListener('input', function () {
+                    clearTimeout(refDebounce);
+                    refDebounce = setTimeout(function () {
+                        var v = refField.value.trim();
+                        // User menghapus kode = tidak pakai referral; buang pending basi
+                        if (!v) { try { localStorage.removeItem('pendingReferral'); } catch (err) {} }
+                        checkReferral(v);
+                    }, 600);
+                });
+            }
+            // Check kode yang tampil di field (draft dari refresh) atau pendingReferral dari URL
+            var pendCode = ''; try { pendCode = localStorage.getItem('pendingReferral') || ''; } catch (err) {}
+            var codeToCheck = (refField && refField.value.trim()) || pendCode;
+            checkReferral(codeToCheck);
+        } catch (err) {}
+        // Router hash: dukung akses langsung #lifetime / #referal & edit manual hash.
+        // Guard: jangan pindah screen non-auth saat belum login (hindari error 401 tampil ke guest).
+        window.addEventListener('hashchange', function () {
+            // Link referral dibuka di tab yang sama: #...?ref= → deteksi ulang kode.
+            // Kode dari URL (klik eksplisit) menang atas isian lama.
+            var urlCode = getReferralFromUrl();
+            if (urlCode) {
+                try { localStorage.setItem('pendingReferral', urlCode); } catch (err) {}
+                var rf = $('register-referral');
+                if (rf) rf.value = urlCode;
+                checkReferral(urlCode);
+            }
+            var n = normalizeScreen(window.location.hash.replace('#', '').split('?')[0]);
+            if (!n || n === 'auth' || n === currentScreen) return;
+            if (!currentUser) return;
+            if (VALID_SCREENS.indexOf(n) === -1) return;
+            showScreen(n);
+        });
         checkSession();
     });
 })();

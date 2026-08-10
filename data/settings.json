@@ -3,6 +3,9 @@
     "generator": false,
     "netflix": true,
     "chat": false,
-    "purchase": false
+    "purchase": true
+  },
+  "h2h": {
+    "apiKey": "AWd61q7rAnsKPmcjoxuETG0Kg0OLEArU6elDnuYyGx2qcAINwh6uwRoA1grnDskCCYYTjanIANc2717aZVnoiDifPMhgdrZVzsVn"
   }
 }

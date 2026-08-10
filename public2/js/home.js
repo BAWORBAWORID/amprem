@@ -11,9 +11,106 @@
             opts.body = JSON.stringify(opts.body);
         }
         return fetch(API_BASE + path, opts).then(function (res) {
-            return res.json().catch(function () { return {}; });
+            return res.json().catch(function () { return {}; }).then(function (data) {
+                if (!res.ok && !(data && data.success)) {
+                    var err = new Error((data && (data.message || data.error)) || ('HTTP ' + res.status));
+                    err.status = res.status;
+                    throw err;
+                }
+                return data;
+            });
         });
     }
+
+    // Pesan error dari api() yang bisa dibaca user; fallback ke teks generik
+    // bila koneksi gagal (Failed to fetch) atau tidak ada pesan jelas.
+    function errMsg(err) {
+        var m = err && err.message;
+        if (m && m !== 'Failed to fetch' && m.indexOf('Load failed') === -1) return m;
+        return 'Gagal terhubung ke server.';
+    }
+
+    // ==== Validasi kode referal (banner atas + status inline di bawah field) ====
+    // state: idle | checking | valid | invalid | error
+    function setReferralUI(state, opts) {
+        opts = opts || {};
+        var banner = $('invite-banner');
+        var status = $('referral-status');
+        var icon = state === 'checking' ? '<i class="fa-solid fa-spinner fa-spin icon"></i>'
+            : state === 'valid' ? '<i class="fa-solid fa-circle-check icon"></i>'
+            : state === 'invalid' ? '<i class="fa-solid fa-circle-xmark icon"></i>'
+            : state === 'error' ? '<i class="fa-solid fa-circle-exclamation icon"></i>'
+            : '<i class="fa-solid fa-gift icon" style="opacity:.55"></i>';
+        var text = opts.text || '';
+        if (status) {
+            if (state === 'idle') {
+                status.className = 'referral-status idle';
+                status.innerHTML = icon + '<span>Kode referral opsional</span>';
+            } else {
+                status.className = 'referral-status ' + state;
+                status.innerHTML = icon + '<span>' + text + '</span>';
+            }
+        }
+        if (banner) {
+            if (state === 'idle') {
+                banner.classList.add('hidden');
+            } else {
+                banner.classList.remove('hidden');
+                banner.className = 'invite-banner ' + (state === 'error' ? 'error' : state);
+                banner.innerHTML = icon + '<div>' + text + '</div>';
+            }
+        }
+    }
+    // Ambil kode referal dari URL: /invite?code= / ?ref= / #referal?ref= / #register?ref=
+    function getReferralFromUrl() {
+        try {
+            var code = '';
+            var hash = window.location.hash || '';
+            var hi = hash.indexOf('?');
+            if (hi !== -1) {
+                var hq = new URLSearchParams(hash.substring(hi + 1));
+                code = hq.get('ref') || hq.get('referral') || hq.get('invite') || hq.get('code') || '';
+            }
+            if (code) return code;
+            var q = new URLSearchParams(window.location.search);
+            return q.get('code') || q.get('ref') || q.get('referral') || q.get('invite') || '';
+        } catch (e) { return ''; }
+    }
+    // Check kode ke backend. Bedakan NETWORK ERROR (⚠) vs INVALID (✕).
+    function checkReferral(code) {
+        code = String(code || '').trim();
+        if (!code) { setReferralUI('idle'); return; }
+        setReferralUI('checking', { text: 'Mengecek kode referral <b>' + esc(code) + '</b>...' });
+        api('/api/invite/check?code=' + encodeURIComponent(code))
+            .then(function (data) {
+                // Anti race condition: abaikan respons lama bila field sudah berubah
+                var now = $('register-referral');
+                if (!now || now.value.trim() !== code) return;
+                if (data && data.valid) {
+                    setReferralUI('valid', { text: '<b>Kode referral valid</b>' + (data.username ? ' — dari <b>@' + esc(data.username) + '</b>' : '') + '. Daftar dengan kode ini dan dapatkan <b>10 kredit gratis</b>.' });
+                } else {
+                    setReferralUI('invalid', { text: '<b>Kode referral tidak valid</b>. Kamu tetap bisa daftar, tapi tanpa bonus kredit.' });
+                }
+            })
+            .catch(function () {
+                var now = $('register-referral');
+                if (!now || now.value.trim() !== code) return;
+                // Jangan bilang "kode salah" — server tidak memberi jawaban.
+                setReferralUI('error', { text: '<b>Tidak dapat memeriksa kode referral.</b> Silakan coba lagi. Register tetap bisa dilanjutkan.' });
+            });
+    }
+
+    var currentScreen = null;
+
+    // Alias hash kanonik: #referal (canonical) ≡ #referral (compat)
+    var SCREEN_ALIASES = { referal: 'referral' };
+    function normalizeScreen(name) { return SCREEN_ALIASES[name] || name; }
+
+    // api() dapat melempar untuk error HTTP asli (401/500/dll). Tangani di satu
+    // tempat agar tidak jadi unhandled rejection yang berisik di konsol.
+    window.addEventListener('unhandledrejection', function (e) {
+        try { e.preventDefault(); } catch (err) {}
+    });
 
     var currentUser = null;
     var chatPollTimer = null;
@@ -22,15 +119,16 @@
     var currentBatch = null;
     var historyCache = [];
     var adminUsersCache = [];
+    var adminLogsCache = [];
 
     var ROLE_BADGE = {
         owner: 'badge-owner', admin: 'badge-admin', premium: 'badge-premium',
-        autogen: 'badge-autogen', user: 'badge-normal'
+        autogen: 'badge-autogen', reseller: 'badge-reseller', user: 'badge-normal'
     };
-    var ROLE_LABEL = { owner: 'Owner', admin: 'Admin', premium: 'Premium', autogen: 'Auto Gen', user: 'User' };
-    var PROFILE_ROLE = { owner: 'Owner', admin: 'Administrator', premium: 'Premium', autogen: 'Auto Gen', user: 'Anggota' };
+    var ROLE_LABEL = { owner: 'Owner', admin: 'Admin', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
+    var PROFILE_ROLE = { owner: 'Owner', admin: 'Administrator', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'Anggota' };
 
-    var VALID_SCREENS = ['dashboard', 'generator', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'admin', 'contributors', 'history', 'settings', 'reviews'];
+    var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews'];
 
     function setLastScreenCookie(name) {
         try { document.cookie = 'last_page=' + encodeURIComponent(name) + '; Path=/; Max-Age=2592000; SameSite=Lax'; } catch (e) {}
@@ -45,8 +143,17 @@
     function $(id) { return document.getElementById(id); }
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+    function isUnlimitedRole(role) {
+        return ['reseller', 'premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    }
+    function hasApiRole(role) {
+        return ['premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    }
+    function hasBulkRole(role) {
+        return ['autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    }
     function isPrivileged() {
-        return currentUser && ['admin', 'owner', 'premium', 'autogen'].indexOf(currentUser.role) !== -1;
+        return currentUser && isUnlimitedRole(currentUser.role);
     }
     function isAdminOrOwner() {
         return currentUser && ['admin', 'owner'].indexOf(currentUser.role) !== -1;
@@ -82,34 +189,46 @@
     }
 
     function showScreen(name) {
+        name = normalizeScreen(name);
         if (name === 'auth') {
-            window.location.hash = '';
+            currentScreen = 'auth';
+            // Hapus hash agar URL bersih; simpan niat (intended) agar direct-access #referal/#lifetime
+            // tetap pulih setelah login (lihat handler login).
+            if (!window.location.hash) setLastScreenCookie('');
             document.querySelectorAll('.screen').forEach(function (s) { s.classList.add('hidden'); });
             $('screen-auth').classList.remove('hidden');
             $('app-sidebar').classList.add('hidden');
             $('mobile-top-bar').classList.add('hidden');
             $('app-layout').classList.remove('sidebar-active');
+            $('main-content').classList.remove('profile-screen-active');
             closeSidebar();
             return;
         }
         if (VALID_SCREENS.indexOf(name) === -1) name = 'dashboard';
         if ((name === 'admin' || name === 'settings') && !isAdminOrOwner()) name = 'dashboard';
-        if (name === 'apiguide' && !isPrivileged()) name = 'dashboard';
+        if (name === 'apiguide' && (!currentUser || !hasApiRole(currentUser.role))) name = 'dashboard';
+        $('main-content').classList.toggle('profile-screen-active', name === 'profile');
         if (name !== 'chat') closeChatStream();
 
         if (name !== 'auth') setLastScreenCookie(name);
-        window.location.hash = name;
+        // Hash kanonik: referral → #referal (tetap terima #referral saat masuk)
+        window.location.hash = (name === 'referral') ? 'referal' : name;
         document.querySelectorAll('.screen').forEach(function (s) { s.classList.add('hidden'); });
         $('screen-' + name).classList.remove('hidden');
         document.querySelectorAll('.sidebar-link').forEach(function (b) { b.classList.remove('active'); });
         var btn = $('btn-' + name + '-view');
-        if (btn) btn.classList.add('active');
+        if (btn) {
+            btn.classList.add('active');
+            // Pastikan item menu aktif selalu terlihat (anti-tertutup footer di layar pendek)
+            try { btn.scrollIntoView({ block: 'nearest' }); } catch (e) { btn.scrollIntoView(); }
+        }
+        currentScreen = name;
         closeSidebar();
 
         var loader = {
-            dashboard: loadDashboard, generator: loadGenerator, netflix: loadNetflix,
+            dashboard: loadDashboard, generator: loadGenerator, lifetime: loadLifetimeScreen, netflix: loadNetflix,
             purchase: loadAPIPanel, chat: loadChatPanel, apiguide: loadAPIGuide,
-            profile: loadProfile, admin: loadAdminPanel, history: loadHistoryScreen,
+            profile: loadProfile, referral: loadReferralScreen, admin: loadAdminPanel, history: loadHistoryScreen,
             settings: loadAdminSettings, reviews: loadReviewsScreen
         }[name];
         if (loader) loader();
@@ -133,6 +252,11 @@
         $('btn-sidebar-close').addEventListener('click', closeSidebar);
         $('sidebar-overlay').addEventListener('click', closeSidebar);
         $('btn-profile-logout').addEventListener('click', handleLogout);
+        var sidebarLogout = $('btn-logout');
+        if (sidebarLogout && !sidebarLogout.dataset.bound) {
+            sidebarLogout.dataset.bound = '1';
+            sidebarLogout.addEventListener('click', handleLogout);
+        }
         $('btn-topbar-chat').addEventListener('click', function () { showScreen('chat'); });
         $('btn-topbar-profile').addEventListener('click', function () { showScreen('profile'); });
     }
@@ -141,21 +265,28 @@
 
     function checkSession() {
         var attempts = 0;
+        themeGateTimer = setTimeout(revealThemePage, 9000);
         function tryFetch() {
             api('/api/auth/profile').then(function (data) {
                 if (data.user) {
                     currentUser = data.user;
+                    applyThemePreference(readThemePreference());
+                    revealThemePage();
                     updateNavbar();
-                    var hash = window.location.hash.replace('#', '');
-                    var last = hash || getLastScreenCookie();
+                    var hash = normalizeScreen(window.location.hash.replace('#', ''));
+                    var last = hash || normalizeScreen(getLastScreenCookie());
                     showScreen(last && VALID_SCREENS.indexOf(last) !== -1 ? last : 'dashboard');
                 } else {
+                    revealThemePage();
                     showScreen('auth');
                 }
             }).catch(function () {
                 attempts++;
                 if (attempts < 3) setTimeout(tryFetch, 2000);
-                else showScreen('auth');
+                else {
+                    revealThemePage();
+                    showScreen('auth');
+                }
             });
             var editBtn = $('btn-change-username');
             if (editBtn && !editBtn.dataset.bound) {
@@ -195,14 +326,58 @@
         btn.classList.toggle('btn-loading', loading);
     }
 
+    // ==== Persistensi halaman auth (refresh tetap di view login/register + draft form) ====
+    function saveAuthDraft() {
+        try {
+            var un = $('register-username').value, pw = $('register-password').value, rf = $('register-referral').value;
+            if (un || pw || rf) sessionStorage.setItem('am_reg_draft', JSON.stringify({ username: un || '', password: pw || '', referral: rf || '' }));
+            var lu = $('login-username').value, lp = $('login-password').value;
+            if (lu || lp) sessionStorage.setItem('am_login_draft', JSON.stringify({ username: lu || '', password: lp || '' }));
+        } catch (e) {}
+    }
+    function clearAuthDrafts() {
+        try { sessionStorage.removeItem('am_reg_draft'); sessionStorage.removeItem('am_login_draft'); } catch (e) {}
+    }
+    function setAuthView(v) {
+        try { localStorage.setItem('am_auth_view', v === 'register' ? 'register' : 'login'); } catch (e) {}
+    }
+    function restoreAuthView() {
+        try {
+            var regView = $('auth-register-view'), logView = $('auth-login-view');
+            if (!regView || !logView) return;
+            var av = localStorage.getItem('am_auth_view') || 'login';
+            if (av === 'register') {
+                logView.classList.add('hidden');
+                regView.classList.remove('hidden');
+                var d = JSON.parse(sessionStorage.getItem('am_reg_draft') || '{}');
+                if (d.username) $('register-username').value = d.username;
+                if (d.password) $('register-password').value = d.password;
+                if (d.referral) $('register-referral').value = d.referral;
+            } else {
+                regView.classList.add('hidden');
+                logView.classList.remove('hidden');
+                var ld = JSON.parse(sessionStorage.getItem('am_login_draft') || '{}');
+                if (ld.username) $('login-username').value = ld.username;
+                if (ld.password) $('login-password').value = ld.password;
+            }
+        } catch (e) {}
+    }
+
     function bindAuth() {
         $('link-to-register').addEventListener('click', function () {
             $('auth-login-view').classList.add('hidden');
             $('auth-register-view').classList.remove('hidden');
+            setAuthView('register');
         });
         $('link-to-login').addEventListener('click', function () {
             $('auth-register-view').classList.add('hidden');
             $('auth-login-view').classList.remove('hidden');
+            setAuthView('login');
+        });
+        // Simpan draft isian saat mengetik agar tidak hilang saat refresh
+        ['register-username', 'register-password', 'register-referral', 'login-username', 'login-password'].forEach(function (id) {
+            var el = $(id);
+            if (el) el.addEventListener('input', saveAuthDraft);
         });
 
         $('form-login').addEventListener('submit', function (e) {
@@ -211,24 +386,41 @@
             api('/api/auth/login', { method: 'POST', body: { username: $('login-username').value.trim(), password: $('login-password').value } })
                 .then(function (data) {
                     if (data.success) {
+                        clearAuthDrafts();
+                        setAuthView('login');
                         Swal.fire({ icon: 'success', title: 'BERHASIL!', text: 'Login berhasil.', timer: 1500, showConfirmButton: false });
+                        document.documentElement.classList.add('theme-pending');
+                        themeGateTimer = setTimeout(revealThemePage, 5000);
                         currentUser = data.user;
+                        applyThemePreference(readThemePreference());
+                        revealThemePage();
                         updateNavbar();
-                        showScreen('dashboard');
+                        // Restore halaman yang dituju (mis. #referal / #lifetime) setelah login
+                        var intended = normalizeScreen(window.location.hash.replace('#', '').split('?')[0]);
+                        showScreen(intended && VALID_SCREENS.indexOf(intended) !== -1 ? intended : 'dashboard');
                     } else {
                         Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Username atau password salah.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () { setAuthLoading(e.target, false); });
         });
 
         $('form-register').addEventListener('submit', function (e) {
             e.preventDefault();
             setAuthLoading(e.target, true);
-            api('/api/auth/register', { method: 'POST', body: { username: $('register-username').value.trim(), password: $('register-password').value } })
+            var refField = $('register-referral');
+            var refCode = (refField && refField.value.trim()) || '';
+            if (!refCode) { try { refCode = localStorage.getItem('pendingReferral') || ''; } catch (err) {} }
+            var regBody = { username: $('register-username').value.trim(), password: $('register-password').value };
+            if (refCode) regBody.referralCode = refCode;
+            api('/api/auth/register', { method: 'POST', body: regBody })
                 .then(function (data) {
                     if (data.success) {
+                        try { localStorage.removeItem('pendingReferral'); } catch (err) {}
+                        clearAuthDrafts();
+                        setAuthView('login');
+                        setReferralUI('idle');
                         Swal.fire({ icon: 'success', title: 'REGISTRASI SUKSES!', text: 'Silakan login dengan akun baru Anda.', timer: 1800, showConfirmButton: false });
                         e.target.reset();
                         setTimeout(function () {
@@ -239,7 +431,7 @@
                         Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Registrasi gagal.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () { setAuthLoading(e.target, false); });
         });
     }
@@ -248,6 +440,7 @@
         api('/api/auth/logout', { method: 'POST' }).then(function () {
             Swal.fire({ icon: 'success', title: 'LOGGED OUT', text: 'Sampai jumpa lagi!', timer: 1200, showConfirmButton: false });
             currentUser = null;
+            applyThemePreference(readThemePreference());
             showScreen('auth');
         });
     }
@@ -402,7 +595,7 @@
                         Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Gagal mengirim tautan.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () {
                     btn.disabled = false;
                     btn.innerHTML = 'Lanjutkan <i class="fa-solid fa-arrow-right"></i>';
@@ -429,18 +622,17 @@
                         Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Tautan verifikasi tidak valid.' });
                     }
                 })
-                .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                 .finally(function () {
                     abtn.disabled = false;
                     abtn.innerHTML = 'Terapkan Lisensi Premium <i class="fa-solid fa-bolt"></i>';
                 });
         });
     }
-
-    function setupAutoGenerator() {
+        function setupAutoGenerator() {
         bindGeneratorManual();
         if (!currentUser) return;
-        var unlocked = isPrivileged();
+        var unlocked = currentUser && hasBulkRole(currentUser.role);
         $('autogen-locked-container').classList.toggle('hidden', unlocked);
         $('autogen-unlocked-container').classList.toggle('hidden', !unlocked);
         if (!unlocked) {
@@ -448,14 +640,20 @@
             return;
         }
         var sel = $('autogen-domain-select');
-        if (sel && sel.options.length === 0) {
-            api('/api/am/domains').then(function (data) {
+        if (sel && !sel.dataset.loaded) {
+            sel.dataset.loaded = '1';
+            var fillDomains = function (list) {
                 sel.innerHTML = '';
-                (data.domains || ['softbank.id']).forEach(function (d) {
+                list.forEach(function (d) {
                     var opt = document.createElement('option');
                     opt.value = d; opt.textContent = d;
                     sel.appendChild(opt);
                 });
+            };
+            api('/api/am/domains').then(function (data) {
+                fillDomains(data.domains && data.domains.length ? data.domains : ['jagomail.com', 'softbank.id', 'premiummail.id']);
+            }).catch(function () {
+                fillDomains(['jagomail.com', 'softbank.id', 'premiummail.id']);
             });
         }
         if (!$('autogen-custom-toggle').dataset.bound) {
@@ -483,7 +681,7 @@
                             Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal memulai batch.' });
                         }
                     })
-                    .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                    .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                     .finally(function () {
                         runBtn.disabled = false;
                         runBtn.innerHTML = '<i class="fa-solid fa-play"></i> Mulai Generate';
@@ -497,7 +695,9 @@
                 if (!currentBatch || !currentBatch.results.length) return;
                 var lines = ['AM PREMIUM ACCOUNTS BATCH GENERATED - ' + new Date().toLocaleString()];
                 currentBatch.results.forEach(function (r, i) {
-                    lines.push((i + 1) + '. Email: ' + r.email + ' | Inbox: ' + r.inbox + ' | Login Link: ' + r.link);
+                    var ok = r.status === 'success';
+                    var inbox = r.inboxUrl || ('https://generator.email/' + r.email);
+                    lines.push((i + 1) + '. Email: ' + r.email + (ok ? ' | PREMIUM AKTIF' : ' | GAGAL: ' + (r.error || 'unknown')) + (r.codeorder ? ' | Alwayscodex: ' + r.codeorder : '') + ' | Inbox: ' + inbox + ' | Login Link: ' + (r.verifyLink || '-'));
                 });
                 lines.push('Total Berhasil: ' + currentBatch.results.length + ' Akun');
                 downloadText(lines.join('\n'), 'am-premium-batch.txt');
@@ -546,6 +746,16 @@
     /* ============================== NETFLIX ============================== */
 
     function loadNetflix() {
+        // Cek status maintenance fitur Netflix (tampilkan halaman maintenance jika aktif)
+        api('/api/auth/system/settings').then(function (data) {
+            var maint = (data && data.maintenance) || {};
+            var isDown = !!maint.netflix;
+            var content = $('netflix-content-container');
+            var maintBox = $('netflix-maintenance-container');
+            if (content) content.classList.toggle('hidden', isDown);
+            if (maintBox) maintBox.classList.toggle('hidden', !isDown);
+        }).catch(function () { /* server offline: biarkan konten normal */ });
+
         var btn = $('btn-netflix-generate');
         if (btn && !btn.dataset.bound) {
             btn.dataset.bound = '1';
@@ -568,7 +778,7 @@
                             Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Gagal mengambil token Netflix.' });
                         }
                     })
-                    .catch(function () { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: 'Gagal terhubung ke server.' }); })
+                    .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
                     .finally(function () {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fa-solid fa-play"></i> Generate Token Netflix';
@@ -631,32 +841,101 @@
 
     /* ============================== PURCHASE ============================== */
 
+    function paymentMethodBtn(method, icon, color, extraStyle) {
+        return '<button type="button" class="swal-payment-btn" data-method="' + method + '" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 12px;border-radius:10px;border:1px solid var(--border-color);background:rgba(255,255,255,0.03);color:var(--text-primary);cursor:pointer;transition:all 0.2s ease;' + (extraStyle || '') + '">' +
+            '<i class="fa-solid ' + icon + '" style="color:' + color + ';font-size:1.8rem;margin-bottom:8px;"></i>' +
+            '<span style="font-weight:600;font-size:0.9rem;">' + method + '</span></button>';
+    }
+
+    var PLAN_PRICES = {
+        reseller: { 3: 7000, 7: 12000, 14: 18000, 30: 25000 },
+        premium: { 3: 9000, 7: 15000, 14: 20000, 30: 28000 },
+        autogen: { 3: 12000, 7: 20000, 14: 28000, 30: 38000 },
+        admin: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 }
+    };
+
     function loadAPIPanel() {
+        Object.keys(PLAN_PRICES).forEach(function (role) {
+            var activeBtn = document.querySelector('.plan-duration-options[data-role="' + role + '"] .duration-btn.active');
+            var days = activeBtn ? parseInt(activeBtn.dataset.days, 10) : 30;
+            var priceEl = document.getElementById('price-' + role);
+            if (priceEl && PLAN_PRICES[role] && PLAN_PRICES[role][days]) {
+                priceEl.innerHTML = 'Rp ' + PLAN_PRICES[role][days].toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
+            }
+            document.querySelectorAll('.plan-duration-options[data-role="' + role + '"] .duration-btn').forEach(function (b) {
+                b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+            });
+        });
+        document.querySelectorAll('.plan-duration-options .duration-btn').forEach(function (btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function () {
+                var role = btn.closest('.plan-duration-options').dataset.role;
+                document.querySelectorAll('.plan-duration-options[data-role="' + role + '"] .duration-btn').forEach(function (b) {
+                    b.classList.toggle('active', b === btn);
+                    b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+                });
+                var days = parseInt(btn.dataset.days, 10);
+                var price = (PLAN_PRICES[role] && PLAN_PRICES[role][days]) ? PLAN_PRICES[role][days] : 0;
+                var priceEl = document.getElementById('price-' + role);
+                if (priceEl) priceEl.innerHTML = 'Rp ' + price.toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
+            });
+        });
         document.querySelectorAll('.btn-purchase-plan').forEach(function (btn) {
             if (btn.dataset.bound) return;
             btn.dataset.bound = '1';
             btn.addEventListener('click', function () {
-                var price = btn.dataset.price, name = btn.dataset.name;
+                var role = btn.dataset.role;
+                var name = btn.dataset.name || 'Paket';
+                var activeBtn = document.querySelector('.plan-duration-options[data-role="' + role + '"] .duration-btn.active');
+                var days = activeBtn ? parseInt(activeBtn.dataset.days, 10) : 30;
+                var price = (PLAN_PRICES[role] && PLAN_PRICES[role][days]) ? PLAN_PRICES[role][days] : 0;
+                var paymentMethod = null;
                 Swal.fire({
-                    title: 'Pilih Metode Pembayaran',
-                    text: 'Paket: ' + name + ' - Rp ' + parseInt(price).toLocaleString('id-ID'),
-                    input: 'select',
-                    inputOptions: { DANA: 'DANA', GoPay: 'GoPay', OVO: 'OVO', Shopee: 'ShopeePay', QRIS: 'QRIS (E-Wallet)' },
-                    inputPlaceholder: 'Pilih metode pembayaran',
+                    title: '<span style="font-weight:700;color:var(--text-primary);">Pilih Metode Pembayaran</span>',
+                    html:
+                        '<div style="text-align:center;margin-bottom:20px;">' +
+                        '<p style="color:var(--text-secondary);margin-bottom:4px;font-size:0.9rem;">Anda memilih paket:</p>' +
+                        '<h4 style="color:var(--accent-primary);font-size:1.15rem;font-weight:700;margin-bottom:4px;">' + esc(name) + '</h4>' +
+                        '<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:4px;">Durasi: <strong>' + days + ' Hari</strong></p>' +
+                        '<p style="color:var(--text-primary);font-weight:600;font-size:1.1rem;">Rp ' + price.toLocaleString('id-ID') + '</p>' +
+                        '</div>' +
+                        '<div class="payment-methods-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:15px;">' +
+                        paymentMethodBtn('DANA', 'fa-wallet', '#008cff') +
+                        paymentMethodBtn('GoPay', 'fa-wallet', '#00a651') +
+                        paymentMethodBtn('OVO', 'fa-wallet', '#4f2d7f') +
+                        paymentMethodBtn('Shopee', 'fa-wallet', '#ee4d2d') +
+                        paymentMethodBtn('QRIS (E-Wallet)', 'fa-qrcode', '#e51e44', 'grid-column:span 2;') +
+                        '</div>' +
+                        '<style>.swal-payment-btn:hover{border-color:var(--accent-primary) !important;background:rgba(99,102,241,0.08) !important;transform:translateY(-2px);}</style>',
+                    showConfirmButton: false,
                     showCancelButton: true,
-                    confirmButtonText: 'Lanjutkan',
                     cancelButtonText: 'Batal',
-                    preConfirm: function (method) {
-                        if (!method) Swal.showValidationMessage('Pilih metode pembayaran terlebih dahulu');
-                        return method;
+                    cancelButtonColor: '#ef4444',
+                    didOpen: function () {
+                        var buttons = Swal.getHtmlContainer().querySelectorAll('.swal-payment-btn');
+                        buttons.forEach(function (button) {
+                            button.addEventListener('click', function () {
+                                paymentMethod = button.getAttribute('data-method');
+                                Swal.close();
+                            });
+                        });
                     }
-                }).then(function (result) {
-                    if (!result.isConfirmed || !result.value) return;
-                    var msg = 'Halo Owner, saya ingin membeli paket *' + name + '* seharga *Rp ' + parseInt(price).toLocaleString('id-ID') + '* via *' + result.value + '*.\n' +
-                        'Detail Akun:\n- Username: ' + (currentUser ? currentUser.username : '-') + '\n- ID Pengguna: ' + (currentUser ? currentUser.id : '-') +
+                }).then(function () {
+                    if (!paymentMethod) return;
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Menghubungkan ke WhatsApp...',
+                        text: 'Silakan kirim detail pembelian Anda di WhatsApp.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    var msg = 'Halo Owner, saya ingin membeli *' + name + '* durasi *' + days + ' Hari* seharga *Rp ' + price.toLocaleString('id-ID') + '* via *' + paymentMethod + '*.\n' +
+                        'Detail Akun:\n- Username: ' + (currentUser ? currentUser.username : '-') + '\n- ID Pengguna: ' + (currentUser ? (currentUser.id || '-') : '-') +
                         '\nMohon instruksi pembayaran selanjutnya. Terima kasih!';
-                    window.open('https://wa.me/6288297563383?text=' + encodeURIComponent(msg), '_blank');
-                    Swal.fire({ icon: 'info', title: 'Instruksi Dikirim', text: 'Silakan lanjutkan pembayaran via WhatsApp.', timer: 2000, showConfirmButton: false });
+                    setTimeout(function () {
+                        window.open('https://wa.me/6288297563383?text=' + encodeURIComponent(msg), '_blank');
+                    }, 1000);
                 });
             });
         });
@@ -747,52 +1026,125 @@
             area.scrollTop = area.scrollHeight;
         }).catch(function () {});
     }
-
-    /* ============================== API GUIDE ============================== */
+        /* ============================== API GUIDE ============================== */
 
     function loadAPIGuide() {
         var key = currentUser ? (currentUser.apiKey || 'API_KEY_ANDA') : 'API_KEY_ANDA';
         var origin = window.location.origin;
-        if ($('code-curl').dataset.bound) return;
-        $('code-curl').dataset.bound = '1';
-        document.querySelectorAll('.code-tab-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                document.querySelectorAll('.code-tab-btn').forEach(function (b) { b.classList.remove('active'); });
-                btn.classList.add('active');
-                document.querySelectorAll('.code-block-item').forEach(function (b) { b.classList.add('hidden'); });
-                $('code-' + btn.dataset.lang).classList.remove('hidden');
+        var docs = $('screen-apiguide');
+        if (!docs) return;
+        var hydrateCodeExamples = function () {
+            var baseEl = $('docs-base-url');
+            if (baseEl) baseEl.textContent = origin + '/api/v1/bot-premium?apikey=' + key;
+            ['curl', 'nodejs', 'python', 'php', 'settings', 'index'].forEach(function (lang) {
+                var el = $('code-' + lang + '-content');
+                if (!el) return;
+                if (!el.dataset.template) el.dataset.template = el.textContent;
+                el.textContent = el.dataset.template.replace(/__API_KEY__/g, key).replace(/__BASE_URL__/g, origin);
             });
+        };
+        if (docs.dataset.bound) {
+            hydrateCodeExamples();
+            return;
+        }
+        docs.dataset.bound = '1';
+
+        var copyText = function (text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text);
+            }
+            return new Promise(function (resolve, reject) {
+                var area = document.createElement('textarea');
+                area.value = text;
+                area.setAttribute('readonly', '');
+                area.style.position = 'fixed';
+                area.style.opacity = '0';
+                document.body.appendChild(area);
+                area.select();
+                try {
+                    if (!document.execCommand('copy')) throw new Error('Copy command failed');
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                } finally {
+                    document.body.removeChild(area);
+                }
+            });
+        };
+
+        var setActiveDoc = function (docId) {
+            var target = $(docId);
+            if (!target) return;
+            document.querySelectorAll('#screen-apiguide .doc-section').forEach(function (section) {
+                section.classList.toggle('active', section.id === docId);
+                section.classList.toggle('hidden', section.id !== docId);
+            });
+            document.querySelectorAll('#screen-apiguide .docs-nav-link').forEach(function (link) {
+                var active = link.dataset.doc === docId;
+                link.classList.toggle('active', active);
+                link.setAttribute('aria-current', active ? 'page' : 'false');
+            });
+            var content = document.querySelector('#screen-apiguide .docs-content');
+            if (content) content.scrollTo({ top: 0, behavior: 'smooth' });
+            var menu = $('docs-sidebar-menu');
+            if (menu && window.innerWidth <= 1024) menu.classList.remove('show');
+        };
+
+        var backButton = $('btn-docs-back');
+        if (backButton) {
+            backButton.addEventListener('click', function () { showScreen('dashboard'); });
+        }
+        document.querySelectorAll('#screen-apiguide .docs-nav-link').forEach(function (link) {
+            link.addEventListener('click', function () { setActiveDoc(link.dataset.doc); });
         });
-        var baseEl = $('docs-base-url');
-        if (baseEl) baseEl.textContent = origin + '/api/v1/bot-premium?apikey=' + key;
-        ['curl', 'nodejs', 'python', 'php'].forEach(function (lang) {
-            var el = $('code-' + lang);
-            if (el) el.textContent = el.textContent.replace(/__API_KEY__/g, key);
-        });
-        document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+
+        document.querySelectorAll('#screen-apiguide .code-tab-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var target = $(btn.dataset.target);
-                if (!target) return;
-                navigator.clipboard.writeText(target.textContent).then(function () {
-                    Swal.fire({ icon: 'success', title: 'Tersalin!', text: 'Kode berhasil disalin ke clipboard.', timer: 1200, showConfirmButton: false });
+                document.querySelectorAll('#screen-apiguide .code-tab-btn').forEach(function (tab) {
+                    tab.classList.toggle('active', tab === btn);
+                    tab.setAttribute('aria-selected', tab === btn ? 'true' : 'false');
+                });
+                document.querySelectorAll('#screen-apiguide .code-block-item').forEach(function (block) {
+                    var active = block.id === 'code-' + btn.dataset.lang;
+                    block.classList.toggle('active', active);
+                    block.classList.toggle('hidden', !active);
                 });
             });
         });
-        if ($('btn-copy-base-url')) {
+
+        hydrateCodeExamples();
+        var baseEl = $('docs-base-url');
+
+        document.querySelectorAll('#screen-apiguide .btn-copy-code').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var target = $(btn.dataset.target);
+                if (!target) return;
+                copyText(target.textContent).then(function () {
+                    Swal.fire({ icon: 'success', title: 'Tersalin!', text: 'Kode berhasil disalin ke clipboard.', timer: 1200, showConfirmButton: false });
+                }).catch(function () {
+                    Swal.fire({ icon: 'info', title: 'Salin manual', text: 'Clipboard browser tidak tersedia. Pilih dan salin kode secara manual.' });
+                });
+            });
+        });
+        if ($('btn-copy-base-url') && baseEl) {
             $('btn-copy-base-url').addEventListener('click', function () {
-                navigator.clipboard.writeText(baseEl.textContent).then(function () {
+                copyText(baseEl.textContent).then(function () {
                     Swal.fire({ icon: 'success', title: 'Tersalin!', timer: 1200, showConfirmButton: false });
+                }).catch(function () {
+                    Swal.fire({ icon: 'info', title: 'Salin manual', text: 'Clipboard browser tidak tersedia. Salin Base URL secara manual.' });
                 });
             });
         }
         if ($('btn-docs-toggle')) {
             $('btn-docs-toggle').addEventListener('click', function () {
-                $('docs-sidebar-menu').classList.toggle('hidden');
+                var menu = $('docs-sidebar-menu');
+                if (!menu) return;
+                var open = menu.classList.toggle('show');
+                menu.classList.remove('hidden');
+                $('btn-docs-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
             });
         }
-        document.querySelectorAll('#docs-sidebar-menu a').forEach(function (a) {
-            a.addEventListener('click', function () { $('docs-sidebar-menu').classList.add('hidden'); });
-        });
+        setActiveDoc(document.querySelector('#screen-apiguide .docs-nav-link.active')?.dataset.doc || 'doc-intro');
     }
 
     /* ============================== PROFILE ============================== */
@@ -801,54 +1153,572 @@
         if (!currentUser) return;
         var u = currentUser;
         $('profile-username').textContent = u.username;
+
+        // Verified Badge ala Meta AI (rosette) — hanya untuk role terverifikasi
+        var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span.profile-verified-badge');
+        if (profileCheckBadge) {
+            var isVerifiedRole = ['owner', 'admin', 'premium', 'autogen', 'reseller'].indexOf(u.role) !== -1;
+            profileCheckBadge.style.display = isVerifiedRole ? 'inline-flex' : 'none';
+        }
+
         $('profile-role-label').textContent = PROFILE_ROLE[u.role] || 'Anggota';
         $('profile-join-date-label').textContent = u.createdAt ? 'Since: ' + new Date(u.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Since: -';
 
         // Populate Personal Info (pinfo) section
         if ($('pinfo-name')) $('pinfo-name').textContent = u.username;
-        if ($('pinfo-role')) $('pinfo-role').textContent = u.role || 'user';
-        if ($('pinfo-credits')) $('pinfo-credits').textContent = creditsDisplay();
+        if ($('pinfo-role')) $('pinfo-role').textContent = PROFILE_ROLE[u.role] || 'Anggota';
+        if ($('pinfo-credits')) $('pinfo-credits').textContent = creditsDisplay() + ' Credits';
         if ($('pinfo-apikey')) $('pinfo-apikey').textContent = u.apiKey || '-';
         if ($('pinfo-expired')) {
-            if (u.apiExpiresAt) {
+            if (u.apiPlan === 'lifetime') {
+                $('pinfo-expired').textContent = 'Lifetime';
+            } else if (u.apiExpiresAt) {
                 $('pinfo-expired').textContent = new Date(u.apiExpiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             } else {
-                $('pinfo-expired').textContent = u.apiPlan === 'lifetime' ? 'No Expired' : '-';
+                $('pinfo-expired').textContent = '-';
             }
         }
         if ($('pinfo-admin')) $('pinfo-admin').textContent = (u.role === 'admin' || u.role === 'owner') ? 'True' : 'False';
-        if ($('pinfo-limit')) $('pinfo-limit').textContent = u.role === 'owner' ? 'Unlimited' : (u.role === 'premium' || u.role === 'autogen' ? 'Premium' : '0');
+        if ($('pinfo-limit')) {
+            var roleLimits = {
+                user: '50 credits / harian',
+                reseller: 'Unlimited Web',
+                premium: 'Unlimited Web + API single',
+                autogen: 'Unlimited Web + API bulk',
+                admin: 'Unlimited + Management',
+                owner: 'Unlimited + Superuser'
+            };
+            $('pinfo-limit').textContent = roleLimits[u.role] || '0';
+        }
 
         $('api-key-input').value = u.apiKey || 'Belum ada API Key. Silahkan beli di menu Beli API Key.';
 
         var apiSection = $('profile-apikey-section');
-        if (apiSection) apiSection.classList.toggle('hidden', u.role === 'user' || u.role === 'autogen');
+        var canManageApiKey = hasApiRole(u.role);
+        if (apiSection) apiSection.classList.toggle('hidden', !canManageApiKey);
 
+        var apiKeyInput = $('api-key-input');
         var copyBtn = $('btn-copy-api');
+        var resetBtn = $('btn-reset-api');
+        var statusEl = $('profile-api-status');
+        var hasApiKey = !!u.apiKey;
+        var apiIsActive = hasApiKey && u.apiActive !== false;
+
+        if (apiKeyInput) {
+            apiKeyInput.value = u.apiKey || 'Belum ada API Key. Silahkan beli di menu Beli API Key.';
+            apiKeyInput.classList.toggle('is-empty', !hasApiKey);
+        }
+        if (statusEl) {
+            statusEl.classList.toggle('is-inactive', !apiIsActive);
+            statusEl.innerHTML = apiIsActive
+                ? '<i class="fa-solid fa-circle-check"></i> Aktif'
+                : '<i class="fa-solid fa-circle-exclamation"></i> Belum tersedia';
+        }
+        if (copyBtn) {
+            copyBtn.disabled = !hasApiKey;
+            copyBtn.setAttribute('aria-disabled', hasApiKey ? 'false' : 'true');
+        }
+
+        var copyApiKey = function (text) {
+            var fallbackCopy = function () {
+                return new Promise(function (resolve, reject) {
+                    var area = document.createElement('textarea');
+                    area.value = text;
+                    area.setAttribute('readonly', '');
+                    area.style.position = 'fixed';
+                    area.style.opacity = '0';
+                    document.body.appendChild(area);
+                    area.select();
+                    try {
+                        if (!document.execCommand('copy')) throw new Error('Copy command failed');
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    } finally {
+                        document.body.removeChild(area);
+                    }
+                });
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text).catch(fallbackCopy);
+            }
+            return fallbackCopy();
+        };
+
         if (copyBtn && !copyBtn.dataset.bound) {
             copyBtn.dataset.bound = '1';
             copyBtn.addEventListener('click', function () {
-                var v = $('api-key-input').value;
-                if (!v || v.indexOf('Belum ada') === 0) return Swal.fire({ icon: 'info', title: 'Info', text: 'Anda belum memiliki API Key.' });
-                navigator.clipboard.writeText(v).then(function () { Swal.fire({ icon: 'success', title: 'Tersalin!', timer: 1200, showConfirmButton: false }); });
+                var value = apiKeyInput ? apiKeyInput.value : '';
+                if (!value || value.indexOf('Belum ada') === 0) {
+                    return Swal.fire({ icon: 'info', title: 'API Key belum tersedia', text: 'Upgrade paket terlebih dahulu untuk mendapatkan API Key.' });
+                }
+                copyBtn.disabled = true;
+                copyApiKey(value).then(function () {
+                    Swal.fire({ icon: 'success', title: 'API Key tersalin', text: 'Key siap digunakan di bot Anda.', timer: 1400, showConfirmButton: false });
+                }).catch(function () {
+                    Swal.fire({ icon: 'info', title: 'Salin manual', text: 'Clipboard browser tidak tersedia. Pilih dan salin API Key secara manual.' });
+                }).finally(function () {
+                    copyBtn.disabled = false;
+                });
             });
-            $('btn-reset-api').addEventListener('click', function () {
+        }
+
+        if (resetBtn && !resetBtn.dataset.bound) {
+            resetBtn.dataset.bound = '1';
+            resetBtn.addEventListener('click', function () {
                 Swal.fire({
                     title: 'Reset API Key?',
-                    text: 'API Key lama akan langsung tidak berlaku.',
-                    icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Reset', cancelButtonText: 'Batal'
-                }).then(function (r) {
-                    if (!r.isConfirmed) return;
+                    text: 'API Key lama Anda tidak akan bisa digunakan lagi setelah di-reset!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Reset!',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--ds-danger').trim()
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+                    resetBtn.disabled = true;
+                    resetBtn.setAttribute('aria-busy', 'true');
+                    resetBtn.classList.add('is-loading');
+                    resetBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Membuat key baru...</span>';
                     api('/api/auth/reset-key', { method: 'POST' }).then(function (data) {
-                        if (data.success) {
-                            currentUser.apiKey = data.apiKey;
-                            Swal.fire({ icon: 'success', title: 'DI-RESET!', text: 'API Key baru: ' + data.apiKey, timer: 3000, showConfirmButton: false });
-                            loadProfile();
+                        if (!data.success) {
+                            throw new Error(data.message || 'Gagal membuat API Key baru.');
                         }
+                        currentUser.apiKey = data.apiKey;
+                        currentUser.apiActive = true;
+                        Swal.fire({ icon: 'success', title: 'API Key berhasil diperbarui', text: 'Key lama sudah dicabut. Simpan atau copy key baru Anda.', confirmButtonText: 'OK' });
+                        loadProfile();
+                    }).catch(function (error) {
+                        Swal.fire({ icon: 'error', title: 'KESALAHAN', text: error.message || 'Gagal terhubung ke server.', confirmButtonText: 'OK' });
+                    }).finally(function () {
+                        resetBtn.disabled = false;
+                        resetBtn.removeAttribute('aria-busy');
+                        resetBtn.classList.remove('is-loading');
+                        resetBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i><span>Revoke &amp; Generate New Key</span>';
                     });
                 });
             });
         }
+
+    }
+
+    /* ============================== LIFETIME (Layanan Lifetime) ============================== */
+
+    function loadLifetimeScreen() {
+        if (!currentUser) return;
+        var st = $('lifetime-plan-status');
+        if (st) {
+            if (currentUser.apiPlan === 'lifetime' || currentUser.role === 'owner') {
+                st.textContent = 'Lifetime';
+            } else if (currentUser.apiPlan) {
+                st.textContent = String(currentUser.apiPlan).charAt(0).toUpperCase() + String(currentUser.apiPlan).slice(1);
+            } else {
+                st.textContent = '-'; // belum punya paket
+            }
+        }
+        // ===== Telegram Bot Deploy (khusus Admin/Owner) =====
+        var tgSection = $('telegram-deploy-section');
+        if (tgSection) {
+            var canDeploy = isAdminOrOwner();
+            tgSection.classList.toggle('hidden', !canDeploy);
+            if (canDeploy) {
+                bindTelegramDeploy();
+                loadTelegramBots();
+            }
+        }
+    }
+
+    /* ============================== PROGRAM REFERAL ============================== */
+
+    var refData = null;
+    var refClaiming = false;
+
+    function copyTextHelper(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise(function (resolve, reject) {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try {
+                if (!document.execCommand('copy')) throw new Error('Copy command failed');
+                resolve();
+            } catch (err) {
+                reject(err);
+            } finally {
+                document.body.removeChild(area);
+            }
+        });
+    }
+
+    function refToast(icon, title, text) {
+        return Swal.fire({ icon: icon, title: title, text: text || '', timer: 2000, showConfirmButton: false, toast: true, position: 'top-end', timerProgressBar: true });
+    }
+
+    function renderRefList(status) {
+        var key = status === 'claimed' ? 'claimed' : 'pending';
+        var listEl = $('ref-' + key + '-list');
+        var emptyEl = $('ref-' + key + '-empty');
+        if (!listEl) return;
+        var items = (refData && refData.referrals || []).filter(function (r) {
+            return (r.status === 'claimed') === (status === 'claimed');
+        });
+        if (!items.length) {
+            listEl.innerHTML = '';
+            if (emptyEl) emptyEl.classList.remove('hidden');
+            return;
+        }
+        if (emptyEl) emptyEl.classList.add('hidden');
+        listEl.innerHTML = items.map(function (r) {
+            var date = r.joinedAt ? new Date(r.joinedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+            return '<div class="ref-acc-item"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><i class="fa-solid fa-user" style="color: var(--accent-primary);"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.username) + '</span></span><span style="display:flex;align-items:center;gap:8px;flex-shrink:0;"><span style="font-size:.72rem;color:var(--text-muted);">' + date + '</span><span class="ref-badge">+' + esc(r.reward) + '</span></span></div>';
+        }).join('');
+    }
+
+    function refUpdateClaimButton() {
+        var btn = $('btn-claim-reward');
+        if (!btn) return;
+        var reward = refData ? (parseInt(refData.pendingReward, 10) || 0) : 0;
+        var textEl = btn.querySelector('.ref-claim-btn-text');
+        if (reward <= 0) {
+            btn.disabled = true;
+            if (textEl) textEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> TIDAK ADA REWARD UNTUK DIKLAIM';
+        } else {
+            btn.disabled = false;
+            if (textEl) textEl.innerHTML = '<i class="fa-solid fa-bolt"></i> KLAIM KREDIT SEKARANG';
+        }
+    }
+
+    function renderReferral(payload) {
+        var d = payload && payload.data ? payload.data : payload;
+        if (!d) return;
+        refData = d;
+        var link = $('ref-url-input');
+        if (link) link.value = d.referralUrl || '';
+        var invited = $('ref-stat-invited');
+        if (invited) invited.textContent = d.totalInvited != null ? d.totalInvited : 0;
+        var pending = $('ref-stat-pending');
+        if (pending) pending.textContent = d.pendingReward != null ? d.pendingReward : 0;
+        var pc = $('ref-pending-count');
+        if (pc) pc.textContent = (d.referrals || []).filter(function (r) { return r.status !== 'claimed'; }).length;
+        var cc = $('ref-claimed-count');
+        if (cc) cc.textContent = (d.referrals || []).filter(function (r) { return r.status === 'claimed'; }).length;
+        var badge = $('ref-reward-badge');
+        if (badge && d.rewardPerReferral) badge.textContent = '+' + d.rewardPerReferral + ' KREDIT / REFERRAL';
+        renderRefList('pending');
+        renderRefList('claimed');
+        refUpdateClaimButton();
+    }
+
+    function bindReferralActions() {
+        var copyBtn = $('btn-copy-ref-link');
+        if (copyBtn && !copyBtn.dataset.bound) {
+            copyBtn.dataset.bound = '1';
+            copyBtn.addEventListener('click', function () {
+                var link = $('ref-url-input');
+                copyTextHelper(link ? link.value : '').then(function () {
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check"></i><span>TERSALIN</span>';
+                    setTimeout(function () { copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i><span>Salin</span>'; }, 2000);
+                    refToast('success', 'Berhasil', 'Link referral berhasil disalin.');
+                }).catch(function () {
+                    refToast('error', 'Gagal', 'Tidak dapat menyalin link.');
+                });
+            });
+        }
+        var shareCopy = $('btn-share-copy');
+        if (shareCopy && !shareCopy.dataset.bound) {
+            shareCopy.dataset.bound = '1';
+            shareCopy.addEventListener('click', function () {
+                var link = $('ref-url-input');
+                copyTextHelper(link ? link.value : '').then(function () {
+                    refToast('success', 'Berhasil', 'Link referral berhasil disalin.');
+                }).catch(function () {
+                    refToast('error', 'Gagal', 'Tidak dapat menyalin link.');
+                });
+            });
+        }
+        var shareNative = $('btn-share-native');
+        if (shareNative && !shareNative.dataset.bound) {
+            shareNative.dataset.bound = '1';
+            shareNative.addEventListener('click', function () {
+                var link = $('ref-url-input');
+                var url = link ? link.value : '';
+                if (navigator.share) {
+                    navigator.share({ title: 'Program Referal', text: 'Gabung dan dapatkan kredit gratis! Pakai kode referral saya.', url: url }).catch(function () { });
+                } else {
+                    copyTextHelper(url).then(function () {
+                        refToast('success', 'Berhasil', 'Link referral berhasil disalin.');
+                    });
+                }
+            });
+        }
+        var claimBtn = $('btn-claim-reward');
+        if (claimBtn && !claimBtn.dataset.bound) {
+            claimBtn.dataset.bound = '1';
+            claimBtn.addEventListener('click', function () {
+                if (refClaiming) return;
+                var reward = refData ? (parseInt(refData.pendingReward, 10) || 0) : 0;
+                if (reward <= 0) return refUpdateClaimButton();
+                refClaiming = true;
+                claimBtn.disabled = true;
+                var spinner = claimBtn.querySelector('.ref-claim-btn-spinner');
+                var text = claimBtn.querySelector('.ref-claim-btn-text');
+                if (spinner) spinner.classList.remove('hidden');
+                if (text) text.classList.add('hidden');
+                api('/api/referral/claim', { method: 'POST' }).then(function (data) {
+                    if (data && data.success) {
+                        if (currentUser && data.credits != null) currentUser.credits = data.credits;
+                        var pc = $('pinfo-credits');
+                        if (pc) pc.textContent = creditsDisplay() + ' Credits';
+                        refData.pendingReward = 0;
+                        (refData.referrals || []).forEach(function (r) { if (r.status === 'pending') r.status = 'claimed'; });
+                        renderReferral(refData);
+                        refToast('success', 'Referral berhasil diklaim!', '+' + data.claimedReward + ' kredit telah ditambahkan.');
+                    } else {
+                        refToast('error', 'Terjadi kesalahan', (data && data.message) || 'Silakan coba lagi.');
+                        refUpdateClaimButton();
+                    }
+                }).catch(function () {
+                    refToast('error', 'Terjadi kesalahan', 'Silakan coba lagi.');
+                    refUpdateClaimButton();
+                }).finally(function () {
+                    refClaiming = false;
+                    claimBtn.disabled = false;
+                    if (spinner) spinner.classList.add('hidden');
+                    if (text) text.classList.remove('hidden');
+                    refUpdateClaimButton();
+                });
+            });
+        }
+        var retry = $('btn-ref-retry');
+        if (retry && !retry.dataset.bound) {
+            retry.dataset.bound = '1';
+            retry.addEventListener('click', loadReferralScreen);
+        }
+        ['pending', 'claimed'].forEach(function (k) {
+            var head = $('ref-acc-head-' + k);
+            if (head && !head.dataset.bound) {
+                head.dataset.bound = '1';
+                head.addEventListener('click', function () {
+                    var open = head.getAttribute('aria-expanded') === 'true';
+                    head.setAttribute('aria-expanded', String(!open));
+                    head.parentElement.setAttribute('data-open', open ? '0' : '1');
+                    var body = $('ref-' + k + '-body');
+                    if (body) body.classList.toggle('hidden', open);
+                });
+            }
+        });
+    }
+
+    function loadReferralScreen() {
+        var loading = $('ref-loading');
+        var errorEl = $('ref-error');
+        var contentEl = $('ref-content');
+        if (loading) loading.classList.remove('hidden');
+        if (errorEl) errorEl.classList.add('hidden');
+        if (contentEl) contentEl.classList.add('hidden');
+        api('/api/referral').then(function (data) {
+            if (!data || !data.success || !data.data) throw new Error((data && data.message) || 'Gagal memuat data referral');
+            renderReferral(data);
+            if (loading) loading.classList.add('hidden');
+            if (contentEl) contentEl.classList.remove('hidden');
+            bindReferralActions();
+        }).catch(function (err) {
+            if (loading) loading.classList.add('hidden');
+            if (errorEl) errorEl.classList.remove('hidden');
+            var t = $('ref-error-text');
+            if (t) t.textContent = (err && err.message) || 'Silakan coba lagi.';
+        });
+    }
+
+    /* ============================== TELEGRAM BOT DEPLOY ============================== */
+
+    function telegramStatusBadge(status) {
+        if (status === 'online') return '<span class="badge badge-normal" style="background: rgba(16,185,129,.15); color: #10b981; border: 1px solid rgba(16,185,129,.35);"><i class="fa-solid fa-circle"></i> Online</span>';
+        if (status === 'error') return '<span class="badge badge-normal" style="background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.35);"><i class="fa-solid fa-triangle-exclamation"></i> Error</span>';
+        return '<span class="badge badge-normal" style="background: rgba(148,163,184,.15); color: #94a3b8; border: 1px solid rgba(148,163,184,.3);"><i class="fa-solid fa-circle"></i> Offline</span>';
+    }
+
+    function renderTelegramBots(bots) {
+        var listEl = $('telegram-bots-list');
+        if (!listEl) return;
+        if (!bots.length) {
+            listEl.innerHTML = '<div style="padding: 16px; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); text-align: center; color: var(--text-muted); font-size: .88rem;"><i class="fa-brands fa-telegram"></i> Belum ada bot ter-deploy. Isi form di atas lalu klik Deploy Bot.</div>';
+            return;
+        }
+        listEl.innerHTML = bots.map(function (b) {
+            var username = b.me && b.me.username ? '@' + esc(b.me.username) : 'belum tersedia';
+            var err = b.error ? '<div style="font-size: .78rem; color: #ef4444; margin-top: 6px;"><i class="fa-solid fa-triangle-exclamation"></i> ' + esc(b.error) + '</div>' : '';
+            var actions = '';
+            if (b.status === 'online') {
+                actions += '<button class="btn btn-secondary tg-action" data-action="stop" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem;"><i class="fa-solid fa-stop"></i> Stop</button>';
+            } else {
+                actions += '<button class="btn btn-secondary tg-action" data-action="start" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem; color: #10b981; border-color: rgba(16,185,129,.4);"><i class="fa-solid fa-play"></i> Start</button>';
+            }
+            actions += '<button class="btn btn-secondary tg-action" data-action="restart" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem;"><i class="fa-solid fa-rotate-right"></i> Restart</button>';
+            actions += '<button class="btn btn-secondary tg-action" data-action="delete" data-id="' + esc(b.id) + '" style="padding: 8px 14px; font-size: .8rem; color: var(--ds-danger); border-color: var(--ds-danger); background: transparent;"><i class="fa-solid fa-trash-can"></i> Hapus</button>';
+            return '<div class="tg-bot-item" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 10px; background: var(--surface-2);">' +
+                '<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">' +
+                '<i class="fa-brands fa-telegram" style="color: #229ED9; font-size: 1.2rem;"></i>' +
+                '<strong style="font-size: .95rem;">' + esc(b.name) + '</strong>' +
+                '<span style="font-size: .78rem; color: var(--text-muted);">' + username + '</span>' +
+                telegramStatusBadge(b.status) +
+                '</div>' +
+                '<div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: .82rem; color: var(--text-secondary); margin-bottom: 10px;">' +
+                '<span><i class="fa-solid fa-user-gear"></i> Owner ID: <code>' + esc(b.ownerId) + '</code></span>' +
+                '<span><i class="fa-solid fa-key"></i> Token: <code>' + esc(b.tokenMasked) + '</code></span>' +
+                '</div>' + err +
+                '<div style="display: flex; gap: 8px; flex-wrap: wrap;">' + actions + '</div>' +
+                '</div>';
+        }).join('');
+
+        listEl.querySelectorAll('.tg-action').forEach(function (btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function () { telegramAction(btn.dataset.action, btn.dataset.id); });
+        });
+    }
+
+    function updateTelegramBotStatus(bots) {
+        var badge = $('telegram-bot-status-badge');
+        var pm2 = $('telegram-bot-pm2-info');
+        if (!badge) return;
+        var online = 0, total = (bots || []).length;
+        (bots || []).forEach(function (b) { if (b.status === 'online') online++; });
+        if (!total) {
+            badge.innerHTML = '<i class="fa-solid fa-circle"></i> Belum Deploy';
+            badge.style.background = '#64748b';
+            badge.style.color = 'white';
+            badge.style.border = '';
+            if (pm2) pm2.textContent = 'Belum ada bot ter-deploy di VPS.';
+            return;
+        }
+        if (online === total) {
+            badge.innerHTML = '<i class="fa-solid fa-circle"></i> Online';
+            badge.style.background = 'rgba(16,185,129,.15)';
+            badge.style.color = '#10b981';
+            badge.style.border = '1px solid rgba(16,185,129,.35)';
+        } else if (online > 0) {
+            badge.innerHTML = '<i class="fa-solid fa-circle-half-stroke"></i> ' + online + '/' + total + ' Online';
+            badge.style.background = 'rgba(245,158,11,.15)';
+            badge.style.color = '#f59e0b';
+            badge.style.border = '1px solid rgba(245,158,11,.35)';
+        } else {
+            badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Offline';
+            badge.style.background = 'rgba(239,68,68,.12)';
+            badge.style.color = '#ef4444';
+            badge.style.border = '1px solid rgba(239,68,68,.35)';
+        }
+        if (pm2) pm2.textContent = total + ' bot terdaftar · ' + online + ' aktif · PM2 managed';
+    }
+
+    function loadTelegramBots() {
+        api('/api/telegram/bots').then(function (data) {
+            if (data && data.success) {
+                renderTelegramBots(data.bots || []);
+                updateTelegramBotStatus(data.bots || []);
+            }
+        }).catch(function () {
+            var badge = $('telegram-bot-status-badge');
+            if (badge) {
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Gagal Terhubung';
+                badge.style.background = 'rgba(148,163,184,.15)';
+                badge.style.color = '#94a3b8';
+                badge.style.border = '1px solid rgba(148,163,184,.3)';
+            }
+        });
+    }
+
+    function telegramAction(action, id) {
+        if (action === 'delete') {
+            Swal.fire({
+                title: 'Hapus bot ini?',
+                text: 'Bot akan dihentikan dan dihapus dari daftar deploy.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, hapus',
+                cancelButtonText: 'Batal'
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                sendTelegramAction(action, id);
+            });
+            return;
+        }
+        sendTelegramAction(action, id);
+    }
+
+    function sendTelegramAction(action, id) {
+        api('/api/telegram/' + action, { method: 'POST', body: { id: id } }).then(function (data) {
+            Swal.fire({
+                icon: data && data.success ? 'success' : 'error',
+                title: data && data.success ? 'Berhasil' : 'Gagal',
+                text: (data && data.message) || 'Terjadi kesalahan.',
+                timer: data && data.success ? 1600 : 3200,
+                showConfirmButton: false
+            });
+            if (data && data.bots) { renderTelegramBots(data.bots); updateTelegramBotStatus(data.bots); }
+            else loadTelegramBots();
+        }).catch(function () {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Tidak dapat terhubung ke server.', timer: 2500, showConfirmButton: false });
+        });
+    }
+
+    function bindTelegramDeploy() {
+        var form = $('form-telegram-deploy');
+        if (!form || form.dataset.bound) return;
+        form.dataset.bound = '1';
+        var checkBtn = $('btn-check-lifetime-bot');
+        if (checkBtn) {
+            checkBtn.addEventListener('click', function () {
+                var badge = $('telegram-bot-status-badge');
+                if (badge) { badge.innerHTML = '<i class="fa-solid fa-circle"></i> Memuat...'; badge.style.background = '#64748b'; badge.style.color = 'white'; }
+                loadTelegramBots();
+            });
+        }
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var name = $('telegram-bot-name');
+            var token = $('telegram-bot-token');
+            var ownerId = $('telegram-owner-id');
+            if (!token.value.trim() || !ownerId.value.trim()) {
+                Swal.fire({ icon: 'warning', title: 'Lengkapi form', text: 'Bot Token dan Telegram Owner ID wajib diisi.', timer: 2200, showConfirmButton: false });
+                return;
+            }
+            if (!name.value.trim()) {
+                name.value = (currentUser ? currentUser.username : 'AM') + ' Bot';
+            }
+            var btn = $('btn-telegram-deploy');
+            var btnText = btn.querySelector('.btn-text');
+            var btnSpinner = btn.querySelector('.btn-spinner');
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnSpinner.classList.remove('hidden');
+            api('/api/telegram/deploy', { method: 'POST', body: { name: name.value.trim(), token: token.value.trim(), ownerId: ownerId.value.trim() } }).then(function (data) {
+                Swal.fire({
+                    icon: data && data.success ? 'success' : 'error',
+                    title: data && data.success ? 'Bot Deployed!' : 'Gagal Deploy',
+                    text: (data && data.message) || 'Terjadi kesalahan.',
+                    timer: data && data.success ? 1800 : 3500,
+                    showConfirmButton: false
+                });
+                if (data && data.success) {
+                    name.value = ''; token.value = ''; ownerId.value = '';
+                }
+                if (data && data.bots) { renderTelegramBots(data.bots); updateTelegramBotStatus(data.bots); }
+                else loadTelegramBots();
+            }).catch(function () {
+                Swal.fire({ icon: 'error', title: 'Gagal Deploy', text: 'Tidak dapat terhubung ke server.', timer: 2500, showConfirmButton: false });
+            }).finally(function () {
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnSpinner.classList.add('hidden');
+            });
+        });
     }
 
     /* ============================== REVIEWS ============================== */
@@ -940,6 +1810,7 @@
     function loadAdminPanel() {
         if (!isAdminOrOwner()) return;
         loadAdminStats();
+        loadAdminH2hProfile();
         loadAdminUsers();
         loadAdminLogs();
         loadAdminTransactions();
@@ -957,42 +1828,98 @@
         });
     }
 
+    function loadAdminH2hProfile() {
+        var name = $('h2h-name'), status = $('h2h-status');
+        if (!name || !status) return;
+        api('/api/admin/h2h/profile').then(function (data) {
+            var bal = $('h2h-balance'), settle = $('h2h-settlement');
+            if (data && data.success) {
+                name.textContent = data.name || '--';
+                if (bal) bal.textContent = data.balance != null ? Number(data.balance).toLocaleString('id-ID') : '--';
+                if (settle) settle.textContent = data.settlementBalance != null ? Number(data.settlementBalance).toLocaleString('id-ID') : '--';
+                status.textContent = data.status || '--';
+                status.className = 'h2h-value h2h-status ' + (data.status === 'active' ? 'is-active' : 'is-inactive');
+            } else {
+                name.textContent = '--';
+                if (bal) bal.textContent = '--';
+                if (settle) settle.textContent = '--';
+                status.textContent = (data && data.message) ? data.message : 'Gagal memuat';
+                status.className = 'h2h-value h2h-status is-inactive';
+            }
+        }).catch(function () {
+            name.textContent = '--';
+            if ($('h2h-balance')) $('h2h-balance').textContent = '--';
+            if ($('h2h-settlement')) $('h2h-settlement').textContent = '--';
+            status.textContent = 'Gagal terhubung';
+            status.className = 'h2h-value h2h-status is-inactive';
+        });
+    }
+
+    function setAdminTableState(tbody, colspan, message, state) {
+        if (!tbody) return;
+        var icon = state === 'error' ? 'fa-triangle-exclamation' : state === 'loading' ? 'fa-spinner fa-spin' : 'fa-inbox';
+        tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="admin-table-state"><i class="fa-solid ' + icon + '"></i><span>' + esc(message) + '</span></td></tr>';
+    }
+
     function loadAdminUsers(page) {
+        var tbody = $('admin-users-table-body');
+        setAdminTableState(tbody, 6, 'Memuat daftar anggota...', 'loading');
         api('/api/admin/users').then(function (data) {
+            if (!data.success) {
+                setAdminTableState(tbody, 6, data.message || 'Daftar anggota tidak dapat dimuat.', 'error');
+                if ($('admin-users-result-count')) $('admin-users-result-count').textContent = 'Gagal memuat';
+                return;
+            }
             adminUsersCache = data.users || [];
             renderAdminUsers(page || 1);
+        }).catch(function () {
+            setAdminTableState(tbody, 6, 'Gagal terhubung ke server.', 'error');
         });
     }
 
     function renderAdminUsers(page) {
         var users = adminUsersCache.slice();
-        var query = ($('admin-search-users').value || '').toLowerCase();
-        if (query) users = users.filter(function (u) { return u.username.toLowerCase().indexOf(query) !== -1; });
+        var query = ($('admin-search-users').value || '').trim().toLowerCase();
+        var role = $('admin-filter-role') ? $('admin-filter-role').value : 'all';
+        var status = $('admin-filter-status') ? $('admin-filter-status').value : 'all';
+        if (query) {
+            users = users.filter(function (u) {
+                return [u.username, u.role, u.device, u.ip].join(' ').toLowerCase().indexOf(query) !== -1;
+            });
+        }
+        if (role !== 'all') users = users.filter(function (u) { return u.role === role; });
+        if (status !== 'all') users = users.filter(function (u) { return status === 'banned' ? !!u.banned : !u.banned; });
+        var resultCount = $('admin-users-result-count');
+        if (resultCount) resultCount.textContent = users.length + ' anggota ditemukan';
         var perPage = 10;
         var totalPages = Math.max(1, Math.ceil(users.length / perPage));
         var current = Math.min(Math.max(1, page || 1), totalPages);
         var slice = users.slice((current - 1) * perPage, current * perPage);
         var tbody = $('admin-users-table-body');
         if (!slice.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Tidak ada anggota.</td></tr>';
+            setAdminTableState(tbody, 6, 'Tidak ada anggota yang cocok dengan filter.', 'empty');
         } else {
             tbody.innerHTML = slice.map(function (u) {
                 var canManage = currentUser.role === 'owner' || (currentUser.role === 'admin' && u.role === 'user');
                 var actions;
                 if (canManage && u.role !== 'owner') {
-                    actions = '<button class="btn btn-secondary btn-sm edit-credits-btn" data-id="' + u.id + '" data-credits="' + (u.credits || 0) + '">Kredit</button> ' +
-                        '<button class="btn btn-secondary btn-sm edit-role-btn" data-id="' + u.id + '" data-role="' + u.role + '">Role</button> ' +
-                        '<button class="btn btn-warning btn-sm reset-password-btn" data-id="' + u.id + '">Reset PW</button> ' +
-                        '<button class="btn ' + (u.banned ? 'btn-success' : 'btn-danger') + ' btn-sm toggle-ban-btn" data-id="' + u.id + '" data-banned="' + (u.banned ? 1 : 0) + '">' + (u.banned ? 'Aktifkan' : 'Blokir') + '</button> ' +
-                        '<button class="btn btn-danger btn-sm delete-user-btn" data-id="' + u.id + '">Hapus</button>';
+                    actions = '<div class="admin-action-group">' +
+                        '<button class="btn btn-secondary btn-sm edit-credits-btn" data-id="' + esc(u.id) + '" data-credits="' + esc(u.credits == null ? 0 : u.credits) + '" title="Edit kredit"><i class="fa-solid fa-bolt"></i><span>Kredit</span></button>' +
+                        '<button class="btn btn-secondary btn-sm edit-role-btn" data-id="' + esc(u.id) + '" data-role="' + esc(u.role) + '" title="Ubah role"><i class="fa-solid fa-user-shield"></i><span>Role</span></button>' +
+                        '<button class="btn btn-warning btn-sm reset-password-btn" data-id="' + esc(u.id) + '" title="Reset password"><i class="fa-solid fa-key"></i><span>Password</span></button>' +
+                        '<button class="btn ' + (u.banned ? 'btn-success' : 'btn-danger') + ' btn-sm toggle-ban-btn" data-id="' + esc(u.id) + '" data-banned="' + (u.banned ? 1 : 0) + '" title="' + (u.banned ? 'Aktifkan akun' : 'Blokir akun') + '"><i class="fa-solid ' + (u.banned ? 'fa-unlock' : 'fa-ban') + '"></i><span>' + (u.banned ? 'Aktifkan' : 'Blokir') + '</span></button>' +
+                        '<button class="btn btn-danger btn-sm delete-user-btn" data-id="' + esc(u.id) + '" title="Hapus akun"><i class="fa-solid fa-trash-can"></i><span>Hapus</span></button>' +
+                        '</div>';
                 } else {
-                    actions = '<span style="color:var(--text-muted);font-size:0.75rem;">Tidak ada aksi</span>';
+                    actions = '<span class="admin-no-action"><i class="fa-solid fa-lock"></i> Dilindungi</span>';
                 }
-                return '<tr><td><strong>' + esc(u.username) + '</strong></td>' +
+                var device = u.device || u.os || 'Tidak diketahui';
+                return '<tr>' +
+                    '<td><div class="admin-user-cell"><span class="admin-user-avatar"><i class="fa-solid fa-user"></i></span><div><strong>' + esc(u.username) + '</strong><small>ID: ' + esc(u.id || '-') + '</small></div></div></td>' +
                     '<td><span class="badge ' + (ROLE_BADGE[u.role] || 'badge-normal') + '">' + esc(ROLE_LABEL[u.role] || u.role) + '</span></td>' +
-                    '<td>' + (u.credits == null ? 'Unlimited' : esc(u.credits)) + '</td>' +
-                    '<td>' + esc(u.device || u.os || '-') + '</td>' +
-                    '<td>' + (u.banned ? '<span class="status-failed">Terblokir</span>' : '<span class="status-success">Aktif</span>') + '</td>' +
+                    '<td><span class="admin-credit-value">' + (u.credits == null ? '<i class="fa-solid fa-infinity"></i> Unlimited' : esc(u.credits)) + '</span></td>' +
+                    '<td><span class="admin-device-cell"><i class="fa-solid fa-desktop"></i>' + esc(device) + '</span><small class="admin-ip-label">' + esc(u.ip || 'IP tidak tersedia') + '</small></td>' +
+                    '<td>' + (u.banned ? '<span class="status-failed"><i class="fa-solid fa-ban"></i> Terblokir</span>' : '<span class="status-success"><i class="fa-solid fa-circle-check"></i> Aktif</span>') + '</td>' +
                     '<td>' + actions + '</td></tr>';
             }).join('');
         }
@@ -1019,33 +1946,66 @@
     }
 
     function loadAdminLogs(page) {
+        var tbody = $('admin-logs-table-body');
+        setAdminTableState(tbody, 5, 'Memuat aktivitas global...', 'loading');
         api('/api/admin/logs').then(function (data) {
-            var logs = data.logs || [];
-            var perPage = 10;
-            var totalPages = Math.max(1, Math.ceil(logs.length / perPage));
-            var current = Math.min(Math.max(1, page || 1), totalPages);
-            var slice = logs.slice((current - 1) * perPage, current * perPage);
-            var tbody = $('admin-logs-table-body');
-            if (!slice.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Belum ada log aktivasi.</td></tr>';
-            } else {
-                tbody.innerHTML = slice.map(function (l) {
-                    var status = l.status === 'success' ? '<span class="status-success">Aktif</span>' : '<span class="status-failed">Gagal</span>';
-                    return '<tr><td>' + esc(l.createdAt) + '</td><td>' + esc(l.operator) + '</td><td>' + esc(l.email) + '</td><td>' + status + '</td><td>' + esc(l.note || '-') + '</td></tr>';
-                }).join('');
+            if (!data.success) {
+                setAdminTableState(tbody, 5, data.message || 'Aktivitas global tidak dapat dimuat.', 'error');
+                if ($('admin-logs-result-count')) $('admin-logs-result-count').textContent = 'Gagal memuat';
+                return;
             }
-            renderPagination($('admin-logs-pagination'), totalPages, current, loadAdminLogs);
+            adminLogsCache = data.logs || [];
+            renderAdminLogs(page || 1);
+        }).catch(function () {
+            setAdminTableState(tbody, 5, 'Gagal terhubung ke server.', 'error');
         });
     }
 
+    function renderAdminLogs(page) {
+        var logs = adminLogsCache.slice().reverse();
+        var query = ($('admin-search-logs').value || '').trim().toLowerCase();
+        var statusFilter = $('admin-filter-log-status') ? $('admin-filter-log-status').value : 'all';
+        if (query) {
+            logs = logs.filter(function (l) {
+                return [l.operator, l.email, l.note, l.createdAt].join(' ').toLowerCase().indexOf(query) !== -1;
+            });
+        }
+        if (statusFilter !== 'all') logs = logs.filter(function (l) { return l.status === statusFilter; });
+        if ($('admin-logs-result-count')) $('admin-logs-result-count').textContent = logs.length + ' aktivitas ditemukan';
+        var perPage = 10;
+        var totalPages = Math.max(1, Math.ceil(logs.length / perPage));
+        var current = Math.min(Math.max(1, page || 1), totalPages);
+        var slice = logs.slice((current - 1) * perPage, current * perPage);
+        var tbody = $('admin-logs-table-body');
+        if (!slice.length) {
+            setAdminTableState(tbody, 5, 'Tidak ada aktivitas yang cocok dengan filter.', 'empty');
+        } else {
+            tbody.innerHTML = slice.map(function (l) {
+                var isSuccess = l.status === 'success';
+                var status = isSuccess ? '<span class="status-success"><i class="fa-solid fa-circle-check"></i> Berhasil</span>' : '<span class="status-failed"><i class="fa-solid fa-circle-xmark"></i> Gagal</span>';
+                return '<tr><td><span class="admin-date-cell"><i class="fa-regular fa-clock"></i>' + esc(l.createdAt || '-') + '</span></td>' +
+                    '<td><strong class="admin-operator-cell"><i class="fa-solid fa-user-tie"></i>' + esc(l.operator || '-') + '</strong></td>' +
+                    '<td><code class="admin-email-cell">' + esc(l.email || '-') + '</code></td>' +
+                    '<td>' + status + '</td><td><span class="admin-note-cell">' + esc(l.note || 'Tidak ada keterangan') + '</span></td></tr>';
+            }).join('');
+        }
+        renderPagination($('admin-logs-pagination'), totalPages, current, function (p) { renderAdminLogs(p); });
+    }
+
     function loadAdminTransactions(page) {
+        var tbody = $('admin-transactions-table-body');
+        setAdminTableState(tbody, 7, 'Memuat transaksi pembayaran...', 'loading');
         api('/api/admin/transactions').then(function (data) {
+            if (!data.success) {
+                setAdminTableState(tbody, 7, data.message || 'Transaksi hanya dapat dilihat oleh owner.', 'error');
+                if ($('admin-transactions-pagination')) $('admin-transactions-pagination').innerHTML = '';
+                return;
+            }
             var txs = data.transactions || [];
             var perPage = 10;
             var totalPages = Math.max(1, Math.ceil(txs.length / perPage));
             var current = Math.min(Math.max(1, page || 1), totalPages);
             var slice = txs.slice((current - 1) * perPage, current * perPage);
-            var tbody = $('admin-transactions-table-body');
             if (!slice.length) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">Belum ada transaksi.</td></tr>';
             } else {
@@ -1069,6 +2029,8 @@
                 });
             });
             renderPagination($('admin-transactions-pagination'), totalPages, current, loadAdminTransactions);
+        }).catch(function () {
+            setAdminTableState(tbody, 7, 'Gagal terhubung ke server.', 'error');
         });
     }
 
@@ -1137,7 +2099,7 @@
         if (resetBtn && !resetBtn.dataset.bound) {
             resetBtn.dataset.bound = '1';
             resetBtn.addEventListener('click', function () {
-                Swal.fire({ title: 'Reset Semua Kredit?', text: 'Semua anggota (role user) akan dikembalikan ke 10 kredit.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Reset', cancelButtonText: 'Batal' })
+                Swal.fire({ title: 'Reset Semua Kredit?', text: 'Semua anggota (role user) akan dikembalikan ke 50 kredit.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Reset', cancelButtonText: 'Batal' })
                     .then(function (r) {
                         if (!r.isConfirmed) return;
                         api('/api/admin/reset-all-credits', { method: 'POST' }).then(function (d) {
@@ -1167,7 +2129,39 @@
                     loadAdminIps();
                 });
             });
-            $('admin-search-users').addEventListener('input', function () { renderAdminUsers(1); });
+            var userFilterControls = ['admin-search-users', 'admin-filter-role', 'admin-filter-status'];
+            userFilterControls.forEach(function (id) {
+                var control = $(id);
+                if (control && !control.dataset.bound) {
+                    control.dataset.bound = '1';
+                    control.addEventListener('input', function () { renderAdminUsers(1); });
+                    control.addEventListener('change', function () { renderAdminUsers(1); });
+                }
+            });
+            var logFilterControls = ['admin-search-logs', 'admin-filter-log-status'];
+            logFilterControls.forEach(function (id) {
+                var control = $(id);
+                if (control && !control.dataset.bound) {
+                    control.dataset.bound = '1';
+                    control.addEventListener('input', function () { renderAdminLogs(1); });
+                    control.addEventListener('change', function () { renderAdminLogs(1); });
+                }
+            });
+            var refreshUsers = $('btn-admin-refresh-users');
+            if (refreshUsers && !refreshUsers.dataset.bound) {
+                refreshUsers.dataset.bound = '1';
+                refreshUsers.addEventListener('click', function () { loadAdminUsers(); });
+            }
+            var refreshLogs = $('btn-admin-refresh-logs');
+            if (refreshLogs && !refreshLogs.dataset.bound) {
+                refreshLogs.dataset.bound = '1';
+                refreshLogs.addEventListener('click', function () { loadAdminLogs(); });
+            }
+            var refreshH2h = $('btn-admin-refresh-h2h');
+            if (refreshH2h && !refreshH2h.dataset.bound) {
+                refreshH2h.dataset.bound = '1';
+                refreshH2h.addEventListener('click', function () { loadAdminH2hProfile(); });
+            }
         }
 
         var tbody = $('admin-users-table-body');
@@ -1223,7 +2217,7 @@
     function handleEditRole(userId) {
         Swal.fire({
             title: 'Ubah Role', input: 'select',
-            inputOptions: { USER: 'USER', PREMIUM: 'PREMIUM', 'AUTO GENERATOR': 'AUTO GENERATOR', ADMIN: 'ADMIN' },
+            inputOptions: { USER: 'USER — Credit Based', RESELLER: 'RESELLER — Unlimited Web Only', PREMIUM: 'PREMIUM — API Single Create', AUTOGEN: 'AUTOGEN — API Bulk Auto', ADMIN: 'ADMIN — Master Management' },
             inputPlaceholder: 'Pilih role baru', showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal',
             preConfirm: function (role) { if (!role) Swal.showValidationMessage('Pilih role'); return role; }
         }).then(function (r) {
@@ -1255,7 +2249,8 @@
                     }
                 });
             } else {
-                api('/api/admin/user/role', { method: 'POST', body: { userId: userId, role: role.toLowerCase() } }).then(function (res) {
+                var selectedRole = role === 'AUTOGEN' ? 'autogen' : role.toLowerCase();
+                api('/api/admin/user/role', { method: 'POST', body: { userId: userId, role: selectedRole } }).then(function (res) {
                     Swal.fire({ icon: res.success ? 'success' : 'error', title: res.success ? 'DIUBAH!' : 'GAGAL', text: res.message, timer: 1500, showConfirmButton: false });
                     loadAdminUsers();
                 });
@@ -1372,8 +2367,13 @@
             try { readSet = JSON.parse(localStorage.getItem('read_notifications') || '[]'); } catch (e) {}
             var unread = list.filter(function (n) { return n.isActive && readSet.indexOf(n.id) === -1; }).length;
             if (badge) {
-                badge.textContent = unread;
-                badge.style.display = unread ? 'flex' : 'none';
+                if (unread) {
+                    badge.textContent = unread;
+                    badge.style.cssText = 'display:flex;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;min-width:16px;width:auto;height:16px;padding:0 4px;border-radius:50%;align-items:center;justify-content:center;position:absolute;top:-2px;right:-2px;';
+                } else {
+                    badge.textContent = '';
+                    badge.style.display = 'none';
+                }
             }
             var listEl = $('notifications-list');
             if (!list.length) {
@@ -1421,21 +2421,6 @@
         loadNotifications();
     }
 
-    var themeIcon = null;
-    function applyTheme(theme) {
-        document.body.classList.toggle('dark-theme', theme === 'dark');
-        localStorage.setItem('theme', theme);
-        if (themeIcon) themeIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    }
-
-    function bindTheme() {
-        themeIcon = $('btn-topbar-theme').querySelector('i');
-        $('btn-topbar-theme').addEventListener('click', function () {
-            applyTheme(document.body.classList.contains('dark-theme') ? 'light' : 'dark');
-        });
-        applyTheme(localStorage.getItem('theme') || 'light');
-    }
-
     function checkAppVersion() {
         try {
             var version = localStorage.getItem('app_version');
@@ -1451,14 +2436,191 @@
         } catch (e) {}
     }
 
+    /* ============================== PREMIUM THEME ============================== */
+    var themeMediaQuery = null;
+    var themeGateTimer = null;
+
+    function themeStorageKey() {
+        var identity = currentUser && (currentUser.username || currentUser.id);
+        return 'am-theme-preference:' + (identity ? String(identity).toLowerCase() : 'guest');
+    }
+
+    function normalizeThemePreference(value) {
+        return ['light', 'dark', 'system'].indexOf(value) !== -1 ? value : 'system';
+    }
+
+    function readThemePreference() {
+        try {
+            var saved = localStorage.getItem(themeStorageKey());
+            if (!saved && currentUser) saved = localStorage.getItem('am-theme-preference:guest');
+            if (!saved) {
+                var legacy = localStorage.getItem('theme');
+                saved = legacy === 'dark' || legacy === 'light' ? legacy : 'system';
+            }
+            return normalizeThemePreference(saved);
+        } catch (e) { return 'system'; }
+    }
+
+    function isSystemDark() {
+        return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+
+    function revealThemePage() {
+        if (themeGateTimer) {
+            clearTimeout(themeGateTimer);
+            themeGateTimer = null;
+        }
+        document.documentElement.classList.remove('theme-pending');
+    }
+
+    function applyThemePreference(preference) {
+        var choice = normalizeThemePreference(preference);
+        var dark = choice === 'dark' || (choice === 'system' && isSystemDark());
+        document.documentElement.dataset.themePreference = choice;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        var themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) themeMeta.setAttribute('content', dark ? '#0B0F19' : '#F8FAFC');
+        document.body.classList.toggle('dark-theme', dark);
+        document.body.classList.toggle('light-theme', !dark);
+
+        var trigger = $('btn-theme-menu');
+        if (trigger) {
+            trigger.dataset.activeTheme = choice;
+            trigger.setAttribute('aria-label', 'Theme: ' + choice.charAt(0).toUpperCase() + choice.slice(1));
+        }
+        document.querySelectorAll('.theme-option').forEach(function (option) {
+            var active = option.dataset.themeChoice === choice;
+            option.classList.toggle('active', active);
+            option.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+    }
+
+    function saveThemePreference(preference) {
+        var choice = normalizeThemePreference(preference);
+        try {
+            localStorage.setItem(themeStorageKey(), choice);
+            if (!currentUser) localStorage.setItem('am-theme-preference:guest', choice);
+        } catch (e) {}
+        applyThemePreference(choice);
+    }
+
+    function initThemeToggle() {
+        applyThemePreference(readThemePreference());
+        if (window.matchMedia) {
+            themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            var onSystemThemeChange = function () {
+                if (readThemePreference() === 'system') applyThemePreference('system');
+            };
+            if (themeMediaQuery.addEventListener) themeMediaQuery.addEventListener('change', onSystemThemeChange);
+            else if (themeMediaQuery.addListener) themeMediaQuery.addListener(onSystemThemeChange);
+        }
+
+        var trigger = $('btn-theme-menu');
+        var menu = $('theme-menu');
+        if (!trigger || !menu || trigger.dataset.bound) return;
+        trigger.dataset.bound = '1';
+        trigger.addEventListener('click', function (event) {
+            event.stopPropagation();
+            var open = menu.classList.toggle('hidden');
+            trigger.setAttribute('aria-expanded', open ? 'false' : 'true');
+            trigger.classList.toggle('is-open', !open);
+        });
+        document.querySelectorAll('.theme-option').forEach(function (option) {
+            option.addEventListener('click', function (event) {
+                event.stopPropagation();
+                createThemeRipple(event, option);
+                saveThemePreference(option.dataset.themeChoice);
+                menu.classList.add('hidden');
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.classList.remove('is-open');
+            });
+        });
+        trigger.addEventListener('pointerdown', function (event) {
+            createThemeRipple(event, trigger);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                menu.classList.add('hidden');
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.classList.remove('is-open');
+            }
+        });
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('#theme-control')) {
+                menu.classList.add('hidden');
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.classList.remove('is-open');
+            }
+        });
+    }
+
+    function createThemeRipple(event, element) {
+        if (!element || window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var rect = element.getBoundingClientRect();
+        var ripple = document.createElement('span');
+        ripple.className = 'theme-ripple';
+        ripple.style.left = (event.clientX - rect.left) + 'px';
+        ripple.style.top = (event.clientY - rect.top) + 'px';
+        element.appendChild(ripple);
+        setTimeout(function () { ripple.remove(); }, 600);
+    }
+    // Theme preference is initialized before session detection and refreshed per user after login.
+
     /* ============================== INIT ============================== */
 
     document.addEventListener('DOMContentLoaded', function () {
         bindNav();
         bindAuth();
-        bindTheme();
+        restoreAuthView(); // Refresh tetap di view login/register + draft form dipulihkan
         bindNotifications();
         checkAppVersion();
+        initThemeToggle(); // FITUR BARU - Pemanggilan Switch Theme
+        // Referral dari link (format /invite?code=, /?ref=, /#referal?ref=, /#register?ref=)
+        // → simpan & isi form register (opsional)
+        try {
+            var inviteCode = getReferralFromUrl();
+            if (inviteCode) localStorage.setItem('pendingReferral', inviteCode);
+            var refField = $('register-referral');
+            if (refField) {
+                var saved = ''; try { saved = localStorage.getItem('pendingReferral') || ''; } catch (err) {}
+                // Jangan timpa kode yang sudah diketik user (draft dari refresh)
+                if (saved && !refField.value) refField.value = saved;
+                // Validasi kode referral live dengan debounce 600ms (anti-spam API)
+                var refDebounce = null;
+                refField.addEventListener('input', function () {
+                    clearTimeout(refDebounce);
+                    refDebounce = setTimeout(function () {
+                        var v = refField.value.trim();
+                        // User menghapus kode = tidak pakai referral; buang pending basi
+                        if (!v) { try { localStorage.removeItem('pendingReferral'); } catch (err) {} }
+                        checkReferral(v);
+                    }, 600);
+                });
+            }
+            // Check kode yang tampil di field (draft dari refresh) atau pendingReferral dari URL
+            var pendCode = ''; try { pendCode = localStorage.getItem('pendingReferral') || ''; } catch (err) {}
+            var codeToCheck = (refField && refField.value.trim()) || pendCode;
+            checkReferral(codeToCheck);
+        } catch (err) {}
+        // Router hash: dukung akses langsung #lifetime / #referal & edit manual hash.
+        // Guard: jangan pindah screen non-auth saat belum login (hindari error 401 tampil ke guest).
+        window.addEventListener('hashchange', function () {
+            // Link referral dibuka di tab yang sama: #...?ref= → deteksi ulang kode.
+            // Kode dari URL (klik eksplisit) menang atas isian lama.
+            var urlCode = getReferralFromUrl();
+            if (urlCode) {
+                try { localStorage.setItem('pendingReferral', urlCode); } catch (err) {}
+                var rf = $('register-referral');
+                if (rf) rf.value = urlCode;
+                checkReferral(urlCode);
+            }
+            var n = normalizeScreen(window.location.hash.replace('#', '').split('?')[0]);
+            if (!n || n === 'auth' || n === currentScreen) return;
+            if (!currentUser) return;
+            if (VALID_SCREENS.indexOf(n) === -1) return;
+            showScreen(n);
+        });
         checkSession();
     });
 })();

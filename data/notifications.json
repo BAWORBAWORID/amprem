@@ -1,5 +1,37 @@
 [
   {
+    "id": "nfc-promo-2026-08-08-22:30:25",
+    "type": "gift",
+    "title": "PROMO PAKET BERLANGGANAN",
+    "text": "🎁 PROMO PAKET BERLANGGANAN\n\nDapatkan penawaran spesial untuk semua paket role (Reseller, Premium, Auto Gen, Admin) dengan durasi 3, 7, 14, atau 30 hari.\n\nAktifkan sekarang melalui menu Beli Role & Paket. Penawaran terbatas!",
+    "isActive": true,
+    "createdAt": "2026-08-08 22:30:25"
+  },
+  {
+    "id": "nfc-maint-2026-08-08-22:30:25",
+    "type": "info",
+    "title": "INFO PEMELIHARAAN",
+    "text": "🛧️ INFO PEMELIHARAAN\n\nFitur Netflix Crack saat ini sedang dalam pemeliharaan (maintenance) untuk peningkatan kualitas layanan.\n\nKami informasikan kembali begitu pemeliharaan selesai. Mohon maaf atas ketidaknyamanannya.",
+    "isActive": true,
+    "createdAt": "2026-08-08 22:30:25"
+  },
+  {
+    "id": "nfc-update-2026-08-08-22:30:25",
+    "type": "success",
+    "title": "UPDATE SISTEM",
+    "text": "🚀 UPDATE SISTEM\n\nKami menambahkan fitur-fitur terbaru:\n- Sistem referal kode undangan (bonus 30 kredit untuk pengundang)\n- Bot Telegram deploy untuk role Admin/Owner\n- Tema premium Light & Dark\n- Validasi kode undangan di halaman /invite\n\nNikmati fitur barunya sekarang!",
+    "isActive": true,
+    "createdAt": "2026-08-08 22:30:25"
+  },
+  {
+    "id": "nfc-welcome-2026-08-08-22:30:25",
+    "type": "gift",
+    "title": "SELAMAT DATANG DI ALWAYSCODEX",
+    "text": "👋 SELAMAT DATANG DI ALWAYSCODEX\n\nTerima kasih sudah bergabung! Anda mendapat kredit bonus awal untuk mulai membuat lisensi premium.\n\nUndang teman via link referal di menu Profil dan dapatkan komisi 30 kredit per pendaftaran berhasil.",
+    "isActive": true,
+    "createdAt": "2026-08-08 22:30:25"
+  },
+  {
     "id": "msh78rxe390b36",
     "type": "info",
     "title": "INFORMATION",

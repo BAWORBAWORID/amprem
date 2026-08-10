@@ -2,6 +2,54 @@
    Admin Control Center — member and global activity panels
    ============================================================================ */
 
+/* ── Admin tab bar (IP Anggota | Pembersihan) ── */
+.admin-tab-bar {
+    display: flex;
+    gap: 4px;
+    margin: 0 0 18px;
+    padding: 5px;
+    border-radius: 13px;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border-soft);
+}
+
+.admin-tab-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.admin-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.04);
+}
+
+.admin-tab-btn.active {
+    color: var(--text-primary);
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.admin-tab-btn i {
+    font-size: 0.85rem;
+}
+
+.admin-tab-content.hidden {
+    display: none;
+}
+
 .admin-control-card {
     overflow: visible !important;
     border-radius: 22px !important;
@@ -121,8 +169,212 @@
     min-width: 960px;
 }
 
-#admin-logs-card table {
+#admin-logs-card table,
+#admin-ips-card table {
     min-width: 760px;
+}
+
+#admin-ips-card .admin-ip-summary {
+    justify-content: space-between;
+    min-height: 44px;
+    margin-bottom: 14px;
+}
+
+#admin-ips-card .admin-ip-summary .admin-search-field {
+    flex: 1 1 300px;
+}
+
+#admin-ips-card .admin-ip-summary select {
+    flex: 0 1 160px;
+}
+
+#admin-ips-card .ip-list-mobile {
+    display: none;
+}
+
+#admin-ips-card .ip-address-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+#admin-ips-card .ip-address-cell i {
+    color: var(--accent-secondary);
+    font-family: var(--font-primary);
+}
+
+#admin-ips-card .ip-user-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-width: 390px;
+}
+
+#admin-ips-card .ip-user-chip {
+    display: inline-flex;
+    max-width: 150px;
+    overflow: hidden;
+    padding: 4px 8px;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    background: var(--surface-subtle);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#admin-ips-card .ip-detail-row > td {
+    padding: 0 !important;
+    background: var(--surface-subtle) !important;
+}
+
+#admin-ips-card .ip-members-panel {
+    display: grid;
+    gap: 8px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border-soft);
+}
+
+#admin-ips-card .ip-members-panel > strong {
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+}
+
+#admin-ips-card .ip-member-detail {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(130px, .8fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+#admin-ips-card .ip-member-identity,
+#admin-ips-card .ip-member-device {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+#admin-ips-card .ip-member-identity strong,
+#admin-ips-card .ip-member-device {
+    overflow: hidden;
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#admin-ips-card .ip-member-identity strong { color: var(--text-primary); }
+
+#admin-ips-card .ip-member-device i { color: var(--accent-secondary); }
+
+#admin-ips-card .ip-empty-state,
+#admin-ips-card .ip-list-state,
+#admin-ips-card .admin-table-state {
+    min-height: 0;
+    height: 120px;
+    padding: 20px 18px;
+}
+
+#admin-ips-card .ip-empty-state i {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--accent-secondary);
+    font-size: 1.35rem;
+}
+
+#admin-ips-card .admin-result-count {
+    margin-left: 0;
+}
+
+#admin-ips-card .admin-page-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+
+/* ── IP list scroll container (bounded height, pagination stays outside) ── */
+#admin-ips-card .ip-list-container {
+    max-height: 420px;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    border-radius: 15px;
+    box-shadow: inset 0 0 0 1px var(--border-soft);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+#admin-ips-card .ip-list-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+#admin-ips-card .ip-list-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#admin-ips-card .ip-list-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
+#admin-ips-card .ip-list-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+#admin-ips-card .table-responsive {
+    max-height: none;
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Compact IP rows — override the general 68px admin card row */
+#admin-ips-card tbody td {
+    height: 50px;
+    padding: 8px 14px !important;
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+
+#admin-ips-card .table-responsive thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+
+#admin-ips-card .pagination-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px !important;
+    padding: 20px 8px 6px;
+}
+
+#admin-ips-card .pagination-container .pag-btn {
+    margin: 0;
+    min-width: 40px;
+}
+
+#admin-ips-card .pagination-container .pag-dots {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
 }
 
 .admin-control-card tbody tr {
@@ -292,7 +544,7 @@
     min-height: 34px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
     .admin-card-heading {
         flex-direction: column;
         gap: 12px;
@@ -320,13 +572,85 @@
     }
 
     #admin-users-card .pagination-container,
-    #admin-logs-card .pagination-container {
+    #admin-logs-card .pagination-container,
+    #admin-ips-card .pagination-container {
         gap: 10px;
         padding-top: 18px;
     }
 
     .admin-action-group {
         min-width: 280px;
+    }
+
+    #admin-ips-card .admin-ip-summary {
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    #admin-ips-card .admin-ip-summary .admin-search-field,
+    #admin-ips-card .admin-ip-summary select,
+    #admin-ips-card .admin-ip-summary .admin-result-count,
+    #admin-ips-card .admin-page-hint {
+        flex: 1 1 100%;
+        width: 100%;
+        margin-left: 0;
+    }
+
+    #admin-ips-card .admin-page-hint {
+        width: 100%;
+    }
+
+    #admin-ips-card .ip-list-container {
+        max-height: min(360px, 50vh);
+    }
+
+    #admin-ips-card .ip-list-desktop {
+        display: none;
+    }
+
+    #admin-ips-card .ip-list-mobile {
+        display: grid;
+        gap: 10px;
+    }
+
+    #admin-ips-card .ip-group-card {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--surface-subtle);
+    }
+
+    #admin-ips-card .ip-group-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    #admin-ips-card .ip-group-card-count {
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    #admin-ips-card .ip-group-card .ip-user-chips {
+        max-width: none;
+    }
+
+    #admin-ips-card .ip-member-detail {
+        grid-template-columns: 1fr auto;
+    }
+
+    #admin-ips-card .ip-member-device {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    #admin-ips-card .ip-member-detail .ban-ip-btn {
+        grid-column: 2;
+        grid-row: 1;
     }
 
     .admin-action-group .btn span {

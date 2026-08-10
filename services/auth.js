@@ -23,10 +23,13 @@ class AlightMotionService {
 
   
   async _post(url, body, headers) {
+    // Timeout 30 detik per request agar worker bulk tidak menggantung diam
+    // (heartbeat worker jadi tetap segar / tidak salah dianggap mati).
     const res = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30000)
     });
     const data = await res.json();
     if (!res.ok) throw { response: { data, status: res.status } };
