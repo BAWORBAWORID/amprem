@@ -4,7 +4,17 @@
    Breakpoints: mobile <= 768px, tablet 769px-1199px, desktop >= 1200px.
    ============================================================================ */
 
-/* Shared sizing and overflow guards */
+/* Design tokens (spacing scale per update.md §16). */
+:root {
+    --space-xs: 6px;
+    --space-sm: 10px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --sidebar-width: 260px;
+}
+
+ /* Shared sizing and overflow guards */
 html,
 body {
     min-width: 320px;
@@ -65,7 +75,7 @@ textarea {
 }
 
 /* Tablet: keep the full navigation visible and use the available width well. */
-@media (min-width: 769px) and (max-width: 1199px) {
+@media (min-width: 768px) and (max-width: 1023px) {
     body {
         overflow-x: hidden;
     }
@@ -214,16 +224,19 @@ textarea {
 }
 
 /* Desktop: wider, calm grids with a contained reading measure. */
-@media (min-width: 1200px) {
+@media (min-width: 1024px) {
     .app-layout.sidebar-active {
         display: grid;
-        grid-template-columns: 260px minmax(0, 1fr);
+        grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
         flex-direction: initial;
     }
 
     .app-sidebar {
-        width: 260px;
-        min-width: 260px;
+        position: sticky;
+        top: 0;
+        align-self: start;
+        width: var(--sidebar-width);
+        min-width: var(--sidebar-width);
         height: 100dvh;
         overflow: hidden;
     }
@@ -235,15 +248,23 @@ textarea {
     }
 
     .main-content {
+        width: 100%;
+        max-width: 1600px;
+        margin-right: auto;
         padding: 36px clamp(34px, 4vw, 64px);
         min-width: 0;
         min-height: 100dvh;
         overflow-x: clip;
     }
 
+    .page-container {
+        width: min(100%, 1500px);
+        margin-inline: auto;
+    }
+
     .screen {
         width: 100%;
-        max-width: 1480px;
+        max-width: 1500px;
         margin-inline: auto;
     }
 
@@ -251,8 +272,9 @@ textarea {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     }
 
+    /* Purchase: 2x2 grid (Reseller|Premium / Auto Gen|VIP) per update.md §7. */
     .purchase-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 
     .admin-stats-grid {
@@ -261,6 +283,13 @@ textarea {
 
     .admin-grid {
         grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    }
+
+    /* Secondary admin tables span the full width so they read like real reports. */
+    #admin-transactions-card,
+    #admin-upgrades-card,
+    #admin-duplicates-card {
+        grid-column: 1 / -1;
     }
 
     .docs-container {
@@ -287,8 +316,20 @@ textarea {
     }
 }
 
+/* Wide desktop: keep content from sprawling on very large monitors. */
+@media (min-width: 1440px) {
+    .main-content {
+        max-width: 1600px;
+    }
+
+    .screen,
+    .page-container {
+        max-width: 1500px;
+    }
+}
+
 /* Keep the existing mobile drawer rules authoritative. */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .app-layout.sidebar-active {
         display: flex;
         flex-direction: column;
@@ -311,6 +352,10 @@ textarea {
     .main-content {
         min-width: 0;
         overflow-x: hidden;
+    }
+
+    .mobile-top-bar {
+        padding-top: env(safe-area-inset-top, 0);
     }
 
     .table-responsive table {

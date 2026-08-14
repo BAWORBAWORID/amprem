@@ -145,7 +145,8 @@ export function addDuplicateLog(message) {
 /* ============================== LAIN-LAIN ============================== */
 
 export function generateOrderId() {
-    return 'Alwayscodex-' + randomKey(8).toUpperCase();
+    const d = (n) => String(crypto.randomInt(0, Math.pow(10, n))).padStart(n, '0');
+    return 'GPA.' + d(4) + '-' + d(4) + '-' + d(4) + '-' + d(5);
 }
 
 export function isMaintenance(which) {

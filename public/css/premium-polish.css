@@ -281,7 +281,7 @@ tbody tr:hover td {
 }
 
 /* Mobile polish: preserve the existing drawer behavior and prevent cramped controls. */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .mobile-top-bar {
         margin-bottom: 18px;
         border-radius: 13px;
@@ -897,14 +897,14 @@ body.dark-theme tbody tr:hover td {
 }
 
 /* Desktop: sembunyikan seluruh elemen mobile; Mobile: matikan drawer lama */
-@media (min-width: 769px) {
+@media (min-width: 768px) {
     .mobile-drawer,
     .mobile-drawer-overlay,
     .mobile-menu-trigger {
         display: none !important;
     }
 }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     #app-sidebar {
         display: none !important;
     }

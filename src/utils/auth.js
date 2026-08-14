@@ -2,7 +2,6 @@
  * Otentikasi, model user, dan kemampuan role.
  * Pindahan dari server.js monolit — memakai bcrypt + store.
  */
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { getUsers, saveUsers, randomKey, nowISO, readJSON } from './store.js';
 
@@ -12,8 +11,14 @@ export function hashPassword(password) {
 
 export function verifyPassword(user, password) {
     const stored = String(user.password || '');
-    if (stored.indexOf('$2') === 0) return bcrypt.compareSync(String(password), stored);
-    return stored === crypto.createHash('sha256').update(String(password)).digest('hex');
+    // Hanya terima hash bcrypt (prefix $2). Hash lemah (SHA-256/plaintext) ditolak
+    // agar tidak ada jalur verifikasi yang tidak aman.
+    if (stored.indexOf('$2') !== 0) return false;
+    return bcrypt.compareSync(String(password), stored);
+}
+
+export function isValidUsername(username) {
+    return /^[a-z0-9_.-]{3,32}$/.test(String(username || '').toLowerCase());
 }
 
 export function seedOwner() {
@@ -181,7 +186,7 @@ export function isUnlimitedRole(role) {
 }
 
 export function hasApiRole(role) {
-    return ['premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
+    return ['premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
 }
 
 export function hasBulkRole(role) {
@@ -230,4 +235,29 @@ export function canUseGenerator(user) {
 export function canUseBatch(user, batch) {
     if (!user || !batch || !hasBulkRole(user.role)) return false;
     return ['vip', 'owner'].indexOf(user.role) !== -1 || batch.operator === user.username;
+}
+
+// Kredit per-role: grant harian +50, dibatasi kapasitas tiap role (tidak di-reset/overwrite).
+export const DAILY_USER_CREDIT_GRANT = 50;
+export const MAX_USER_CREDITS = 150; // kapasitas default role 'user'
+export const ROLE_CREDIT_CAP = { user: 150, pro: 200 };
+export const DEFAULT_USER_CREDITS = DAILY_USER_CREDIT_GRANT; // nilai awal / reset admin
+
+// Top-up kredit harian secara lazy (saat diakses), tiap jam 00:00 WIB.
+// Berlaku untuk role yang punya entri di ROLE_CREDIT_CAP. Saldo yang sudah >= kapasitas
+// role tidak pernah dikurangi. Mengembalikan true jika kredit baru saja di-top-up.
+export function ensureDailyUserCredits(user) {
+    if (!user || !ROLE_CREDIT_CAP[user.role]) return false;
+    const cap = ROLE_CREDIT_CAP[user.role];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+    if (user.creditResetDate !== today) {
+        const current = parseInt(user.credits, 10) || 0;
+        // Top-up ke atas saja; saldo yang sudah >= cap tidak pernah dikurangi.
+        if (current < cap) {
+            user.credits = Math.min(cap, current + DAILY_USER_CREDIT_GRANT);
+        }
+        user.creditResetDate = today;
+        return true;
+    }
+    return false;
 }

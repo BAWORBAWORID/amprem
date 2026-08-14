@@ -32,5 +32,22 @@
     "error": null,
     "createdAt": "2026-08-12T01:06:34.276Z",
     "startedAt": "2026-08-12T14:31:00.514Z"
+  },
+  {
+    "id": "mssleozu4f3c41",
+    "name": "branndeveloper Bot",
+    "token": "8746565723:AAHT6C2HLyz8uj45u1sgbmaPQDVxE2w7lbM",
+    "ownerId": "7994130791",
+    "apiKey": "Codex1acb956ed545a3e6a880e9b1341a3ed",
+    "deployedBy": "branndeveloper",
+    "me": {
+      "id": 8746565723,
+      "username": "brannnn_bot",
+      "first_name": "Bran alight motion"
+    },
+    "status": "online",
+    "error": null,
+    "createdAt": "2026-08-14T06:55:25.962Z",
+    "startedAt": "2026-08-14T06:55:25.962Z"
   }
 ]

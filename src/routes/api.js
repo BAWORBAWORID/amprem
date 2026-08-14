@@ -30,7 +30,7 @@ function saveBannedIPRecords(records) {
 }
 
 import { createSession, setSessionCookie, destroySession, getSessionUser } from '../utils/session.js';
-import { sanitizeUser, hashPassword, verifyPassword, isUnlimitedRole, hasApiRole, hasBulkRole, canUseApiKey, prepareApiRole, isPremiumExpired, canUseGenerator, canUseBatch, generateReferralCode, ensureReferralCode, findReferralOwner, getReferralData, claimReferralRewards, REFERRAL_REWARD } from '../utils/auth.js';
+import { sanitizeUser, hashPassword, verifyPassword, isUnlimitedRole, hasApiRole, hasBulkRole, canUseApiKey, prepareApiRole, isPremiumExpired, canUseGenerator, canUseBatch, generateReferralCode, ensureReferralCode, findReferralOwner, getReferralData, claimReferralRewards, REFERRAL_REWARD, ensureDailyUserCredits, DEFAULT_USER_CREDITS, isValidUsername } from '../utils/auth.js';
 import { getChatMessages, broadcastChat, broadcastChatEvent, containsBadword, reviewStats } from '../utils/chat.js';
 import { sendLink, claimPremium, getActiveBatch, startBatch, startBatchWorker, progressBatch, serializeBatch, generateNFToken, GENEMAIL_DOMAINS, GENEMAIL_VERIFIED_DOMAINS } from '../utils/am.js';
 
@@ -191,7 +191,7 @@ async function handleAPI(req, res, url) {
         const password = String(body.password || '');
         if (username.length < 3) return sendJSON(res, 400, { success: false, message: 'Username minimal 3 karakter.' });
         if (password.length < 6) return sendJSON(res, 400, { success: false, message: 'Password minimal 6 karakter.' });
-        if (!/^[a-z0-9_.-]+$/.test(username)) return sendJSON(res, 400, { success: false, message: 'Username hanya boleh huruf, angka, titik, garis bawah, dan strip.' });
+        if (!isValidUsername(username)) return sendJSON(res, 400, { success: false, message: 'Username hanya boleh huruf, angka, titik, garis bawah, strip (3-32 karakter).' });
         const users = getUsers();
         if (users[username]) return sendJSON(res, 409, { success: false, error: 'USERNAME_EXISTS', message: 'Username sudah terdaftar.' });
         const banned = getBannedIPRecords().map(function (entry) { return entry.ip; });
@@ -203,9 +203,10 @@ async function handleAPI(req, res, url) {
             addLog('[SISTEM] Registrasi ditolak (limit 3 akun/IP): ' + username + ' dari ' + ip);
             return sendJSON(res, 403, { success: false, message: 'Batas maksimal 3 akun per IP tercapai. Hubungi admin jika ini akun Anda.' });
         }
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
         const user = {
             id: newId(), username: username, password: hashPassword(password),
-            role: 'user', credits: 20, apiKey: '', apiPlan: '', apiExpiresAt: null, apiActive: false,
+            role: 'user', credits: DEFAULT_USER_CREDITS, creditResetDate: today, apiKey: '', apiPlan: '', apiExpiresAt: null, apiActive: false,
             createdAt: nowISO(), banned: false, ip: ip, device: getClientDevice(req),
             referralCode: generateReferralCode(users), referredBy: '', referralCount: 0, referralEarned: 0,
             referralPending: 0, referralClaimed: 0, referrals: [],
@@ -222,8 +223,10 @@ async function handleAPI(req, res, url) {
             // Akun banned juga tidak berhak menerima komisi (konsisten dgn /api/invite/check).
             const sameIp = !isLocalIP(ip) && inviter && String(inviter.ip || '') === ip;
             if (inviter && !inviter.banned && !sameIp) {
-                // Yang diundang hanya dapat 10 credit (bukan 20 default).
+                // Yang diundang hanya dapat 10 credit (bukan default) untuk hari pertama;
+                // esok harinya otomatis reset ke DEFAULT_USER_CREDITS via ensureDailyUserCredits.
                 user.credits = 10;
+                user.creditResetDate = today;
                 user.referredBy = inviter.username;
                 user.referredByCode = inviter.referralCode;
                 // Pengundang TIDAK langsung dapat kredit — reward masuk status
@@ -294,6 +297,11 @@ async function handleAPI(req, res, url) {
         const user = getSessionUser(req, res);
         if (!user) return sendJSON(res, 200, { success: false, message: 'Tidak terautentikasi.' });
         ensureReferralCode(user);
+        if (ensureDailyUserCredits(user)) {
+            const users = getUsers();
+            users[user.username] = user;
+            saveUsers(users);
+        }
         return sendJSON(res, 200, { success: true, user: sanitizeUser(user) });
     }
 
@@ -360,6 +368,21 @@ async function handleAPI(req, res, url) {
 
         addLog('[SISTEM] Username "' + oldName + '" diubah menjadi "' + newName + '"');
         return sendJSON(res, 200, { success: true, message: 'Username berhasil diubah.', username: newName });
+    }
+
+    if (pathname === '/api/auth/change-password' && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        const body = await readBody(req);
+        const newPassword = String(body.newPassword || '');
+        if (!newPassword) return sendJSON(res, 400, { success: false, message: 'Password baru wajib diisi.' });
+        if (newPassword.length < 6) return sendJSON(res, 400, { success: false, message: 'Password minimal 6 karakter.' });
+        const users = getUsers();
+        user.password = hashPassword(newPassword);
+        users[user.username] = user;
+        saveUsers(users);
+        addLog('[SISTEM] ' + user.username + ' mengubah password');
+        return sendJSON(res, 200, { success: true, message: 'Password berhasil diubah.' });
     }
 
     if (pathname === '/api/auth/notifications' && method === 'GET') {
@@ -497,9 +520,9 @@ async function handleAPI(req, res, url) {
 
     /* ---------- PAYMENT (LEGACY QRIS) ---------- */
     if (pathname.startsWith('/api/payment/status/') && method === 'GET') {
-        const refNo = decodeURIComponent(pathname.split('/').pop());
+        const transactionId = decodeURIComponent(pathname.split('/').pop());
         const txs = readJSON('transactions', []);
-        const tx = txs.find(function (t) { return t.refNo === refNo; });
+        const tx = txs.find(function (t) { return t.transaction_id === transactionId; });
         if (!tx) return sendJSON(res, 404, { success: false, message: 'Transaksi tidak ditemukan.' });
         return sendJSON(res, 200, { success: true, status: tx.status });
     }
@@ -518,6 +541,7 @@ async function handleAPI(req, res, url) {
             premium: { 3: 9000, 7: 15000, 14: 20000, 30: 28000 },
             autogen: { 3: 12000, 7: 20000, 14: 28000, 30: 38000 },
             vip: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 },
+            pro: { 30: 15000 },
         };
         if (!PLAN_PRICES[role]) return sendJSON(res, 400, { success: false, message: 'Paket tidak valid.' });
         const serverPrice = (PLAN_PRICES[role][days] != null) ? PLAN_PRICES[role][days] : null;
@@ -526,13 +550,13 @@ async function handleAPI(req, res, url) {
         // Fee acak sebagai kode verifikasi unik (100-900, step 100)
         const fee = (Math.floor(Math.random() * 9) + 1) * 100;
         const amount = baseAmount + fee;
-        const refNo = generateOrderId();
+        const transactionId = generateOrderId();
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-        createTransaction(user.username, refNo, amount, role);
+        createTransaction(user.username, transactionId, amount, role);
         const payment = await generatePaymentQRIS(amount);
         return sendJSON(res, 200, {
             success: true,
-            order: { refNo: refNo, amount: amount, baseAmount: baseAmount, fee: fee, days: days, expiresAt: expiresAt },
+            order: { transaction_id: transactionId, amount: amount, baseAmount: baseAmount, fee: fee, days: days, expiresAt: expiresAt },
             payment: { qr: { url: payment.imageUrl }, qrString: payment.qrString },
         });
     }
@@ -542,6 +566,12 @@ async function handleAPI(req, res, url) {
         const user = getSessionUser(req, res);
         if (!user) return null;
         if (user.role !== 'owner') return null;
+        return user;
+    }
+    function requireBotUser(res) {
+        const user = getSessionUser(req, res);
+        if (!user) return null;
+        if (user.role !== 'owner' && user.role !== 'vip' && user.role !== 'pro') return null;
         return user;
     }
     function isPrivilegedRole(role) {
@@ -657,13 +687,14 @@ async function handleAPI(req, res, url) {
     if (pathname === '/api/admin/reset-all-credits' && method === 'POST') {
         const admin = requireAdmin(res);
         if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
         const users = getUsers();
         Object.keys(users).forEach(function (k) {
-            if (users[k].role === 'user') users[k].credits = 20;
+            if (users[k].role === 'user') { users[k].credits = DEFAULT_USER_CREDITS; users[k].creditResetDate = today; }
         });
         saveUsers(users);
-        addLog('[ADMIN ' + admin.username + '] Reset semua kredit user menjadi 20');
-        return sendJSON(res, 200, { success: true, message: 'Semua kredit user di-reset menjadi 20.' });
+        addLog('[ADMIN ' + admin.username + '] Reset semua kredit user menjadi ' + DEFAULT_USER_CREDITS);
+        return sendJSON(res, 200, { success: true, message: 'Semua kredit user di-reset menjadi ' + DEFAULT_USER_CREDITS + '.' });
     }
 
     if (pathname === '/api/admin/transaction/approve' && method === 'POST') {
@@ -672,7 +703,7 @@ async function handleAPI(req, res, url) {
         if (admin.role !== 'owner') return sendJSON(res, 403, { success: false, message: 'Khusus owner.' });
         const body = await readBody(req);
         const txs = readJSON('transactions', []);
-        const tx = txs.find(function (t) { return t.refNo === body.refNo; });
+        const tx = txs.find(function (t) { return t.transaction_id === body.transaction_id; });
         if (!tx) return sendJSON(res, 404, { success: false, message: 'Transaksi tidak ditemukan.' });
         tx.status = 'success';
         writeJSON('transactions', txs);
@@ -692,12 +723,29 @@ async function handleAPI(req, res, url) {
                 u.role = 'autogen'; u.apiPlan = 'autogen'; u.apiExpiresAt = null; prepareApiRole(u, previousRole);
             } else if (tx.plan === 'vip') {
                 u.role = 'vip'; u.apiPlan = 'lifetime'; u.apiExpiresAt = null; prepareApiRole(u, previousRole);
+            } else if (tx.plan === 'pro') {
+                u.role = 'pro'; u.apiPlan = 'monthly'; u.apiExpiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(); u.credits = 200; prepareApiRole(u, previousRole);
             }
             users[tx.username] = u;
             saveUsers(users);
         }
-        addLog('[ADMIN ' + admin.username + '] Setujui transaksi ' + tx.refNo + ' (' + tx.plan + ')');
+        addLog('[ADMIN ' + admin.username + '] Setujui transaksi ' + tx.transaction_id + ' (' + tx.plan + ')');
         return sendJSON(res, 200, { success: true, message: 'Transaksi disetujui. Paket diterapkan ke ' + tx.username + '.' });
+    }
+
+    if (pathname === '/api/admin/transaction/reject' && method === 'POST') {
+        const admin = requireAdmin(res);
+        if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        if (admin.role !== 'owner') return sendJSON(res, 403, { success: false, message: 'Khusus owner.' });
+        const body = await readBody(req);
+        const txs = readJSON('transactions', []);
+        const tx = txs.find(function (t) { return t.transaction_id === body.transaction_id; });
+        if (!tx) return sendJSON(res, 404, { success: false, message: 'Transaksi tidak ditemukan.' });
+        if (tx.status !== 'pending') return sendJSON(res, 409, { success: false, message: 'Transaksi sudah diproses.' });
+        tx.status = 'rejected';
+        writeJSON('transactions', txs);
+        addLog('[ADMIN ' + admin.username + '] Tolak transaksi ' + tx.transaction_id + ' (' + tx.plan + ')');
+        return sendJSON(res, 200, { success: true, message: 'Transaksi ditolak.' });
     }
 
     if (pathname === '/api/admin/ip/ban' && method === 'POST') {
@@ -749,6 +797,7 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
+        if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
         if (target.role === 'owner' || target.id === admin.id) return sendJSON(res, 403, { success: false, message: 'Tidak bisa menghapus akun ini.' });
         if (admin.role === 'vip' && target.role !== 'user') return sendJSON(res, 403, { success: false, message: 'Admin hanya bisa menghapus member biasa.' });
         delete users[target.username];
@@ -764,6 +813,7 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
+        if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
         if (admin.role === 'vip' && ['vip', 'owner'].indexOf(target.role) !== -1) return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat mengelola akun admin atau owner.' });
         target.credits = Math.max(0, parseInt(body.credits, 10) || 0);
         users[target.username] = target;
@@ -780,6 +830,7 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
+        if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
         if (admin.role === 'vip' && ['vip', 'owner'].indexOf(target.role) !== -1) return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat mengelola akun admin atau owner.' });
         target.password = hashPassword(String(body.newPassword));
         users[target.username] = target;
@@ -795,6 +846,7 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
+        if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
         if (target.role === 'owner' || target.id === admin.id) return sendJSON(res, 403, { success: false, message: 'Tidak bisa memblokir akun ini.' });
         target.banned = !target.banned;
         users[target.username] = target;
@@ -810,17 +862,18 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
+        if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
         if (target.role === 'owner' || target.id === admin.id) return sendJSON(res, 403, { success: false, message: 'Tidak bisa mengubah role akun ini.' });
         if (admin.role === 'vip' && ['vip', 'owner'].indexOf(target.role) !== -1) return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat mengelola akun admin atau owner.' });
         const role = String(body.role || '');
         const previousRole = target.role;
-        if (['user', 'reseller', 'premium', 'autogen', 'vip'].indexOf(role) === -1) return sendJSON(res, 400, { success: false, message: 'Role tidak valid.' });
+        if (['user', 'reseller', 'premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) === -1) return sendJSON(res, 400, { success: false, message: 'Role tidak valid.' });
         if (admin.role === 'vip' && role === 'vip') return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat memberikan role Admin.' });
         target.role = role;
         // Semua role premium (reseller/premium/autogen/admin) mendukung
         // masa aktif: apiPlan 'lifetime' (selamanya) atau expired dgn durasi.
         // Default admin/owner tanpa body.apiPlan = lifetime (kompatibel lama).
-        const premiumRoles = ['reseller', 'premium', 'autogen', 'vip'];
+        const premiumRoles = ['reseller', 'premium', 'autogen', 'vip', 'pro'];
         if (premiumRoles.indexOf(role) !== -1) {
             // Default lifetime bila apiPlan tidak dikirim (kompatibel lama).
             const plan = body.apiPlan === 'expired' ? 'expired' : 'lifetime';
@@ -922,13 +975,13 @@ async function handleAPI(req, res, url) {
     }
 
     if (pathname === '/api/telegram/bots' && method === 'GET') {
-        const admin = requireAdmin(res);
+        const admin = requireBotUser(res);
         if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
         return sendJSON(res, 200, { success: true, bots: botsFor(admin) });
     }
 
     if (pathname === '/api/telegram/deploy' && method === 'POST') {
-        const admin = requireAdmin(res);
+        const admin = requireBotUser(res);
         if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
         const body = await readBody(req);
         // Pastikan admin punya API Key untuk dipakai bot memanggil API internal.
@@ -942,7 +995,7 @@ async function handleAPI(req, res, url) {
             saveUsers(users);
         }
         try {
-            const bot = await deployBot({ name: body.name, token: body.token, ownerId: body.ownerId, apiKey: apiKey, deployedBy: admin.username, isOwner: admin.role === 'owner' });
+            const bot = await deployBot({ name: body.name, token: body.token, ownerId: body.ownerId, apiKey: apiKey, deployedBy: admin.username, role: admin.role });
             addLog('[ADMIN ' + admin.username + '] Deploy bot telegram: ' + bot.name);
             return sendJSON(res, 200, { success: true, message: 'Bot ' + bot.name + ' berhasil di-deploy dan online.', bots: botsFor(admin) });
         } catch (e) {
@@ -951,7 +1004,7 @@ async function handleAPI(req, res, url) {
     }
 
     if (pathname === '/api/telegram/start' && method === 'POST') {
-        const admin = requireAdmin(res);
+        const admin = requireBotUser(res);
         if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
         const body = await readBody(req);
         if (!botManageable(body.id, admin)) return sendJSON(res, 403, { success: false, message: 'Bot ini bukan milik akun Anda.' });
@@ -965,7 +1018,7 @@ async function handleAPI(req, res, url) {
     }
 
     if (pathname === '/api/telegram/stop' && method === 'POST') {
-        const admin = requireAdmin(res);
+        const admin = requireBotUser(res);
         if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
         const body = await readBody(req);
         if (!botManageable(body.id, admin)) return sendJSON(res, 403, { success: false, message: 'Bot ini bukan milik akun Anda.' });
@@ -975,7 +1028,7 @@ async function handleAPI(req, res, url) {
     }
 
     if (pathname === '/api/telegram/restart' && method === 'POST') {
-        const admin = requireAdmin(res);
+        const admin = requireBotUser(res);
         if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
         const body = await readBody(req);
         if (!botManageable(body.id, admin)) return sendJSON(res, 403, { success: false, message: 'Bot ini bukan milik akun Anda.' });
@@ -989,7 +1042,7 @@ async function handleAPI(req, res, url) {
     }
 
     if (pathname === '/api/telegram/delete' && method === 'POST') {
-        const admin = requireAdmin(res);
+        const admin = requireBotUser(res);
         if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
         const body = await readBody(req);
         if (!botManageable(body.id, admin)) return sendJSON(res, 403, { success: false, message: 'Bot ini bukan milik akun Anda.' });

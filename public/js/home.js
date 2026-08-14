@@ -131,7 +131,7 @@
         autogen: 'badge-autogen', reseller: 'badge-reseller', user: 'badge-normal'
     };
     var ROLE_LABEL = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
-    var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'Anggota' };
+    var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', pro: 'Pro', user: 'Anggota' };
 
     var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews', ];
 
@@ -152,7 +152,7 @@
         return ['reseller', 'premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
     }
     function hasApiRole(role) {
-        return ['premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
+        return ['premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
     }
     function hasBulkRole(role) {
         return ['autogen', 'vip', 'owner'].indexOf(role) !== -1;
@@ -539,7 +539,9 @@
                 var d = JSON.parse(sessionStorage.getItem('am_reg_draft') || '{}');
                 if (d.username) $('register-username').value = d.username;
                 if (d.password) $('register-password').value = d.password;
-                if (d.referral) $('register-referral').value = d.referral;
+                // CATATAN: referral TIDAK di-restore dari draft. Field referral murni
+                // diisi dari URL ?invite= (lihat init di bawah). Ini mencegah referral
+                // basi (mis. @alwayscodex) muncul kembali saat buka website tanpa invite.
             } else {
                 regView.classList.add('hidden');
                 logView.classList.remove('hidden');
@@ -1039,7 +1041,8 @@
         reseller: { 3: 7000, 7: 12000, 14: 18000, 30: 25000 },
         premium: { 3: 9000, 7: 15000, 14: 20000, 30: 28000 },
         autogen: { 3: 12000, 7: 20000, 14: 28000, 30: 38000 },
-        vip: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 }
+        vip: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 },
+        pro: { 30: 15000 }
     };
 
     // Satu sumber harga di frontend; harus cocok dengan backend.
@@ -1066,7 +1069,7 @@
             var fee = Number(order.fee != null ? order.fee : 0);
             var fmtRp = function (n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); };
             var waMessage = 'Halo Admin, saya sudah melakukan pembayaran *Upgrade Role*.\n' +
-                '*Trx ID:* ' + order.refNo + '\n' +
+                '*Transaction ID:* ' + order.transaction_id + '\n' +
                 '*Username:* ' + (currentUser ? currentUser.username : '-') + '\n' +
                 '*Paket:* ' + name + ' - ' + days + ' Hari\n' +
                 '*Harga Paket:* ' + fmtRp(base) + '\n' +
@@ -1102,7 +1105,7 @@
             function checkStatus() {
                 var btn = document.getElementById('qris-check-btn');
                 if (btn) btn.disabled = true;
-                api('/api/payment/status/' + encodeURIComponent(order.refNo)).then(function (d) {
+                api('/api/payment/status/' + encodeURIComponent(order.transaction_id)).then(function (d) {
                     var st = (d && d.status) || '';
                     if (st === 'success') {
                         stopTimer();
@@ -1130,7 +1133,7 @@
             function cancelPayment() {
                 var btn = document.getElementById('qris-cancel-btn');
                 if (btn) btn.disabled = true;
-                api('/api/payment/cancel', { method: 'POST', body: { refNo: order.refNo } }).then(function () {
+                api('/api/payment/cancel', { method: 'POST', body: { transaction_id: order.transaction_id } }).then(function () {
                     stopTimer();
                     Swal.close();
                 }).catch(function () {
@@ -1190,31 +1193,9 @@
         });
     }
 
-    function updateBottomQrisTotal(role, days) {
-        var totalEl = document.getElementById('qris-total');
-        var price = getPackagePrice(role, days);
-        if (totalEl) totalEl.textContent = (price == null) ? 'Harga tidak tersedia' : 'Rp ' + price.toLocaleString('id-ID');
-        window._bottomQris = { role: role, days: days, price: (price == null ? 0 : price) };
-    }
 
-    function bindManualQrisWa() {
-        var waBtn = document.getElementById('btn-qris-manual-wa');
-        if (!waBtn || waBtn.dataset.bound) return;
-        waBtn.dataset.bound = '1';
-        waBtn.addEventListener('click', function () {
-            var ref = window._bottomQris || { role: 'premium', days: 30, price: 0 };
-            var roleLabel = (ref.role || '').charAt(0).toUpperCase() + (ref.role || '').slice(1);
-            var priceText = (ref.price && Number(ref.price) > 0) ? 'Rp ' + Number(ref.price).toLocaleString('id-ID') : 'Harga tidak tersedia';
-            var msg = 'Halo Owner, saya ingin membeli *Role ' + roleLabel + '* durasi *' + ref.days + ' Hari* seharga *' + priceText + '* via *QRIS (Manual)*.\n' +
-                'Detail Akun:\n- Username: ' + (currentUser ? currentUser.username : '-') + '\n- ID Pengguna: ' + (currentUser ? (currentUser.id || '-') : '-') +
-                '\nMohon instruksi pembayaran selanjutnya. Terima kasih!';
-            window.open('https://wa.me/6288297563383?text=' + encodeURIComponent(msg), '_blank');
-        });
-    }
 
     function loadAPIPanel() {
-        bindManualQrisWa();
-        updateBottomQrisTotal('premium', 30);
         Object.keys(PLAN_PRICES).forEach(function (role) {
             var activeBtn = document.querySelector('.plan-duration-options[data-role="' + role + '"] .duration-btn.active');
             var days = activeBtn ? parseInt(activeBtn.dataset.days, 10) : 30;
@@ -1246,7 +1227,6 @@
                         ? 'Harga tidak tersedia'
                         : 'Rp ' + price.toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
                 }
-                updateBottomQrisTotal(role, days);
             });
         });
         document.querySelectorAll('.btn-purchase-plan').forEach(function (btn) {
@@ -1262,7 +1242,6 @@
                     Swal.fire({ icon: 'warning', title: 'Harga Tidak Tersedia', text: 'Harga paket untuk durasi terpilih tidak ditemukan.', confirmButtonText: 'OK' });
                     return;
                 }
-                updateBottomQrisTotal(role, days);
                 startQRISPayment(role, days, name);
             });
         });
@@ -1476,11 +1455,13 @@
         if (!currentUser) return;
         var u = currentUser;
         $('profile-username').textContent = u.username;
+        var avatarEl = $('profile-avatar-circle');
+        if (avatarEl) avatarEl.textContent = (u.username || 'U').charAt(0).toUpperCase();
 
         // Verified Badge ala Meta AI (rosette) — hanya untuk role terverifikasi
         var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span.profile-verified-badge');
         if (profileCheckBadge) {
-            var isVerifiedRole = ['owner', 'vip', 'premium', 'autogen', 'reseller'].indexOf(u.role) !== -1;
+            var isVerifiedRole = ['owner', 'vip', 'premium', 'autogen', 'reseller', 'pro'].indexOf(u.role) !== -1;
             profileCheckBadge.style.display = isVerifiedRole ? 'inline-flex' : 'none';
         }
 
@@ -1508,10 +1489,43 @@
                 reseller: 'Unlimited Web',
                 premium: 'Unlimited Web + API single',
                 autogen: 'Unlimited Web + API bulk',
-                vip: 'Unlimited + Management',
+                vip: 'Unlimited + VIP Feature',
+                pro: '200 Credits + 1 Bot',
                 owner: 'Unlimited + Superuser'
             };
             $('pinfo-limit').textContent = roleLimits[u.role] || '0';
+        }
+
+        // Account Overview cards + header badges (UI redesign)
+        if ($('ov-role')) $('ov-role').textContent = PROFILE_ROLE[u.role] || 'Anggota';
+        if ($('ov-masa-aktif')) {
+            var masaText = '-';
+            if (u.apiPlan === 'lifetime') masaText = 'Lifetime';
+            else if (u.apiExpiresAt) masaText = new Date(u.apiExpiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            $('ov-masa-aktif').textContent = masaText;
+        }
+        if ($('ov-kredit')) $('ov-kredit').textContent = creditsDisplay() + ' Credits';
+        if ($('ov-limit')) $('ov-limit').textContent = (roleLimits[u.role] || '0');
+        if ($('ov-bot')) {
+            var botRole = u.role;
+            $('ov-bot').textContent = (botRole === 'owner') ? 'Unlimited' : (botRole === 'vip' ? '3 Bot' : (botRole === 'pro' ? '1 Bot' : 'Tidak tersedia'));
+            if (botRole === 'owner' || botRole === 'vip' || botRole === 'pro') {
+                api('/api/telegram/bots').then(function (d) {
+                    if (d && d.success && Array.isArray(d.bots)) {
+                        var n = d.bots.length;
+                        var el = $('ov-bot');
+                        if (el) el.textContent = (botRole === 'owner') ? (n + ' (Unlimited)') : (botRole === 'vip' ? (n + ' / 3') : (n + ' / 1'));
+                    }
+                }).catch(function () {});
+            }
+        }
+        var rolePill = $('pc-badge-role');
+        if (rolePill) rolePill.textContent = (PROFILE_ROLE[u.role] || 'Anggota').toUpperCase();
+        var masaPill = $('pc-badge-masa');
+        if (masaPill) {
+            var isLife = u.apiPlan === 'lifetime';
+            masaPill.textContent = isLife ? 'LIFETIME' : 'AKTIF';
+            masaPill.className = 'pc-pill ' + (isLife ? 'pc-pill-lifetime' : 'pc-pill-active');
         }
 
         $('api-key-input').value = u.apiKey || 'Belum ada API Key. Silahkan beli di menu Beli API Key.';
@@ -1621,6 +1635,31 @@
                         resetBtn.classList.remove('is-loading');
                         resetBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i><span>Revoke &amp; Generate New Key</span>';
                     });
+                });
+            });
+        }
+
+        var resetPwBtn = $('btn-reset-password');
+        if (resetPwBtn && !resetPwBtn.dataset.bound) {
+            resetPwBtn.dataset.bound = '1';
+            resetPwBtn.addEventListener('click', function () {
+                var np = $('new-password'), cp = $('confirm-password');
+                var newPassword = np ? np.value : '', confirmPassword = cp ? cp.value : '';
+                if (!newPassword) return Swal.fire({ icon: 'warning', title: 'Password baru wajib diisi.', confirmButtonText: 'OK' });
+                if (!confirmPassword) return Swal.fire({ icon: 'warning', title: 'Confirm password wajib diisi.', confirmButtonText: 'OK' });
+                if (newPassword.length < 6) return Swal.fire({ icon: 'warning', title: 'Password minimal 6 karakter.', confirmButtonText: 'OK' });
+                if (newPassword !== confirmPassword) return Swal.fire({ icon: 'warning', title: 'Password dan confirm password tidak sama.', confirmButtonText: 'OK' });
+                resetPwBtn.disabled = true;
+                var orig = resetPwBtn.innerHTML;
+                resetPwBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>MENGUBAH PASSWORD...</span>';
+                api('/api/auth/change-password', { method: 'POST', body: { newPassword: newPassword } }).then(function (d) {
+                    if (!d.success) throw new Error(d.message || 'Gagal mengubah password.');
+                    if (np) np.value = ''; if (cp) cp.value = '';
+                    Swal.fire({ icon: 'success', title: 'Password berhasil diubah.', confirmButtonText: 'OK' });
+                }).catch(function (err) {
+                    Swal.fire({ icon: 'error', title: 'GAGAL', text: (err && err.message) || 'Terjadi kesalahan koneksi.', confirmButtonText: 'OK' });
+                }).finally(function () {
+                    resetPwBtn.disabled = false; resetPwBtn.innerHTML = orig;
                 });
             });
         }
@@ -1915,6 +1954,8 @@
         if (!badge) return;
         var online = 0, total = (bots || []).length;
         (bots || []).forEach(function (b) { if (b.status === 'online') online++; });
+        var countEl = $('telegram-bot-count');
+        if (countEl) countEl.textContent = (total === 1 ? '1 Bot' : total + ' Bot');
         if (!total) {
             badge.innerHTML = '<i class="fa-solid fa-circle"></i> Belum Deploy';
             badge.style.background = '#64748b';
@@ -2320,10 +2361,10 @@
 
     function loadAdminTransactions(page) {
         var tbody = $('admin-transactions-table-body');
-        setAdminTableState(tbody, 7, 'Memuat transaksi pembayaran...', 'loading');
+        setAdminTableState(tbody, 6, 'Memuat transaksi pembayaran...', 'loading');
         api('/api/admin/transactions').then(function (data) {
             if (!data.success) {
-                setAdminTableState(tbody, 7, data.message || 'Transaksi hanya dapat dilihat oleh owner.', 'error');
+                setAdminTableState(tbody, 6, data.message || 'Transaksi hanya dapat dilihat oleh owner.', 'error');
                 if ($('admin-transactions-pagination')) $('admin-transactions-pagination').innerHTML = '';
                 return;
             }
@@ -2333,30 +2374,19 @@
             var current = Math.min(Math.max(1, page || 1), totalPages);
             var slice = txs.slice((current - 1) * perPage, current * perPage);
             if (!slice.length) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">Belum ada transaksi.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Belum ada transaksi.</td></tr>';
             } else {
                 tbody.innerHTML = slice.map(function (t) {
                     var status = t.status === 'success' ? '<span class="status-success">Sukses</span>'
                         : t.status === 'failed' ? '<span class="status-failed">Gagal</span>'
+                        : t.status === 'rejected' ? '<span class="status-failed">Ditolak</span>'
                         : '<span class="status-pending">Pending</span>';
-                    var action = t.status === 'pending'
-                        ? '<button class="btn btn-success btn-sm approve-tx-btn" data-ref="' + esc(t.refNo) + '">Setujui</button>'
-                        : '<span style="color:var(--text-muted);font-size:0.75rem;">-</span>';
-                    return '<tr><td>' + esc(t.createdAt) + '</td><td>' + esc(t.username) + '</td><td>' + esc(t.refNo) + '</td><td>Rp ' + esc(t.amount) + '</td><td>' + esc(t.plan) + '</td><td>' + status + '</td><td>' + action + '</td></tr>';
+                    return '<tr><td>' + esc(t.createdAt) + '</td><td>' + esc(t.username) + '</td><td>' + esc(t.transaction_id) + '</td><td>Rp ' + esc(t.amount) + '</td><td>' + esc(t.plan) + '</td><td>' + status + '</td></tr>';
                 }).join('');
             }
-            tbody.querySelectorAll('.approve-tx-btn').forEach(function (b) {
-                b.addEventListener('click', function () {
-                    api('/api/admin/transaction/approve', { method: 'POST', body: { refNo: b.dataset.ref } }).then(function (d) {
-                        Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'DISETUJUI!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
-                        loadAdminTransactions(current);
-                        loadAdminUsers();
-                    });
-                });
-            });
             renderPagination($('admin-transactions-pagination'), totalPages, current, loadAdminTransactions);
         }).catch(function () {
-            setAdminTableState(tbody, 7, 'Gagal terhubung ke server.', 'error');
+            setAdminTableState(tbody, 6, 'Gagal terhubung ke server.', 'error');
         });
     }
 
@@ -2380,16 +2410,17 @@
                 tbody.innerHTML = slice.map(function (t) {
                     var status = t.status === 'success' ? '<span class="status-success">Sukses</span>'
                         : t.status === 'failed' ? '<span class="status-failed">Gagal</span>'
+                        : t.status === 'rejected' ? '<span class="status-failed">Ditolak</span>'
                         : '<span class="status-pending">Pending</span>';
                     var base = t.baseAmount != null ? t.baseAmount : (t.amount != null ? t.amount - (t.fee || 0) : 0);
                     var fee = t.fee != null ? t.fee : 0;
                     var action = t.status === 'pending'
                         ? '<div style="display:flex;gap:4px;">' +
-                        '<button class="btn btn-success btn-sm approve-tx-btn" data-ref="' + esc(t.refNo) + '">Setujui</button>' +
-                        '<button class="btn btn-danger btn-sm reject-tx-btn" data-ref="' + esc(t.refNo) + '">Tolak</button>' +
+                        '<button class="btn btn-success btn-sm approve-tx-btn" data-transaction-id="' + esc(t.transaction_id) + '">Setujui</button>' +
+                        '<button class="btn btn-danger btn-sm reject-tx-btn" data-transaction-id="' + esc(t.transaction_id) + '">Tolak</button>' +
                         '</div>'
                         : '<span style="color:var(--text-muted);font-size:0.75rem;">-</span>';
-                    return '<tr><td>' + esc(t.createdAt) + '</td><td>' + esc(t.username) + '</td><td>' + esc(t.refNo) + '</td>' +
+                    return '<tr><td>' + esc(t.createdAt) + '</td><td>' + esc(t.username) + '</td><td>' + esc(t.transaction_id) + '</td>' +
                         '<td>Rp ' + esc(t.amount) + '</td>' +
                         '<td>Rp ' + esc(base) + ' + Rp ' + esc(fee) + '</td>' +
                         '<td>' + status + '</td><td>' + action + '</td></tr>';
@@ -2397,7 +2428,7 @@
             }
             tbody.querySelectorAll('.approve-tx-btn').forEach(function (b) {
                 b.addEventListener('click', function () {
-                    api('/api/admin/transaction/approve', { method: 'POST', body: { refNo: b.dataset.ref } }).then(function (d) {
+                    api('/api/admin/transaction/approve', { method: 'POST', body: { transaction_id: b.dataset.transactionId } }).then(function (d) {
                         Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'DISETUJUI!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
                         loadAdminUpgrades(current);
                         loadAdminTransactions(current);
@@ -2409,9 +2440,23 @@
 
             tbody.querySelectorAll(".reject-tx-btn").forEach(function (b) {
                 b.addEventListener("click", function () {
-                    api("/api/admin/transaction/reject", { method: "POST", body: { refNo: b.dataset.ref } }).then(function (d) {
-                        Swal.fire({ icon: d.success ? "success" : "error", title: d.success ? "DITOLAK!" : "GAGAL", text: d.message, timer: 1500, showConfirmButton: false });
-                        loadAdminUpgrades(current);
+                    if (b.disabled) return;
+                    b.disabled = true;
+                    var orig = b.textContent;
+                    b.textContent = "MEMPROSES...";
+                    api("/api/admin/transaction/reject", { method: "POST", body: { transaction_id: b.dataset.transactionId } }).then(function (d) {
+                        if (d && d.success) {
+                            Swal.fire({ icon: "success", title: "DITOLAK!", text: d.message || "Upgrade ditolak.", timer: 1500, showConfirmButton: false });
+                            loadAdminUpgrades(current);
+                        } else {
+                            Swal.fire({ icon: "error", title: "GAGAL", text: (d && d.message) || "Gagal menolak upgrade.", confirmButtonText: "OK" });
+                            b.disabled = false;
+                            b.textContent = orig;
+                        }
+                    }).catch(function () {
+                        Swal.fire({ icon: "error", title: "GAGAL", text: "Terjadi kesalahan koneksi.", confirmButtonText: "OK" });
+                        b.disabled = false;
+                        b.textContent = orig;
                     });
                 });
             });
@@ -2729,7 +2774,7 @@
     function handleEditRole(userId) {
         Swal.fire({
             title: 'Ubah Role', input: 'select',
-            inputOptions: { USER: 'USER — Credit Based', RESELLER: 'RESELLER — Unlimited Web Only', PREMIUM: 'PREMIUM — API Single Create', AUTOGEN: 'AUTOGEN — API Bulk Auto', ADMIN: 'ADMIN — Master Management' },
+            inputOptions: { USER: 'USER — Credit Based', RESELLER: 'RESELLER — Unlimited Web Only', PREMIUM: 'PREMIUM — API Single Create', AUTOGEN: 'AUTOGEN — API Bulk Auto', VIP: 'VIP — Unlimited + VIP Feature', PRO: 'PRO — 200 Credits + 1 Bot', OWNER: 'OWNER — Full Access' },
             inputPlaceholder: 'Pilih role baru', showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal',
             preConfirm: function (role) { if (!role) Swal.showValidationMessage('Pilih role'); return role; }
         }).then(function (r) {
@@ -2968,7 +3013,7 @@
                     text: 'Versi aplikasi Anda sudah usang. Silakan unduh versi terbaru.',
                     confirmButtonText: 'Download APK'
                 }).then(function () {
-                    window.location.href = '/createamryezen.apk';
+                    window.location.href = '/alwayscodex.apk';
                 });
             }
         } catch (e) {}
@@ -3115,15 +3160,22 @@
         checkAppVersion();
         initThemeToggle(); // FITUR BARU - Pemanggilan Switch Theme
         // Referral dari link (format /invite?code=, /?ref=, /#referal?ref=, /#register?ref=)
-        // → simpan & isi form register (opsional)
+        // URL adalah SATU-SATUNYA sumber kebenaran. Tidak ada default/hardcode.
         try {
             var inviteCode = getReferralFromUrl();
-            if (inviteCode) localStorage.setItem('pendingReferral', inviteCode);
             var refField = $('register-referral');
+            if (inviteCode) {
+                // Ada ?invite=CODE → gunakan CODE, simpan untuk persist saat refresh.
+                try { localStorage.setItem('pendingReferral', inviteCode); } catch (err) {}
+                if (refField) refField.value = inviteCode;
+                checkReferral(inviteCode);
+            } else {
+                // TIDAK ada invite di URL → referral kosong, buang pending basi.
+                try { localStorage.removeItem('pendingReferral'); } catch (err) {}
+                if (refField) refField.value = '';
+                setReferralUI('idle');
+            }
             if (refField) {
-                var saved = ''; try { saved = localStorage.getItem('pendingReferral') || ''; } catch (err) {}
-                // Jangan timpa kode yang sudah diketik user (draft dari refresh)
-                if (saved && !refField.value) refField.value = saved;
                 // Validasi kode referral live dengan debounce 600ms (anti-spam API)
                 var refDebounce = null;
                 refField.addEventListener('input', function () {
@@ -3136,10 +3188,6 @@
                     }, 600);
                 });
             }
-            // Check kode yang tampil di field (draft dari refresh) atau pendingReferral dari URL
-            var pendCode = ''; try { pendCode = localStorage.getItem('pendingReferral') || ''; } catch (err) {}
-            var codeToCheck = (refField && refField.value.trim()) || pendCode;
-            checkReferral(codeToCheck);
         } catch (err) {}
         // Router hash: dukung akses langsung #lifetime / #referal & edit manual hash.
         // Guard: jangan pindah screen non-auth saat belum login (hindari error 401 tampil ke guest).
@@ -3152,6 +3200,11 @@
                 var rf = $('register-referral');
                 if (rf) rf.value = urlCode;
                 checkReferral(urlCode);
+            } else {
+                // URL tidak punya invite → pastikan tidak ada sisa referral basi.
+                try { localStorage.removeItem('pendingReferral'); } catch (err) {}
+                var rf0 = $('register-referral');
+                if (rf0 && !rf0.value.trim()) { rf0.value = ''; setReferralUI('idle'); }
             }
             var n = normalizeScreen(window.location.hash.replace('#', '').split('?')[0]);
             if (!n || n === 'auth' || n === currentScreen) return;

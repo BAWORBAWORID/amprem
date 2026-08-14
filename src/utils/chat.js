@@ -72,10 +72,10 @@ function reviewStats(reviews) {
 
 /* ============================== TRANSACTIONS ============================== */
 
-function createTransaction(username, refNo, amount, plan) {
+function createTransaction(username, transactionId, amount, plan) {
     const txs = readJSON('transactions', []);
     txs.push({
-        id: newId(), username: username, refNo: refNo, amount: amount, plan: plan,
+        id: newId(), username: username, transaction_id: transactionId, amount: amount, plan: plan,
         status: 'pending', createdAt: fmtDateTime(),
     });
     writeJSON('transactions', txs);

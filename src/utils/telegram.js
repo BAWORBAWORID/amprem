@@ -261,10 +261,10 @@ function startBotRunner(bot) {
 
 /**
  * Deploy bot baru (atau ganti token lama yang sama).
- * input: { name, token, ownerId, apiKey, deployedBy, isOwner }
+ * input: { name, token, ownerId, apiKey, deployedBy, role }
  * - deployedBy: username website yang men-deploy (pemilik bot).
- * - isOwner: true hanya untuk role owner (tanpa batas jumlah bot).
- *   Role admin dibatasi maksimal 1 bot.
+ * - role: 'owner' (unlimited) atau 'vip' (maksimal 3 bot).
+ *   Role lain tidak diizinkan men-deploy bot.
  */
 async function deployBot(input) {
     let name = String(input.name || '').trim().slice(0, 40);
@@ -272,20 +272,27 @@ async function deployBot(input) {
     const ownerId = String(input.ownerId || '').trim();
     const apiKey = String(input.apiKey || '').trim();
     const deployedBy = String(input.deployedBy || '').trim();
-    const isOwner = !!input.isOwner;
+    const role = String(input.role || '').trim();
+    const isOwner = role === 'owner';
 
     if (!/^\d+:[A-Za-z0-9_-]{30,}$/.test(token)) throw new Error('Format Bot Token tidak valid. Ambil token dari @BotFather.');
     if (!/^-?\d+$/.test(ownerId)) throw new Error('Owner ID harus berupa angka (dapatkan dari @userinfobot atau perintah /id di bot).');
     if (!apiKey) throw new Error('API Key akun Anda kosong. Generate API Key di menu Profil terlebih dahulu.');
     if (!deployedBy) throw new Error('Username deploy tidak valid.');
 
-    // Role admin: maksimal 1 bot per username. Owner bebas.
-    // Bot dengan token yang sama (flow update/replace bot yang sama)
-    // tidak dihitung sebagai bot tambahan.
-    if (!isOwner) {
+    // Hanya role VIP (maks 3 bot), Pro (maks 1 bot), dan Owner (unlimited) yang boleh deploy.
+    // Bot dengan token yang sama (flow update/replace) tidak dihitung sebagai bot tambahan.
+    if (role !== 'owner' && role !== 'vip' && role !== 'pro') {
+        throw new Error('Hanya akun VIP, Pro, dan Owner yang dapat men-deploy bot Telegram.');
+    }
+    if (role === 'vip') {
         const own = loadBots().filter((b) => b.deployedBy === deployedBy);
         const dupOwn = own.find((b) => b.token === token);
-        if (own.length - (dupOwn ? 1 : 0) >= 1) throw new Error('Role VIP hanya dapat men-deploy maksimal 1 bot. Hapus bot lama Anda terlebih dahulu.');
+        if (own.length - (dupOwn ? 1 : 0) >= 3) throw new Error('Role VIP hanya dapat men-deploy maksimal 3 bot. Hapus bot lama Anda terlebih dahulu.');
+    } else if (role === 'pro') {
+        const own = loadBots().filter((b) => b.deployedBy === deployedBy);
+        const dupOwn = own.find((b) => b.token === token);
+        if (own.length - (dupOwn ? 1 : 0) >= 1) throw new Error('Role Pro hanya dapat men-deploy maksimal 1 bot. Hapus bot lama Anda terlebih dahulu.');
     }
 
     const me = await validateToken(token);
@@ -873,6 +880,8 @@ async function finalizeAutoGen(bot, chatId, state, batch) {
     const u = globalThis.__amTelegramUsers[userId];
     u.quota = Math.max(0, (u.quota || 0) - ok);
     u.totalAccounts = (u.totalAccounts || 0) + ok;
+    // Simpan segera agar kuota persisten & konsisten dengan file.
+    saveTelegramData();
 
     const startedAt = batch.startedAt || Date.now();
     const totalTime = fmtDur(Date.now() - startedAt);
@@ -902,6 +911,41 @@ async function finalizeAutoGen(bot, chatId, state, batch) {
     delete globalThis.__amUserStates[chatId];
 }
 
+/**
+ * Mengambil sisa kuota user Telegram. Nilai diambil dari cache in-memory
+ * DAN dari file telegram_users.json, lalu diambil yang TERKECIL.
+ * Tujuannya defensif:
+ *  - mencegah bypass bila file diedit manual jadi 0 (cache masih >0),
+ *  - mencegah double-spend bila cache sudah dikurangi tapi file belum tersimpan.
+ */
+function getUserQuota(userId) {
+    const cache = (globalThis.__amTelegramUsers[userId] && globalThis.__amTelegramUsers[userId].quota) || 0;
+    let fileQ = 0;
+    try {
+        const usersFile = path.join(DATA_DIR, 'telegram_users.json');
+        if (fs.existsSync(usersFile)) {
+            const data = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+            fileQ = (data[userId] && data[userId].quota) || 0;
+        }
+    } catch (e) { /* abaikan, fallback ke cache */ }
+    return Math.min(cache, fileQ);
+}
+
+// Pesan saat kuota 0. Owner boleh pakai voucher /addlicense; user biasa
+// disuruh hubungi owner untuk minta lisensi.
+function quotaZeroMessage(isOwner, bot) {
+    if (isOwner) {
+        return '❌ Sisa kuota Anda 0. Gunakan voucher atau perintah /addlicense untuk menambah kuota.';
+    }
+    let ownerName = '';
+    try {
+        const ow = globalThis.__amTelegramUsers[String(bot.ownerId)];
+        if (ow && ow.username) ownerName = ' @' + ow.username;
+        else ownerName = ' (ID: ' + String(bot.ownerId) + ')';
+    } catch (e) { /* abaikan */ }
+    return '❌ Sisa kuota Anda 0. Silakan hubungi owner' + ownerName + ' untuk meminta penambahan kuota/lisensi.';
+}
+
 async function handleWaitingAutoCount(bot, chatId, state, text) {
     if (text.toLowerCase() === '/cancel') {
         await editMessageText(bot.token, chatId, state.messageId, '❌ Proses dibatalkan.\nKirim /start untuk kembali ke menu utama.');
@@ -911,7 +955,7 @@ async function handleWaitingAutoCount(bot, chatId, state, text) {
     const userId = String(chatId);
     const isOwner = String(chatId) === String(bot.ownerId);
     const u = globalThis.__amTelegramUsers[userId] || {};
-    const quota = u.quota || 0;
+    const quota = isOwner ? 100 : getUserQuota(userId);
     let count = parseInt(text.trim(), 10);
     if (!count || count < 1) {
         await editMessageText(bot.token, chatId, state.messageId, '⚠️ Jumlah tidak valid. Kirim angka (contoh: 5).');
@@ -923,7 +967,8 @@ async function handleWaitingAutoCount(bot, chatId, state, text) {
         return;
     }
     if (!isOwner && quota <= 0) {
-        await editMessageText(bot.token, chatId, state.messageId, '❌ Sisa kuota Anda 0. Gunakan voucher atau perintah /addlicense untuk menambah kuota.');
+        delete globalThis.__amUserStates[chatId];
+        await editMessageText(bot.token, chatId, state.messageId, quotaZeroMessage(isOwner, bot) + '\n\nKirim /start untuk kembali ke menu.', getBackKeyboard());
         return;
     }
     let capped = false;
@@ -1023,6 +1068,15 @@ async function handleWaitingLink(bot, chatId, state, text) {
     }
     const link = text.trim();
     
+    // Cek kuota sebelum mengaktifkan lisensi (owner bebas).
+    const userId = String(chatId);
+    const isOwner = String(chatId) === String(bot.ownerId);
+    if (!isOwner && getUserQuota(userId) <= 0) {
+        delete globalThis.__amUserStates[chatId];
+        await editMessageText(bot.token, chatId, state.messageId, quotaZeroMessage(isOwner, bot) + '\n\nKirim /start untuk kembali ke menu.', getBackKeyboard());
+        return;
+    }
+    
     if (!link || !link.startsWith('http')) {
         await editMessageText(bot.token, chatId, state.messageId, '⚠️ Format link tidak valid. Silakan tempel tautan verifikasi yang lengkap (harus dimulai dengan https://):');
         return;
@@ -1049,13 +1103,13 @@ async function handleWaitingLink(bot, chatId, state, text) {
         const orderId = apiCode ? 'Alwayscodex-' + String(apiCode).replace(/^Alwayscodex-/i, '') : generateOrderId();
         
         // Update user stats
-        const userId = String(chatId);
         if (!globalThis.__amTelegramUsers[userId]) {
             globalThis.__amTelegramUsers[userId] = { id: userId, username: '', firstName: '', quota: 1, totalAccounts: 0, referredBy: null };
         }
         
         globalThis.__amTelegramUsers[userId].quota = Math.max(0, (globalThis.__amTelegramUsers[userId].quota || 1) - 1);
         globalThis.__amTelegramUsers[userId].totalAccounts = (globalThis.__amTelegramUsers[userId].totalAccounts || 0) + 1;
+        saveTelegramData();
         
         // Show success message
         await editMessageText(bot.token, chatId, globalThis.__amUserStates[chatId].messageId, `🎉 ALIGHT MOTION PREMIUM BERHASIL DIAKTIFKAN!\n\n📧 Email: ${email}\n👑 Status: Premium Aktif\n🔖 Order ID: ${orderId}\n🔑 Sisa Kuota: ${globalThis.__amTelegramUsers[userId].quota}`);
@@ -1178,6 +1232,7 @@ async function handleAddLicense(bot, chatId, fromId, args) {
     }
     
     globalThis.__amTelegramUsers[targetChatId].quota += kuota;
+    saveTelegramData();
     await sendText(bot.token, chatId, `✅ <b>${kuota}</b> kuota berhasil ditambahkan ke user <b>${targetChatId}</b>.`);
 }
 
@@ -1242,6 +1297,14 @@ async function handleStats(bot, chatId, fromId, args) {
 async function handleBulkExternal(bot, chatId, fromId, args) {
     if (String(fromId) !== String(bot.ownerId)) {
         return sendText(bot.token, chatId, '⛔ Hanya Owner yang boleh menggunakan perintah /bulk.');
+    }
+    // Batasi /bulk berdasarkan role website pemilik bot. Hanya role bulk-capable
+    // (Autogen/VIP/Owner) yang boleh; role lain (termasuk Pro) tidak bisa bulk.
+    const users = getUsers();
+    const ownerUser = users[bot.deployedBy];
+    const ownerRole = ownerUser && ownerUser.role;
+    if (['autogen', 'vip', 'owner'].indexOf(ownerRole) === -1) {
+        return sendText(bot.token, chatId, '⛔ Fitur /bulk hanya untuk role Autogen, VIP, dan Owner.');
     }
     const parts = String(args || '').trim().split(/\s+/);
     const count = Math.min(5, Math.max(1, parseInt(parts[0], 10) || 5));
@@ -1380,17 +1443,33 @@ async function handleCallbackQuery(bot, callbackQuery) {
         case 'gen_auto':
         {
             const userId = String(chatId);
-            const u = globalThis.__amTelegramUsers[userId] || {};
-            const quota = u.quota || 0;
+            const isOwner = String(chatId) === String(bot.ownerId);
+            // Gate kuota di awal: jika 0, jangan masuk sesi waiting_autocount
+            // (biar user tidak terjebak di sesi yang berhenti).
+            if (!isOwner && getUserQuota(userId) <= 0) {
+                delete globalThis.__amUserStates[chatId];
+                await editMessageText(bot.token, chatId, messageId, quotaZeroMessage(isOwner, bot) + '\n\nTekan tombol di bawah untuk kembali ke menu.', getBackKeyboard());
+                break;
+            }
+            const quota = isOwner ? 100 : getUserQuota(userId);
             globalThis.__amUserStates[chatId] = { step: 'waiting_autocount', messageId: messageId };
             await editMessageText(bot.token, chatId, messageId, '⚡ Auto Generator (Otomatis)\n\nBerapa banyak akun premium yang ingin Anda buat? (Maksimal 100 akun, sisa kuota Anda: ' + quota + '):\n\nKirim angka jumlah akun. Contoh: 5', getBackKeyboard());
             break;
         }
             
         case 'gen_manual':
+        {
+            const userId = String(chatId);
+            const isOwner = String(chatId) === String(bot.ownerId);
+            if (!isOwner && getUserQuota(userId) <= 0) {
+                delete globalThis.__amUserStates[chatId];
+                await editMessageText(bot.token, chatId, messageId, quotaZeroMessage(isOwner, bot) + '\n\nTekan tombol di bawah untuk kembali ke menu.', getBackKeyboard());
+                break;
+            }
             await editMessageText(bot.token, chatId, messageId, '📧 Metode Manual Generator\n\nSilakan ketik alamat email Alight Motion target Anda:\n(Contoh: namaemail@gmail.com)', getBackKeyboard());
             globalThis.__amUserStates[chatId] = { step: 'waiting_email', messageId: messageId };
             break;
+        }
             
         case 'back_to_main':
             await goBackToMain(bot, chatId, messageId, user);

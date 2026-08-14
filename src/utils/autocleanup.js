@@ -9,6 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import { SESSION_DIR, readJSON, writeJSON, getUsers, saveUsers, nowISO, addLog } from './store.js';
+import { DEFAULT_USER_CREDITS } from './auth.js';
 
 const HISTORY_FILE = path.join(process.cwd(), 'data', 'history.json');
 const TRANSACTIONS_FILE = path.join(process.cwd(), 'data', 'transactions.json');
@@ -53,14 +54,14 @@ function activeSessionUserIds() {
 // akun yang punya sinyal aktivitas apa pun TIDAK akan dihapus, meski tidak
 // punya lastLoginAt (akun lama yang dibuat sebelum fitur pelacakan login).
 // Sinyal: pernah login (tracking baru), punya riwayat aktivasi, ada sesi
-// aktif, kredit tidak lagi di angka default 20 (pernah pakai/diisi), upgrade
+// aktif, kredit tidak lagi di angka default (pernah pakai/diisi), upgrade
 // API aktif, atau terlibat program referal (mengundang/diundang/klaim).
 function hasActivity(user, username, historyNames, sessIds) {
     if (user.lastLoginAt) return true;
     if (historyNames.has(username)) return true;
     if (sessIds.has(user.id)) return true;
     if (user.apiActive) return true;
-    if ((parseInt(user.credits, 10) || 0) !== 20) return true;
+    if ((parseInt(user.credits, 10) || 0) !== DEFAULT_USER_CREDITS) return true;
     if (user.referredBy) return true;
     if ((parseInt(user.referralCount, 10) || 0) > 0) return true;
     if (Array.isArray(user.referrals) && user.referrals.length) return true;

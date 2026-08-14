@@ -159,8 +159,7 @@ body.dark-theme .status-pending { background: var(--ds-warning-bg) !important; b
 .generator-box,
 .auth-box,
 .chat-container,
-.plan-card,
-.qris-payment-card {
+.plan-card {
     background: var(--ds-surface) !important;
     border-color: var(--ds-border) !important;
     box-shadow: var(--ds-shadow-soft) !important;
@@ -170,7 +169,6 @@ body.dark-theme .status-pending { background: var(--ds-warning-bg) !important; b
 .card-title,
 .docs-title,
 .plan-card h3,
-.qris-payment-card h3,
 .chat-header > span:not(.badge),
 .admin-operator-cell,
 .profile-info-value,
@@ -351,8 +349,7 @@ body.dark-theme .table-card,
 body.dark-theme .generator-box,
 body.dark-theme .auth-box,
 body.dark-theme .chat-container,
-body.dark-theme .plan-card,
-body.dark-theme .qris-payment-card { background: var(--ds-surface) !important; }
+body.dark-theme .plan-card { background: var(--ds-surface) !important; }
 
 /* =========================================================
    FINAL COMPONENT NORMALIZATION
@@ -959,7 +956,6 @@ html[data-theme="dark"] .generator-box,
 html[data-theme="dark"] .auth-box,
 html[data-theme="dark"] .chat-container,
 html[data-theme="dark"] .plan-card,
-html[data-theme="dark"] .qris-payment-card,
 html[data-theme="dark"] .flow-box,
 html[data-theme="dark"] .review-card,
 html[data-theme="dark"] .notifications-dropdown,

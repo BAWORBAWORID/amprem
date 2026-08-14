@@ -12,11 +12,16 @@ import { URL } from 'url';
 import AMAuth from '../../services/auth.js';
 import { runBulk, closeBrowser, buildEmailList } from '../../services/bulk.js';
 import { getUsers, saveUsers, readJSON, writeJSON, newId, nowISO, fmtDateTime, randomKey, generateOrderId, addLog, addActivationLog } from './store.js';
-import { canUseGenerator } from './auth.js';
+import { canUseGenerator, ensureDailyUserCredits } from './auth.js';
 import { notifyBulkResult } from './telegram.js';
 
 async function sendLink(user, email) {
     const users = getUsers();
+    // Reset kredit harian (lazy) sebelum pengecekan/penotongan.
+    if (ensureDailyUserCredits(user)) {
+        users[user.username] = user;
+        saveUsers(users);
+    }
 
     if (!canUseGenerator(user)) {
         return { success: false, message: 'Masa aktif Premium Anda telah berakhir. Silakan perpanjang paket untuk melanjutkan.' };

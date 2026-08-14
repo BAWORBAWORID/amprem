@@ -1,399 +1,113 @@
-FIX — VIP PRICE DETECTION DI #PURCHASE
+Prompt — Tambahkan Web Preview AM Creator
 
-Target:
-"https://am.alwayscodex.my.id/#purchase"
+@Pencarian web "https://am.alwayscodex.my.id"
 
-MASALAH
+Cek dan update AM Creator karena saat ini bagian metadata untuk link preview / social preview belum lengkap seperti pada "https://api.alwayscodex.my.id".
 
-Pada halaman Beli Role & Paket, paket VIP memiliki masalah harga.
+Tambahkan dan rapikan bagian berikut tanpa merusak UI, routing, JavaScript, authentication, API, atau fitur yang sudah berjalan:
 
-Saat memilih:
+1. Open Graph
 
-VIP → 14 Hari
+Tambahkan metadata:
 
-harga yang tampil:
+- "og:title" → AM Creator — Premium Dashboard
+- "og:description" → Alight Motion Premium Creator by AlwaysCodex
+- "og:url" → "https://am.alwayscodex.my.id/"
+- "og:type" → "website"
+- "og:site_name" → AlwaysCodex
+- "og:image" → gunakan logo/preview resmi AM Creator yang tersedia di website.
 
-Rp 0 /14 hari
+2. Twitter Card
 
-Padahal paket VIP seharusnya menggunakan sistem harga yang sama seperti:
+Tambahkan:
 
-- Reseller
-- Premium
-- Auto Gen
+- "twitter:card" → "summary_large_image"
+- "twitter:title"
+- "twitter:description"
+- "twitter:image"
 
-Saat ini source halaman menunjukkan VIP memiliki harga:
+Gunakan image yang sama dengan Open Graph agar preview konsisten.
 
-Rp 55.000 /30 hari
+3. Favicon & Logo
 
-tetapi ketika duration diubah melalui UI, frontend dapat menghasilkan "Rp 0".
+Pastikan website memiliki:
 
-TUJUAN
+- favicon PNG/ICO
+- logo untuk browser/tab
+- logo yang dapat digunakan sebagai social preview
+- path asset yang valid dan tidak 404
 
-Perbaiki sistem pricing VIP agar terdeteksi dan dihitung menggunakan mekanisme yang sama persis dengan paket lainnya.
+Jika folder "/images/" sudah tersedia, gunakan struktur asset yang sudah ada. Jangan membuat duplicate logo jika asset yang sesuai sudah tersedia.
 
-Jangan menghapus VIP.
+4. Preview Image
 
----
+Jika AM Creator belum memiliki image khusus untuk preview, buat/gunakan asset:
 
-1. CEK PRICE CONFIGURATION
+"/images/preview.png"
 
-Cari seluruh konfigurasi harga:
+Spesifikasi yang disarankan:
 
-price
-prices
-pricing
-plans
-packages
-roles
-durations
+- 1200 × 630 px
+- branding AM Creator
+- teks AlwaysCodex
+- desain mengikuti tema website AM Creator
+- terlihat jelas pada preview WhatsApp, Telegram, Discord, Facebook, dan platform lainnya.
 
-Cari khusus:
+5. SEO Metadata
 
-VIP
-vip
-14
-30
+Tambahkan metadata dasar:
 
-Bandingkan struktur VIP dengan:
+- "<title>AM Creator — Premium Dashboard</title>"
+- meta description
+- canonical URL
+- theme-color
+- robots
+- viewport
 
-RESELLER
-PREMIUM
-AUTO GEN
+6. Validasi Asset
 
-Jangan membuat sistem pricing baru jika sistem existing sudah bisa digunakan.
+Setelah update:
 
-VIP harus mengikuti struktur data pricing yang sama dengan package lainnya.
+- cek semua URL image
+- pastikan tidak ada "404"
+- pastikan "og:image" dapat diakses langsung tanpa authentication
+- pastikan image menggunakan HTTPS
+- pastikan metadata berada di "<head>"
+- jangan gunakan image dari domain eksternal jika asset lokal tersedia.
 
----
-
-2. CEK DURATION MAPPING
-
-Pastikan VIP mempunyai mapping untuk semua duration yang tersedia:
-
-3 Hari
-7 Hari
-14 Hari
-30 Hari
-
-Jika memang harga untuk masing-masing duration sudah tersedia di backend/config, gunakan harga tersebut.
-
-Jangan membuat harga baru secara asal.
-
-Contoh struktur yang benar:
-
-{
-    reseller: {
-        3: PRICE,
-        7: PRICE,
-        14: PRICE,
-        30: PRICE
-    },
-
-    premium: {
-        3: PRICE,
-        7: PRICE,
-        14: PRICE,
-        30: PRICE
-    },
-
-    autogen: {
-        3: PRICE,
-        7: PRICE,
-        14: PRICE,
-        30: PRICE
-    },
-
-    vip: {
-        3: PRICE,
-        7: PRICE,
-        14: PRICE,
-        30: PRICE
-    }
-}
-
-Sesuaikan dengan struktur project yang sebenarnya.
-
----
-
-3. JANGAN DEFAULT KE Rp 0
-
-Cari logic seperti:
-
-price || 0
-
-atau:
-
-prices[plan]?.[duration] || 0
-
-atau:
-
-const price = package.price || 0;
-
-Jangan membuat package yang gagal ditemukan otomatis menjadi "Rp 0".
-
-Gunakan fallback yang aman.
-
-Contoh:
-
-const price = prices?.[plan]?.[duration];
-
-if (price == null) {
-    console.error('[PRICE NOT FOUND]', {
-        plan,
-        duration
-    });
-
-    return;
-}
-
-Jika harga tidak ditemukan, tampilkan:
-
-Harga tidak tersedia
-
-bukan:
-
-Rp 0
-
-Karena "Rp 0" dapat membuat user mengira paket tersebut gratis.
-
----
-
-4. CEK CASE SENSITIVITY
-
-Pastikan identifier package konsisten.
-
-Misalnya jangan sampai:
-
-"VIP"
-
-dipakai di UI tetapi pricing menggunakan:
-
-"vip"
-
-atau:
-
-"Vip"
-
-Normalisasi jika diperlukan:
-
-const planKey = String(plan).toLowerCase();
-
-Kemudian gunakan identifier yang konsisten di seluruh pricing flow.
-
----
-
-5. CEK DURASI YANG DIPILIH
-
-Saat user klik:
-
-3 Hari
-7 Hari
-14 Hari
-30 Hari
-
-pastikan event handler mengirim duration yang benar.
-
-Contoh:
-
-selectDuration('vip', 14)
-
-harus menghasilkan lookup:
-
-prices.vip[14]
-
-bukan:
-
-prices.VIP['14hari']
-prices.vip['14 Hari']
-prices.vip.duration14
-
-kecuali memang struktur backend menggunakan format tersebut.
-
-Ikuti format yang sudah digunakan package Reseller/Premium/Auto Gen.
-
----
-
-6. SAMAKAN LOGIC DENGAN PACKAGE LAIN
-
-Ini bagian paling penting.
-
-Cari bagaimana:
-
-Reseller → pilih 14 Hari → harga berubah
-Premium → pilih 14 Hari → harga berubah
-Auto Gen → pilih 14 Hari → harga berubah
-
-Kemudian gunakan logic yang sama untuk VIP.
-
-Jangan membuat handler VIP yang berbeda jika tidak diperlukan.
-
-Semua package harus menggunakan satu pricing function:
-
-getPackagePrice(plan, duration)
-
-Contoh:
-
-function getPackagePrice(plan, duration) {
-    const planKey = String(plan).toLowerCase();
-    const days = Number(duration);
-
-    const price = pricing?.[planKey]?.[days];
-
-    if (price == null) {
-        console.error('[PRICE NOT FOUND]', {
-            plan: planKey,
-            duration: days
-        });
-
-        return null;
-    }
-
-    return Number(price);
-}
-
----
-
-7. CEK ORDER / PAYMENT
-
-Perbaikan frontend saja tidak cukup.
-
-Pastikan ketika:
-
-VIP + 14 Hari
-
-dipilih dan user klik:
-
-BELI SEKARANG
-
-nilai yang dikirim ke backend benar:
-
-{
-  "plan": "vip",
-  "duration": 14,
-  "price": <harga-yang-seharusnya>
-}
-
-Backend harus melakukan validasi harga sendiri.
-
-Jangan mempercayai harga yang dikirim dari frontend.
-
-Contoh:
-
-const serverPrice = getPackagePrice(plan, duration);
-
-if (serverPrice == null) {
-    return res.status(400).json({
-        success: false,
-        error: 'Harga paket tidak tersedia'
-    });
-}
-
-Gunakan "serverPrice" untuk transaksi.
-
----
-
-8. JANGAN MENGUBAH HARGA EXISTING
+7. Jangan Mengubah Fitur
 
 PENTING:
 
-Jangan mengubah harga:
+Jangan mengubah atau menghapus:
 
-- Reseller
-- Premium
-- Auto Gen
-- VIP
+- login/register
+- profile
+- subscription
+- lifetime
+- referral
+- API guide
+- settings
+- authentication
+- backend/API
+- routing SPA
+- Cloudflare configuration
+- database
+- existing JavaScript logic
 
-kecuali memang ditemukan konfigurasi harga yang rusak.
+Fokus hanya pada SEO, favicon, logo, Open Graph, Twitter Card, dan social preview.
 
-Jangan mengarang harga baru.
+Target Akhir
 
-Jika source/backend sudah mempunyai harga VIP per duration, gunakan data tersebut.
+Ketika seseorang membagikan:
 
-Jika hanya 30 hari yang memang dikonfigurasi, jangan mengarang harga untuk 3/7/14 hari. Tampilkan "Harga tidak tersedia" sampai konfigurasi resminya tersedia.
+"https://am.alwayscodex.my.id"
 
----
+ke WhatsApp / Telegram / Discord / Facebook, tampil:
 
-9. TEST
+AM Creator — Premium Dashboard
+Alight Motion Premium Creator by AlwaysCodex
 
-Test semua kombinasi:
++ gambar/logo preview AM Creator
 
-Reseller
-
-3 Hari
-7 Hari
-14 Hari
-30 Hari
-
-Premium
-
-3 Hari
-7 Hari
-14 Hari
-30 Hari
-
-Auto Gen
-
-3 Hari
-7 Hari
-14 Hari
-30 Hari
-
-VIP
-
-3 Hari
-7 Hari
-14 Hari
-30 Hari
-
-Pastikan tidak ada satu pun yang menghasilkan:
-
-Rp 0
-
-kecuali memang harga paket tersebut secara resmi benar-benar "0".
-
----
-
-10. UI
-
-Format harga tetap seperti sekarang:
-
-Rp 55.000 /30 hari
-
-atau sesuai harga duration yang sebenarnya.
-
-Jangan mengubah:
-
-- desain card
-- warna
-- tombol
-- layout
-- QRIS
-- sidebar
-- navigation
-
----
-
-ACCEPTANCE CRITERIA
-
-Fix dianggap berhasil jika:
-
-1. VIP tidak lagi menampilkan "Rp 0" karena missing pricing data.
-2. VIP menggunakan pricing engine yang sama dengan package lain.
-3. Pergantian "3 / 7 / 14 / 30 Hari" langsung memperbarui harga.
-4. Harga yang ditampilkan frontend sama dengan harga yang divalidasi backend.
-5. Order VIP mengirim plan + duration yang benar.
-6. Harga tidak pernah otomatis menjadi "0" ketika data pricing tidak ditemukan.
-7. Tidak ada JavaScript error.
-8. Reseller, Premium, dan Auto Gen tetap berfungsi seperti sebelumnya.
-
-PRIORITAS
-
-Cari root cause terlebih dahulu.
-
-Jangan sekadar mengganti:
-
-0
-
-menjadi angka tertentu.
-
-Cari kenapa "VIP + duration" tidak menemukan harga, lalu perbaiki mapping/configuration/lookup-nya supaya VIP benar-benar bekerja dengan mekanisme yang sama seperti package lainnya.
+Buat implementasinya bersih, modern, ringan, dan mengikuti struktur branding AlwaysCodex yang sudah digunakan pada "api.alwayscodex.my.id".
