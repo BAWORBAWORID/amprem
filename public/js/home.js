@@ -113,6 +113,9 @@
     });
 
     var currentUser = null;
+    // Status maintenance fitur yang perlu diketahui sisi klien (misal: bolehkan
+    // role 'user' pakai API Key). Diisi oleh loadMaintenance().
+    var APP_MAINT = {};
     var chatPollTimer = null;
     var chatEventSource = null;
     var batchPollTimer = null;
@@ -124,13 +127,13 @@
     var adminBannedIpsCache = [];
 
     var ROLE_BADGE = {
-        owner: 'badge-owner', admin: 'badge-admin', premium: 'badge-premium',
+        owner: 'badge-owner', vip: 'badge-admin', premium: 'badge-premium',
         autogen: 'badge-autogen', reseller: 'badge-reseller', user: 'badge-normal'
     };
-    var ROLE_LABEL = { owner: 'Owner', admin: 'Admin', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
-    var PROFILE_ROLE = { owner: 'Owner', admin: 'Administrator', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'Anggota' };
+    var ROLE_LABEL = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
+    var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'Anggota' };
 
-    var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews'];
+    var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews', ];
 
     function setLastScreenCookie(name) {
         try { document.cookie = 'last_page=' + encodeURIComponent(name) + '; Path=/; Max-Age=2592000; SameSite=Lax'; } catch (e) {}
@@ -146,19 +149,19 @@
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
     function isUnlimitedRole(role) {
-        return ['reseller', 'premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+        return ['reseller', 'premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
     }
     function hasApiRole(role) {
-        return ['premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+        return ['premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
     }
     function hasBulkRole(role) {
-        return ['autogen', 'admin', 'owner'].indexOf(role) !== -1;
+        return ['autogen', 'vip', 'owner'].indexOf(role) !== -1;
     }
     function isPrivileged() {
         return currentUser && isUnlimitedRole(currentUser.role);
     }
     function isAdminOrOwner() {
-        return currentUser && ['admin', 'owner'].indexOf(currentUser.role) !== -1;
+        return currentUser && ['owner'].indexOf(currentUser.role) !== -1;
     }
     function isOwner() { return currentUser && currentUser.role === 'owner'; }
     function creditsDisplay() { return isPrivileged() ? 'Unlimited' : (currentUser ? currentUser.credits : 0); }
@@ -188,6 +191,9 @@
         $('sidebar-admin-category').classList.toggle('hidden', !isAdmin);
         $('btn-admin-view').classList.toggle('hidden', !isAdmin);
         $('btn-settings-view').classList.toggle('hidden', !isAdmin);
+
+        buildMobileMenu();
+        syncMobileActive(currentScreen);
     }
 
     function showScreen(name) {
@@ -208,7 +214,7 @@
         }
         if (VALID_SCREENS.indexOf(name) === -1) name = 'dashboard';
         if ((name === 'admin' || name === 'settings') && !isAdminOrOwner()) name = 'dashboard';
-        if (name === 'apiguide' && (!currentUser || !hasApiRole(currentUser.role))) name = 'dashboard';
+        if (name === 'apiguide' && (!currentUser || !hasApiRole(currentUser.role)) && !(currentUser && currentUser.role === 'user' && APP_MAINT && !APP_MAINT.apikeyUserDisabled)) name = 'dashboard';
         $('main-content').classList.toggle('profile-screen-active', name === 'profile');
         if (name !== 'chat') closeChatStream();
 
@@ -224,6 +230,7 @@
             // Pastikan item menu aktif selalu terlihat (anti-tertutup footer di layar pendek)
             try { btn.scrollIntoView({ block: 'nearest' }); } catch (e) { btn.scrollIntoView(); }
         }
+        syncMobileActive(name);
         currentScreen = name;
         closeSidebar();
 
@@ -239,6 +246,158 @@
     function closeSidebar() {
         $('app-sidebar').classList.remove('active');
         $('sidebar-overlay').classList.remove('active');
+        closeMobileMenu();
+    }
+
+    /* ============================== MOBILE MENU (⋮ DRAWER) ============================== */
+    // Drawer mobile di-render dari DATA MENU EXISTING (#nav-menu) — satu sumber
+    // kebenaran, bukan menu kedua yang hardcoded. Grup mengikuti struktur update.md.
+    var MOBILE_MENU_GROUPS = [
+        { label: 'Statistik Live', leaf: 'dashboard' },
+        { label: 'AM Generator', children: ['generator', 'netflix', 'history'] },
+        { label: 'Layanan & API', children: ['purchase', 'apiguide', 'chat'] },
+        { label: 'Akun & Aplikasi', children: ['profile', 'referral', 'lifetime', 'reviews', 'contributors'] },
+        { label: 'Support & APK', children: ['whatsapp', 'apk'] },
+        { label: 'Pengaturan Admin', children: ['admin', 'settings'] }
+    ];
+
+    function openMobileMenu() {
+        var drawer = $('mobile-drawer'), overlay = $('mobile-drawer-overlay'), trigger = $('btn-mobile-menu-trigger');
+        if (!drawer) return;
+        drawer.classList.add('active');
+        drawer.setAttribute('aria-hidden', 'false');
+        if (overlay) overlay.classList.add('active');
+        if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+        var drawer = $('mobile-drawer'), overlay = $('mobile-drawer-overlay'), trigger = $('btn-mobile-menu-trigger');
+        if (drawer) { drawer.classList.remove('active'); drawer.setAttribute('aria-hidden', 'true'); }
+        if (overlay) overlay.classList.remove('active');
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
+
+    // Ikon kategori diambil dari icon item pertama grup (reuse icon existing).
+    function mobileGroupIcon(itemHtml) {
+        var m = /<i[^>]*>.*?<\/i>/.exec(itemHtml || '');
+        return m ? m[0] : '<i class="fa-solid fa-bars"></i>';
+    }
+
+    function buildMobileMenu() {
+        var menu = $('mobile-drawer-menu');
+        if (!menu) return;
+        if (!menu.dataset.bound) {
+            menu.dataset.bound = '1';
+            // Delegasi: kategori (accordion), item screen (router existing), link eksternal.
+            menu.addEventListener('click', function (ev) {
+                var cat = ev.target.closest('.mobile-nav-cat');
+                if (cat) {
+                    var group = cat.parentElement;
+                    var wasOpen = group.classList.contains('open');
+                    menu.querySelectorAll('.mobile-nav-group.open').forEach(function (g) { g.classList.remove('open'); g.querySelector('.mobile-nav-cat').setAttribute('aria-expanded', 'false'); });
+                    if (!wasOpen) { group.classList.add('open'); group.querySelector('.mobile-nav-cat').setAttribute('aria-expanded', 'true'); }
+                    return;
+                }
+                var authTab = ev.target.closest('.mobile-drawer-item[data-auth-tab]');
+                if (authTab) {
+                    showScreen('auth');
+                    var toReg = $('link-to-register'), toLog = $('link-to-login');
+                    if (authTab.getAttribute('data-auth-tab') === 'register' && toReg) toReg.click();
+                    else if (toLog) toLog.click();
+                    return;
+                }
+                var item = ev.target.closest('.mobile-drawer-item[data-screen]');
+                if (item) {
+                    showScreen(item.getAttribute('data-screen'));
+                    return; // showScreen → closeSidebar → drawer tertutup
+                }
+                var link = ev.target.closest('.mobile-drawer-item[href]');
+                if (link) closeMobileMenu(); // browser meneruskan link (tab baru/download)
+            });
+        }
+        menu.innerHTML = '';
+
+        // Kumpulkan item dari sidebar existing.
+        var screens = {};
+        var links = [];
+        document.querySelectorAll('#nav-menu .sidebar-link').forEach(function (el) {
+            if (el.tagName === 'A') {
+                links.push({ html: el.innerHTML, href: el.getAttribute('href') || '#', download: el.getAttribute('download'), target: el.getAttribute('target') || '' });
+                return;
+            }
+            var m = /^btn-(.+)-view$/.exec(el.id);
+            if (m) screens[m[1]] = { html: el.innerHTML, hidden: el.classList.contains('hidden') };
+        });
+        function findLink(kind) {
+            for (var i = 0; i < links.length; i++) {
+                if (kind === 'whatsapp' && /whatsapp\.com\/channel|wa\.me|whatsapp/i.test(links[i].href)) return links[i];
+                if (kind === 'apk' && /\.apk($|\?)/i.test(links[i].href)) return links[i];
+            }
+            return null;
+        }
+
+        var isAdmin = isAdminOrOwner();
+        var sectionLabel = document.querySelector('.mobile-drawer-section-label');
+        if (!currentUser) {
+            // Menu tamu TERPISAH dari menu home: hanya akses (login/register + link publik).
+            if (sectionLabel) sectionLabel.textContent = 'AKSES';
+            var guestHtml =
+                '<button type="button" class="mobile-drawer-item mobile-drawer-login-btn" data-auth-tab="login"><i class="fa-solid fa-right-to-bracket"></i> Login</button>' +
+                '<button type="button" class="mobile-drawer-item" data-auth-tab="register"><i class="fa-solid fa-user-plus"></i> Register</button>';
+            var waLink = findLink('whatsapp'), apkLink = findLink('apk');
+            if (waLink) guestHtml += '<a class="mobile-drawer-item" href="' + esc(waLink.href) + '" target="_blank">' + waLink.html + '</a>';
+            if (apkLink) guestHtml += '<a class="mobile-drawer-item" href="' + esc(apkLink.href) + '"' + (apkLink.download ? ' download="' + esc(apkLink.download) + '"' : '') + ' target="_blank">' + apkLink.html + '</a>';
+            menu.insertAdjacentHTML('beforeend', guestHtml);
+        } else {
+            if (sectionLabel) sectionLabel.textContent = 'MENU';
+            MOBILE_MENU_GROUPS.forEach(function (group) {
+            var html = '';
+            if (group.leaf) {
+                var leafItem = screens[group.leaf];
+                if (!leafItem || leafItem.hidden) return;
+                html += '<button type="button" class="mobile-drawer-item" data-screen="' + group.leaf + '">' + leafItem.html + '</button>';
+                menu.insertAdjacentHTML('beforeend', html);
+                return;
+            }
+            // Grup admin: validasi logika (bukan sekadar CSS).
+            if (group.label === 'Pengaturan Admin' && !isAdmin) return;
+            var firstIcon = null;
+            group.children.forEach(function (name) {
+                var itemHtml = null, href = null, download = null, target = null;
+                if (name === 'whatsapp' || name === 'apk') {
+                    var link = findLink(name);
+                    if (link) { itemHtml = link.html; href = link.href; download = link.download; target = link.target || '_blank'; }
+                } else {
+                    var item = screens[name];
+                    if (!item || item.hidden) return;
+                    itemHtml = item.html;
+                }
+                if (!itemHtml) return;
+                if (!firstIcon) firstIcon = mobileGroupIcon(itemHtml);
+                if (href !== null) {
+                    html += '<a class="mobile-drawer-item" href="' + esc(href) + '"' + (download ? ' download="' + esc(download) + '"' : '') + ' target="' + esc(target) + '">' + itemHtml + '</a>';
+                } else {
+                    html += '<button type="button" class="mobile-drawer-item" data-screen="' + name + '">' + itemHtml + '</button>';
+                }
+            });
+            if (!html) return;
+            menu.insertAdjacentHTML('beforeend',
+                '<div class="mobile-nav-group">' +
+                '<button type="button" class="mobile-nav-cat" aria-expanded="false">' + firstIcon + '<span class="mobile-nav-cat-label">' + esc(group.label) + '</span><i class="fa-solid fa-chevron-down mobile-nav-chevron"></i></button>' +
+                '<div class="mobile-nav-sub">' + html + '</div>' +
+                '</div>');
+        });
+        }
+        var mobileLogoutBtn = $('btn-mobile-drawer-logout');
+        if (mobileLogoutBtn) mobileLogoutBtn.classList.toggle('hidden', !currentUser);
+    }
+
+    function syncMobileActive(name) {
+        document.querySelectorAll('#mobile-drawer-menu [data-screen]').forEach(function (el) {
+            el.classList.toggle('active', el.getAttribute('data-screen') === name);
+        });
     }
 
     function bindNav() {
@@ -246,13 +405,30 @@
             var name = btn.id.replace(/^btn-/, '').replace(/-view$/, '');
             btn.addEventListener('click', function () { showScreen(name); });
         });
-        $('btn-sidebar-toggle').addEventListener('click', function (e) {
-            e.stopPropagation();
-            var isOpen = $('app-sidebar').classList.toggle('active');
-            $('sidebar-overlay').classList.toggle('active', isOpen);
+        var menuTrigger = $('btn-mobile-menu-trigger');
+        if (menuTrigger) menuTrigger.addEventListener('click', function () {
+            var drawer = $('mobile-drawer');
+            if (drawer && drawer.classList.contains('active')) closeMobileMenu();
+            else openMobileMenu();
         });
-        $('btn-sidebar-close').addEventListener('click', closeSidebar);
-        $('sidebar-overlay').addEventListener('click', closeSidebar);
+        var drawerCloseBtn = $('btn-mobile-drawer-close');
+        if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeMobileMenu);
+        var drawerOverlay = $('mobile-drawer-overlay');
+        if (drawerOverlay) drawerOverlay.addEventListener('click', closeMobileMenu);
+        var mobileLogout = $('btn-mobile-drawer-logout');
+        if (mobileLogout && !mobileLogout.dataset.bound) {
+            mobileLogout.dataset.bound = '1';
+            mobileLogout.addEventListener('click', handleLogout);
+        }
+        document.addEventListener('keydown', function (e) {
+            var drawer = $('mobile-drawer');
+            if (e.key === 'Escape' && drawer && drawer.classList.contains('active')) closeMobileMenu();
+        });
+        window.addEventListener('hashchange', function () {
+            var drawer = $('mobile-drawer');
+            if (drawer && drawer.classList.contains('active')) closeMobileMenu();
+        });
+        buildMobileMenu();
         $('btn-profile-logout').addEventListener('click', handleLogout);
         var sidebarLogout = $('btn-logout');
         if (sidebarLogout && !sidebarLogout.dataset.bound) {
@@ -261,6 +437,14 @@
         }
         $('btn-topbar-chat').addEventListener('click', function () { showScreen('chat'); });
         $('btn-topbar-profile').addEventListener('click', function () { showScreen('profile'); });
+    }
+
+    // Ambil status maintenance ringan (tanpa auth) untuk keperluan UI sisi klien,
+    // misalnya menentukan apakah role 'user' diizinkan pakai API Key.
+    function loadMaintenance() {
+        api('/api/auth/system/settings').then(function (d) {
+            if (d && d.maintenance) APP_MAINT = d.maintenance;
+        }).catch(function () { /* biarkan APP_MAINT tetap kosong */ });
     }
 
     /* ============================== AUTH ============================== */
@@ -272,6 +456,7 @@
             api('/api/auth/profile').then(function (data) {
                 if (data.user) {
                     currentUser = data.user;
+                    loadMaintenance();
                     applyThemePreference(readThemePreference());
                     revealThemePage();
                     updateNavbar();
@@ -394,6 +579,7 @@
                         document.documentElement.classList.add('theme-pending');
                         themeGateTimer = setTimeout(revealThemePage, 5000);
                         currentUser = data.user;
+                        loadMaintenance();
                         applyThemePreference(readThemePreference());
                         revealThemePage();
                         updateNavbar();
@@ -853,16 +1039,191 @@
         reseller: { 3: 7000, 7: 12000, 14: 18000, 30: 25000 },
         premium: { 3: 9000, 7: 15000, 14: 20000, 30: 28000 },
         autogen: { 3: 12000, 7: 20000, 14: 28000, 30: 38000 },
-        admin: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 }
+        vip: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 }
     };
 
+    // Satu sumber harga di frontend; harus cocok dengan backend.
+    // Normalisasi: plan -> lower-case, days -> angka. Return null kalau tidak ditemukan.
+    function getPackagePrice(plan, duration) {
+        var planKey = String(plan == null ? '' : plan).toLowerCase();
+        var days = Number(duration);
+        if (!PLAN_PRICES[planKey]) return null;
+        var price = PLAN_PRICES[planKey][days];
+        return (price == null) ? null : Number(price);
+    }
+
+    /* ============================== PEMBAYARAN QRIS (STATIC) ============================== */
+
+    // Membuat order QRIS di backend lalu menampilkan modal pembayaran:
+    // QR image, total nominal, countdown dari expiresAt, Cek Status & Batal.
+    function startQRISPayment(role, days, name) {
+        api('/api/payment/qris', { method: 'POST', body: { role: role, days: days } }).then(function (data) {
+            if (!data.success) throw new Error((data && data.message) || 'Gagal membuat pembayaran.');
+            var order = data.order;
+            var qrUrl = data.payment && data.payment.qr && data.payment.qr.url;
+            var amountText = 'Rp ' + Number(order.amount || 0).toLocaleString('id-ID');
+            var base = Number(order.baseAmount != null ? order.baseAmount : 0);
+            var fee = Number(order.fee != null ? order.fee : 0);
+            var fmtRp = function (n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); };
+            var waMessage = 'Halo Admin, saya sudah melakukan pembayaran *Upgrade Role*.\n' +
+                '*Trx ID:* ' + order.refNo + '\n' +
+                '*Username:* ' + (currentUser ? currentUser.username : '-') + '\n' +
+                '*Paket:* ' + name + ' - ' + days + ' Hari\n' +
+                '*Harga Paket:* ' + fmtRp(base) + '\n' +
+                '*Kode Verifikasi (Fee):* ' + fmtRp(fee) + '\n' +
+                '*Total Dibayar:* ' + fmtRp(Number(order.amount || 0)) + '\n' +
+                '\nMohon dicek dan role diaktifkan ya. Terima kasih!';
+            var waHref = 'https://wa.me/6288297563383?text=' + encodeURIComponent(waMessage);
+            var endTime = new Date(order.expiresAt).getTime();
+            var timer = null;
+
+            function fmtTime(ms) {
+                var total = Math.max(0, Math.floor(ms / 1000));
+                var h = Math.floor(total / 3600);
+                var m = Math.floor((total % 3600) / 60);
+                var s = total % 60;
+                var pad = function (n) { return String(n).padStart(2, '0'); };
+                return (h > 0 ? pad(h) + ':' : '') + pad(m) + ':' + pad(s);
+            }
+            function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+            function setExpired() {
+                var el = document.getElementById('qris-countdown');
+                if (el) el.textContent = '00:00';
+                var btn = document.getElementById('qris-check-btn');
+                if (btn) { btn.disabled = true; btn.textContent = 'Pembayaran Kedaluwarsa'; }
+                var hint = document.getElementById('qris-hint');
+                if (hint) hint.textContent = 'Pembayaran telah kedaluwarsa. Silakan buat pembayaran baru.';
+            }
+            function refreshProfile() {
+                api('/api/auth/profile').then(function (p) {
+                    if (p && p.user) { currentUser = p.user; loadMaintenance(); updateNavbar(); loadProfile(); }
+                }).catch(function () {});
+            }
+            function checkStatus() {
+                var btn = document.getElementById('qris-check-btn');
+                if (btn) btn.disabled = true;
+                api('/api/payment/status/' + encodeURIComponent(order.refNo)).then(function (d) {
+                    var st = (d && d.status) || '';
+                    if (st === 'success') {
+                        stopTimer();
+                        Swal.close();
+                        Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil', text: 'Pembayaran Anda telah dikonfirmasi. Paket sedang diterapkan.', confirmButtonText: 'OK' }).then(function () {
+                            refreshProfile();
+                        });
+                    } else if (st === 'expired') {
+                        stopTimer();
+                        setExpired();
+                        Swal.fire({ icon: 'warning', title: 'Kedaluwarsa', text: 'Pembayaran telah kedaluwarsa. Silakan buat pembayaran baru.' });
+                    } else if (st === 'failed') {
+                        stopTimer();
+                        Swal.close();
+                        Swal.fire({ icon: 'error', title: 'Pembayaran Dibatalkan', text: 'Pembayaran ini telah dibatalkan.', confirmButtonText: 'OK' });
+                    } else {
+                        if (btn) btn.disabled = false;
+                        Swal.fire({ icon: 'info', title: 'Belum Terbayar', text: 'Pembayaran belum terkonfirmasi. Selesaikan transfer lalu cek kembali.', confirmButtonText: 'OK' });
+                    }
+                }).catch(function (err) {
+                    if (btn) btn.disabled = false;
+                    Swal.fire({ icon: 'error', title: 'Gagal Memeriksa', text: errMsg(err), confirmButtonText: 'OK' });
+                });
+            }
+            function cancelPayment() {
+                var btn = document.getElementById('qris-cancel-btn');
+                if (btn) btn.disabled = true;
+                api('/api/payment/cancel', { method: 'POST', body: { refNo: order.refNo } }).then(function () {
+                    stopTimer();
+                    Swal.close();
+                }).catch(function () {
+                    stopTimer();
+                    Swal.close();
+                });
+            }
+
+            Swal.fire({
+                title: '<span style="font-weight:700;color:var(--text-primary);">Pembayaran QRIS Otomatis</span>',
+                html:
+                    '<div class="payment-qris-wrap">' +
+                    '<p style="color:var(--text-secondary);margin-bottom:6px;font-size:0.9rem;">Scan QRIS berikut untuk membayar paket:</p>' +
+                    '<p style="color:var(--accent-primary);font-weight:700;font-size:1.05rem;margin-bottom:12px;">' + esc(name) + ' &middot; ' + days + ' Hari</p>' +
+                    '<div class="payment-qris-box"><img class="payment-qris-image" src="' + esc(qrUrl) + '" alt="QRIS ' + amountText + '" loading="lazy"></div>' +
+                    '<div class="payment-qris-breakdown">' +
+                    '<div class="row"><span>Harga Paket</span><span>' + fmtRp(base) + '</span></div>' +
+                    '<div class="row fee"><span>Kode Verifikasi (Fee Acak)</span><span>' + fmtRp(fee) + '</span></div>' +
+                    '<div class="row total"><span>Total QRIS</span><span>' + fmtRp(Number(order.amount || 0)) + '</span></div>' +
+                    '</div>' +
+                    '<a class="payment-qris-wa" href="' + waHref + '" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Konfirmasi Pembayaran ke WhatsApp</a>' +
+                    '<p class="payment-qris-timer"><i class="fa-regular fa-clock"></i> Sisa waktu: <strong id="qris-countdown">--:--</strong></p>' +
+                    '<p id="qris-hint" class="payment-qris-hint">Pembayaran kedaluwarsa otomatis bila tidak diselesaikan tepat waktu.</p>' +
+                    '<div class="payment-qris-actions">' +
+                    '<button id="qris-check-btn" class="btn btn-success">Cek Status Pembayaran</button>' +
+                    '<button id="qris-cancel-btn" class="btn btn-danger">Batal</button>' +
+                    '</div>' +
+                    '</div>',
+                showConfirmButton: false,
+                showCloseButton: false,
+                allowOutsideClick: false,
+                didOpen: function () {
+                    var container = Swal.getHtmlContainer();
+                    var checkBtn = container.querySelector('#qris-check-btn');
+                    var cancelBtn = container.querySelector('#qris-cancel-btn');
+                    if (checkBtn) checkBtn.addEventListener('click', checkStatus);
+                    if (cancelBtn) cancelBtn.addEventListener('click', cancelPayment);
+                },
+                didClose: function () { stopTimer(); }
+            });
+
+            function tick() {
+                var remain = endTime - Date.now();
+                var el = document.getElementById('qris-countdown');
+                if (remain <= 0) {
+                    stopTimer();
+                    setExpired();
+                    if (el) el.textContent = '00:00';
+                    return;
+                }
+                if (el) el.textContent = fmtTime(remain);
+            }
+            timer = setInterval(tick, 1000);
+            tick();
+        }).catch(function (err) {
+            Swal.fire({ icon: 'error', title: 'Pembayaran Gagal Dibuat', text: errMsg(err), confirmButtonText: 'OK' });
+        });
+    }
+
+    function updateBottomQrisTotal(role, days) {
+        var totalEl = document.getElementById('qris-total');
+        var price = getPackagePrice(role, days);
+        if (totalEl) totalEl.textContent = (price == null) ? 'Harga tidak tersedia' : 'Rp ' + price.toLocaleString('id-ID');
+        window._bottomQris = { role: role, days: days, price: (price == null ? 0 : price) };
+    }
+
+    function bindManualQrisWa() {
+        var waBtn = document.getElementById('btn-qris-manual-wa');
+        if (!waBtn || waBtn.dataset.bound) return;
+        waBtn.dataset.bound = '1';
+        waBtn.addEventListener('click', function () {
+            var ref = window._bottomQris || { role: 'premium', days: 30, price: 0 };
+            var roleLabel = (ref.role || '').charAt(0).toUpperCase() + (ref.role || '').slice(1);
+            var priceText = (ref.price && Number(ref.price) > 0) ? 'Rp ' + Number(ref.price).toLocaleString('id-ID') : 'Harga tidak tersedia';
+            var msg = 'Halo Owner, saya ingin membeli *Role ' + roleLabel + '* durasi *' + ref.days + ' Hari* seharga *' + priceText + '* via *QRIS (Manual)*.\n' +
+                'Detail Akun:\n- Username: ' + (currentUser ? currentUser.username : '-') + '\n- ID Pengguna: ' + (currentUser ? (currentUser.id || '-') : '-') +
+                '\nMohon instruksi pembayaran selanjutnya. Terima kasih!';
+            window.open('https://wa.me/6288297563383?text=' + encodeURIComponent(msg), '_blank');
+        });
+    }
+
     function loadAPIPanel() {
+        bindManualQrisWa();
+        updateBottomQrisTotal('premium', 30);
         Object.keys(PLAN_PRICES).forEach(function (role) {
             var activeBtn = document.querySelector('.plan-duration-options[data-role="' + role + '"] .duration-btn.active');
             var days = activeBtn ? parseInt(activeBtn.dataset.days, 10) : 30;
             var priceEl = document.getElementById('price-' + role);
-            if (priceEl && PLAN_PRICES[role] && PLAN_PRICES[role][days]) {
-                priceEl.innerHTML = 'Rp ' + PLAN_PRICES[role][days].toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
+            var price = getPackagePrice(role, days);
+            if (priceEl) {
+                priceEl.innerHTML = (price == null)
+                    ? 'Harga tidak tersedia'
+                    : 'Rp ' + price.toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
             }
             document.querySelectorAll('.plan-duration-options[data-role="' + role + '"] .duration-btn').forEach(function (b) {
                 b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
@@ -878,9 +1239,14 @@
                     b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
                 });
                 var days = parseInt(btn.dataset.days, 10);
-                var price = (PLAN_PRICES[role] && PLAN_PRICES[role][days]) ? PLAN_PRICES[role][days] : 0;
+                var price = getPackagePrice(role, days);
                 var priceEl = document.getElementById('price-' + role);
-                if (priceEl) priceEl.innerHTML = 'Rp ' + price.toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
+                if (priceEl) {
+                    priceEl.innerHTML = (price == null)
+                        ? 'Harga tidak tersedia'
+                        : 'Rp ' + price.toLocaleString('id-ID') + '<span class="plan-duration">/' + days + ' hari</span>';
+                }
+                updateBottomQrisTotal(role, days);
             });
         });
         document.querySelectorAll('.btn-purchase-plan').forEach(function (btn) {
@@ -891,54 +1257,13 @@
                 var name = btn.dataset.name || 'Paket';
                 var activeBtn = document.querySelector('.plan-duration-options[data-role="' + role + '"] .duration-btn.active');
                 var days = activeBtn ? parseInt(activeBtn.dataset.days, 10) : 30;
-                var price = (PLAN_PRICES[role] && PLAN_PRICES[role][days]) ? PLAN_PRICES[role][days] : 0;
-                var paymentMethod = null;
-                Swal.fire({
-                    title: '<span style="font-weight:700;color:var(--text-primary);">Pilih Metode Pembayaran</span>',
-                    html:
-                        '<div style="text-align:center;margin-bottom:20px;">' +
-                        '<p style="color:var(--text-secondary);margin-bottom:4px;font-size:0.9rem;">Anda memilih paket:</p>' +
-                        '<h4 style="color:var(--accent-primary);font-size:1.15rem;font-weight:700;margin-bottom:4px;">' + esc(name) + '</h4>' +
-                        '<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:4px;">Durasi: <strong>' + days + ' Hari</strong></p>' +
-                        '<p style="color:var(--text-primary);font-weight:600;font-size:1.1rem;">Rp ' + price.toLocaleString('id-ID') + '</p>' +
-                        '</div>' +
-                        '<div class="payment-methods-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:15px;">' +
-                        paymentMethodBtn('DANA', 'fa-wallet', '#008cff') +
-                        paymentMethodBtn('GoPay', 'fa-wallet', '#00a651') +
-                        paymentMethodBtn('OVO', 'fa-wallet', '#4f2d7f') +
-                        paymentMethodBtn('Shopee', 'fa-wallet', '#ee4d2d') +
-                        paymentMethodBtn('QRIS (E-Wallet)', 'fa-qrcode', '#e51e44', 'grid-column:span 2;') +
-                        '</div>' +
-                        '<style>.swal-payment-btn:hover{border-color:var(--accent-primary) !important;background:rgba(99,102,241,0.08) !important;transform:translateY(-2px);}</style>',
-                    showConfirmButton: false,
-                    showCancelButton: true,
-                    cancelButtonText: 'Batal',
-                    cancelButtonColor: '#ef4444',
-                    didOpen: function () {
-                        var buttons = Swal.getHtmlContainer().querySelectorAll('.swal-payment-btn');
-                        buttons.forEach(function (button) {
-                            button.addEventListener('click', function () {
-                                paymentMethod = button.getAttribute('data-method');
-                                Swal.close();
-                            });
-                        });
-                    }
-                }).then(function () {
-                    if (!paymentMethod) return;
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Menghubungkan ke WhatsApp...',
-                        text: 'Silakan kirim detail pembelian Anda di WhatsApp.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    var msg = 'Halo Owner, saya ingin membeli *' + name + '* durasi *' + days + ' Hari* seharga *Rp ' + price.toLocaleString('id-ID') + '* via *' + paymentMethod + '*.\n' +
-                        'Detail Akun:\n- Username: ' + (currentUser ? currentUser.username : '-') + '\n- ID Pengguna: ' + (currentUser ? (currentUser.id || '-') : '-') +
-                        '\nMohon instruksi pembayaran selanjutnya. Terima kasih!';
-                    setTimeout(function () {
-                        window.open('https://wa.me/6288297563383?text=' + encodeURIComponent(msg), '_blank');
-                    }, 1000);
-                });
+                var price = getPackagePrice(role, days);
+                if (price == null) {
+                    Swal.fire({ icon: 'warning', title: 'Harga Tidak Tersedia', text: 'Harga paket untuk durasi terpilih tidak ditemukan.', confirmButtonText: 'OK' });
+                    return;
+                }
+                updateBottomQrisTotal(role, days);
+                startQRISPayment(role, days, name);
             });
         });
     }
@@ -996,7 +1321,7 @@
         var self = m.username === me ? 'chat-msg-self' : 'chat-msg-other';
         var badge = '';
         if (m.role === 'owner') badge = '<span class="chat-role-badge" style="background:#8b5cf6;">Owner</span>';
-        else if (m.role === 'admin') badge = '<span class="chat-role-badge" style="background:#3b82f6;">Admin</span>';
+        else if (m.role === 'vip') badge = '<span class="chat-role-badge" style="background:#f59e0b;">VIP</span>';
         return '<div class="chat-message-bubble ' + self + '" data-mid="' + esc(m.id) + '">' +
             '<div class="chat-message-meta"><strong>' + esc(m.username) + '</strong> ' + badge + ' <span style="color:var(--text-muted);font-size:0.7rem;">' + esc(m.createdAt) + '</span></div>' +
             '<div class="chat-message-text">' + esc(m.text) + '</div></div>';
@@ -1092,10 +1417,6 @@
             if (menu && window.innerWidth <= 1024) menu.classList.remove('show');
         };
 
-        var backButton = $('btn-docs-back');
-        if (backButton) {
-            backButton.addEventListener('click', function () { showScreen('dashboard'); });
-        }
         document.querySelectorAll('#screen-apiguide .docs-nav-link').forEach(function (link) {
             link.addEventListener('click', function () { setActiveDoc(link.dataset.doc); });
         });
@@ -1159,7 +1480,7 @@
         // Verified Badge ala Meta AI (rosette) — hanya untuk role terverifikasi
         var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span.profile-verified-badge');
         if (profileCheckBadge) {
-            var isVerifiedRole = ['owner', 'admin', 'premium', 'autogen', 'reseller'].indexOf(u.role) !== -1;
+            var isVerifiedRole = ['owner', 'vip', 'premium', 'autogen', 'reseller'].indexOf(u.role) !== -1;
             profileCheckBadge.style.display = isVerifiedRole ? 'inline-flex' : 'none';
         }
 
@@ -1180,14 +1501,14 @@
                 $('pinfo-expired').textContent = '-';
             }
         }
-        if ($('pinfo-admin')) $('pinfo-admin').textContent = (u.role === 'admin' || u.role === 'owner') ? 'True' : 'False';
+        if ($('pinfo-admin')) $('pinfo-admin').textContent = (u.role === 'owner') ? 'True' : 'False';
         if ($('pinfo-limit')) {
             var roleLimits = {
                 user: '50 credits / harian',
                 reseller: 'Unlimited Web',
                 premium: 'Unlimited Web + API single',
                 autogen: 'Unlimited Web + API bulk',
-                admin: 'Unlimited + Management',
+                vip: 'Unlimited + Management',
                 owner: 'Unlimited + Superuser'
             };
             $('pinfo-limit').textContent = roleLimits[u.role] || '0';
@@ -1196,7 +1517,9 @@
         $('api-key-input').value = u.apiKey || 'Belum ada API Key. Silahkan beli di menu Beli API Key.';
 
         var apiSection = $('profile-apikey-section');
-        var canManageApiKey = hasApiRole(u.role);
+        // Role premium/autogen/vip/owner selalu boleh. 'user' boleh bila toggle
+        // "Nonaktifkan Apikey Untuk User" dalam posisi OFF (APP_MAINT.apikeyUserDisabled false).
+        var canManageApiKey = hasApiRole(u.role) || (u.role === 'user' && APP_MAINT && !APP_MAINT.apikeyUserDisabled);
         if (apiSection) apiSection.classList.toggle('hidden', !canManageApiKey);
 
         var apiKeyInput = $('api-key-input');
@@ -1816,6 +2139,7 @@
         loadAdminUsers();
         loadAdminLogs();
         loadAdminTransactions();
+        loadAdminUpgrades();
         loadAdminIps();
         loadDuplicateLogs();
         bindAdminActions();
@@ -1902,7 +2226,7 @@
             setAdminTableState(tbody, 6, 'Tidak ada anggota yang cocok dengan filter.', 'empty');
         } else {
             tbody.innerHTML = slice.map(function (u) {
-                var canManage = currentUser.role === 'owner' || (currentUser.role === 'admin' && u.role === 'user');
+                var canManage = currentUser.role === 'owner' || (currentUser.role === 'vip' && u.role === 'user');
                 var actions;
                 if (canManage && u.role !== 'owner') {
                     actions = '<div class="admin-action-group">' +
@@ -2031,6 +2355,66 @@
                 });
             });
             renderPagination($('admin-transactions-pagination'), totalPages, current, loadAdminTransactions);
+        }).catch(function () {
+            setAdminTableState(tbody, 7, 'Gagal terhubung ke server.', 'error');
+        });
+    }
+
+    function loadAdminUpgrades(page) {
+        var tbody = $('admin-upgrades-table-body');
+        setAdminTableState(tbody, 7, 'Memuat upgrade user...', 'loading');
+        api('/api/admin/upgrades').then(function (data) {
+            if (!data.success) {
+                setAdminTableState(tbody, 7, data.message || 'Upgrade hanya dapat dilihat oleh owner.', 'error');
+                if ($('admin-upgrades-pagination')) $('admin-upgrades-pagination').innerHTML = '';
+                return;
+            }
+            var txs = data.upgrades || [];
+            var perPage = 10;
+            var totalPages = Math.max(1, Math.ceil(txs.length / perPage));
+            var current = Math.min(Math.max(1, page || 1), totalPages);
+            var slice = txs.slice((current - 1) * perPage, current * perPage);
+            if (!slice.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">Belum ada upgrade user.</td></tr>';
+            } else {
+                tbody.innerHTML = slice.map(function (t) {
+                    var status = t.status === 'success' ? '<span class="status-success">Sukses</span>'
+                        : t.status === 'failed' ? '<span class="status-failed">Gagal</span>'
+                        : '<span class="status-pending">Pending</span>';
+                    var base = t.baseAmount != null ? t.baseAmount : (t.amount != null ? t.amount - (t.fee || 0) : 0);
+                    var fee = t.fee != null ? t.fee : 0;
+                    var action = t.status === 'pending'
+                        ? '<div style="display:flex;gap:4px;">' +
+                        '<button class="btn btn-success btn-sm approve-tx-btn" data-ref="' + esc(t.refNo) + '">Setujui</button>' +
+                        '<button class="btn btn-danger btn-sm reject-tx-btn" data-ref="' + esc(t.refNo) + '">Tolak</button>' +
+                        '</div>'
+                        : '<span style="color:var(--text-muted);font-size:0.75rem;">-</span>';
+                    return '<tr><td>' + esc(t.createdAt) + '</td><td>' + esc(t.username) + '</td><td>' + esc(t.refNo) + '</td>' +
+                        '<td>Rp ' + esc(t.amount) + '</td>' +
+                        '<td>Rp ' + esc(base) + ' + Rp ' + esc(fee) + '</td>' +
+                        '<td>' + status + '</td><td>' + action + '</td></tr>';
+                }).join('');
+            }
+            tbody.querySelectorAll('.approve-tx-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    api('/api/admin/transaction/approve', { method: 'POST', body: { refNo: b.dataset.ref } }).then(function (d) {
+                        Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'DISETUJUI!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
+                        loadAdminUpgrades(current);
+                        loadAdminTransactions(current);
+                        loadAdminUsers();
+                    });
+                });
+            });
+            renderPagination($('admin-upgrades-pagination'), totalPages, current, loadAdminUpgrades);
+
+            tbody.querySelectorAll(".reject-tx-btn").forEach(function (b) {
+                b.addEventListener("click", function () {
+                    api("/api/admin/transaction/reject", { method: "POST", body: { refNo: b.dataset.ref } }).then(function (d) {
+                        Swal.fire({ icon: d.success ? "success" : "error", title: d.success ? "DITOLAK!" : "GAGAL", text: d.message, timer: 1500, showConfirmButton: false });
+                        loadAdminUpgrades(current);
+                    });
+                });
+            });
         }).catch(function () {
             setAdminTableState(tbody, 7, 'Gagal terhubung ke server.', 'error');
         });
@@ -2196,27 +2580,34 @@
                         });
                     });
             });
-            $('btn-cleanup-ry-users').addEventListener('click', function () {
-                Swal.fire({ title: 'Bersihkan Akun ry_?', text: 'Cleanup ini menggunakan proses existing dan berlaku global untuk semua akun berawalan "ry_", beserta log dan transaksi terkait.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan Global', cancelButtonText: 'Batal' })
-                    .then(function (r) {
-                        if (!r.isConfirmed) return;
-                        api('/api/admin/cleanup-ry', { method: 'POST' }).then(function (d) {
-                            Swal.fire({ icon: 'success', title: 'BERSIH!', text: d.message, timer: 1500, showConfirmButton: false });
-                            loadAdminUsers();
-                            loadAdminStats();
-                            loadAdminIps(1);
+            var cleanupBtn = $('btn-cleanup-ry-users');
+            if (cleanupBtn) {
+                cleanupBtn.addEventListener('click', function () {
+                    Swal.fire({ title: 'Bersihkan Akun ry_?', text: 'Cleanup ini menggunakan proses existing dan berlaku global untuk semua akun berawalan "ry_", beserta log dan transaksi terkait.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan Global', cancelButtonText: 'Batal' })
+                        .then(function (r) {
+                            if (!r.isConfirmed) return;
+                            api('/api/admin/cleanup-ry', { method: 'POST' }).then(function (d) {
+                                Swal.fire({ icon: 'success', title: 'BERSIH!', text: d.message, timer: 1500, showConfirmButton: false });
+                                loadAdminUsers();
+                                loadAdminStats();
+                                loadAdminIps(1);
+                            });
                         });
-                    });
-            });
-            $('btn-ban-ip-submit').addEventListener('click', function () {
-                var ip = $('input-ban-ip').value.trim();
-                if (!ip) return Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Masukkan IP terlebih dahulu.' });
-                api('/api/admin/ip/ban', { method: 'POST', body: { ip: ip } }).then(function (d) {
-                    Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'DI-BLOKIR!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
-                    $('input-ban-ip').value = '';
-                    loadAdminIps(1);
                 });
-            });
+            }
+            var banIpBtn = $('btn-ban-ip-submit');
+            var banIpInput = $('input-ban-ip');
+            if (banIpBtn && banIpInput) {
+                banIpBtn.addEventListener('click', function () {
+                    var ip = banIpInput.value.trim();
+                    if (!ip) return Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Masukkan IP terlebih dahulu.' });
+                    api('/api/admin/ip/ban', { method: 'POST', body: { ip: ip } }).then(function (d) {
+                        Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'DI-BLOKIR!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
+                        banIpInput.value = '';
+                        loadAdminIps(1);
+                    });
+                });
+            }
             var userFilterControls = ['admin-search-users', 'admin-filter-role', 'admin-filter-status'];
             userFilterControls.forEach(function (id) {
                 var control = $(id);
@@ -2277,6 +2668,11 @@
             if (refreshH2h && !refreshH2h.dataset.bound) {
                 refreshH2h.dataset.bound = '1';
                 refreshH2h.addEventListener('click', function () { loadAdminH2hProfile(); });
+            }
+            var refreshUpgrades = $('btn-admin-refresh-upgrades');
+            if (refreshUpgrades && !refreshUpgrades.dataset.bound) {
+                refreshUpgrades.dataset.bound = '1';
+                refreshUpgrades.addEventListener('click', function () { loadAdminUpgrades(); });
             }
         }
 
@@ -2384,6 +2780,17 @@
             if ($('maint-netflix')) $('maint-netflix').checked = !!maint.netflix;
             if ($('maint-chat')) $('maint-chat').checked = !!maint.chat;
             if ($('maint-purchase')) $('maint-purchase').checked = !!maint.purchase;
+            if ($('maint-apikey-user')) $('maint-apikey-user').checked = !!maint.apikeyUserDisabled;
+            var ac = data.autoCleanup || {};
+            if ($('autocleanup-enabled')) $('autocleanup-enabled').checked = !!ac.enabled;
+            if ($('autocleanup-hours')) $('autocleanup-hours').value = String(ac.hours || 24);
+            var statusEl = document.getElementById('autocleanup-status');
+            if (statusEl) {
+                var dot = '<i class="fa-solid fa-circle" style="font-size:0.55rem; margin-right:6px; color:' + (ac.enabled ? '#10b981' : '#64748b') + ';"></i>';
+                var msg = ac.enabled ? 'Aktif — akun tanpa login akan dibersihkan otomatis setelah durasi yang dipilih.' : 'Nonaktif — akun nonaktif tidak akan dihapus otomatis.';
+                var lastTxt = ac.lastRun ? '<span style="color:var(--text-muted); margin-left:4px;">Terakhir: ' + ac.lastRun + (ac.lastCount ? ' (' + ac.lastCount + ' akun)' : '') + '</span>' : '';
+                statusEl.innerHTML = dot + msg + lastTxt;
+            }
         });
         var saveBtn = $('btn-save-maintenance');
         if (saveBtn && !saveBtn.dataset.bound) {
@@ -2393,10 +2800,25 @@
                     generator: $('maint-generator').checked,
                     netflix: $('maint-netflix').checked,
                     chat: $('maint-chat').checked,
-                    purchase: $('maint-purchase').checked
+                    purchase: $('maint-purchase').checked,
+                    apikeyUserDisabled: $('maint-apikey-user').checked
                 };
                 api('/api/admin/system/settings', { method: 'POST', body: { key: 'maintenance', value: value } }).then(function (d) {
                     Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'TERSIMPAN!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
+                });
+            });
+            var saveAcBtn = $('btn-save-autocleanup');
+            if (saveAcBtn) saveAcBtn.addEventListener('click', function () {
+                api('/api/admin/system/settings', { method: 'POST', body: { autoCleanup: { enabled: !!(document.getElementById('autocleanup-enabled') || {}).checked, hours: parseInt((document.getElementById('autocleanup-hours') || {}).value, 10) } } }).then(function (d) {
+                    Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'TERSIMPAN!' : 'GAGAL', text: d.message, timer: 1500, showConfirmButton: false });
+                    if (d.success) loadAdminSettings();
+                });
+            });
+            var runAcBtn = $('btn-autocleanup-run');
+            if (runAcBtn) runAcBtn.addEventListener('click', function () {
+                api('/api/admin/autocleanup/run', { method: 'POST' }).then(function (d) {
+                    Swal.fire({ icon: d.success ? 'success' : 'error', title: d.success ? 'SELESAI!' : 'GAGAL', text: d.message, timer: 1800, showConfirmButton: false });
+                    loadAdminSettings();
                 });
             });
             $('btn-admin-add-notif').addEventListener('click', function () {

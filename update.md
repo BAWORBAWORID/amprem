@@ -1,538 +1,399 @@
-FIX ADMIN — IP ANGGOTA & PEMBERSIHAN TERLALU PANJANG
+FIX — VIP PRICE DETECTION DI #PURCHASE
 
 Target:
-https://am.alwayscodex.my.id/#admin
+"https://am.alwayscodex.my.id/#purchase"
 
-Masalah:
-Section "IP Anggota & Pembersihan" saat ini memanjang terlalu jauh
-ke bawah karena list IP menampilkan banyak row.
+MASALAH
 
-Akibatnya:
-- card IP terlalu tinggi
-- IP Terblokir terdorong jauh ke bawah
-- layout admin menjadi tidak seimbang
-- halaman terasa sangat panjang
-- pagination tidak berada pada posisi yang rapi
+Pada halaman Beli Role & Paket, paket VIP memiliki masalah harga.
 
-JANGAN hanya menambahkan pagination.
+Saat memilih:
 
-Perbaiki layout + list container + pagination.
+VIP → 14 Hari
 
-==================================================
-1. BATASI AREA LIST IP
-==================================================
+harga yang tampil:
 
-Jangan biarkan seluruh card IP mengikuti tinggi semua data.
+Rp 0 /14 hari
 
-Buat area khusus:
+Padahal paket VIP seharusnya menggunakan sistem harga yang sama seperti:
 
-.ip-list-container
+- Reseller
+- Premium
+- Auto Gen
 
-dengan tinggi terbatas.
+Saat ini source halaman menunjukkan VIP memiliki harga:
 
-Desktop:
+Rp 55.000 /30 hari
 
-max-height: 420px;
-overflow-y: auto;
+tetapi ketika duration diubah melalui UI, frontend dapat menghasilkan "Rp 0".
 
-Mobile:
+TUJUAN
 
-max-height: 360px;
-overflow-y: auto;
+Perbaiki sistem pricing VIP agar terdeteksi dan dihitung menggunakan mekanisme yang sama persis dengan paket lainnya.
 
-atau sesuaikan dengan tinggi viewport.
+Jangan menghapus VIP.
 
-CONTOH:
+---
 
-IP ANGGOTA & PEMBERSIHAN
-────────────────────────────
+1. CEK PRICE CONFIGURATION
 
-[Search]
-[Filter]
+Cari seluruh konfigurasi harga:
 
-10 data per halaman
+price
+prices
+pricing
+plans
+packages
+roles
+durations
 
-┌────────────────────────────┐
-│ IP 1                       │
-│ IP 2                       │
-│ IP 3                       │
-│ IP 4                       │
-│ IP 5                       │
-│ IP 6                       │
-│ IP 7                       │
-│ IP 8                       │
-│ IP 9                       │
-│ IP 10                      │
-└────────────────────────────┘
+Cari khusus:
 
-      1  2  3  ...  31
+VIP
+vip
+14
+30
 
-────────────────────────────
+Bandingkan struktur VIP dengan:
 
-IP TERBLOKIR
+RESELLER
+PREMIUM
+AUTO GEN
 
+Jangan membuat sistem pricing baru jika sistem existing sudah bisa digunakan.
 
-==================================================
-2. JANGAN BUAT CARD IP MEMANJANG
-==================================================
+VIP harus mengikuti struktur data pricing yang sama dengan package lainnya.
 
-Gunakan:
+---
 
-.ip-list-container {
-    max-height: 420px;
-    overflow-y: auto;
-    overflow-x: hidden;
+2. CEK DURATION MAPPING
+
+Pastikan VIP mempunyai mapping untuk semua duration yang tersedia:
+
+3 Hari
+7 Hari
+14 Hari
+30 Hari
+
+Jika memang harga untuk masing-masing duration sudah tersedia di backend/config, gunakan harga tersebut.
+
+Jangan membuat harga baru secara asal.
+
+Contoh struktur yang benar:
+
+{
+    reseller: {
+        3: PRICE,
+        7: PRICE,
+        14: PRICE,
+        30: PRICE
+    },
+
+    premium: {
+        3: PRICE,
+        7: PRICE,
+        14: PRICE,
+        30: PRICE
+    },
+
+    autogen: {
+        3: PRICE,
+        7: PRICE,
+        14: PRICE,
+        30: PRICE
+    },
+
+    vip: {
+        3: PRICE,
+        7: PRICE,
+        14: PRICE,
+        30: PRICE
+    }
 }
 
-Card utama:
+Sesuaikan dengan struktur project yang sebenarnya.
 
-.ip-management-card {
-    height: auto;
-}
+---
 
-Jangan:
+3. JANGAN DEFAULT KE Rp 0
 
-height: auto;
+Cari logic seperti:
 
-pada list sehingga seluruh data membuat section semakin panjang.
+price || 0
 
-List harus memiliki viewport sendiri.
+atau:
 
+prices[plan]?.[duration] || 0
 
-==================================================
-3. MOBILE
-==================================================
+atau:
 
-Untuk Android/mobile:
+const price = package.price || 0;
 
-.ip-list-container {
-    max-height: 360px;
-    overflow-y: auto;
-}
+Jangan membuat package yang gagal ditemukan otomatis menjadi "Rp 0".
 
-Jika tinggi layar kecil, gunakan:
-
-max-height: min(360px, 50vh);
-
-Tujuannya agar IP list tidak mengambil setengah halaman
-atau bahkan lebih.
-
-Jangan membuat halaman horizontal scroll.
-
-
-==================================================
-4. CUSTOM SCROLLBAR
-
-Scrollbar di dalam list harus tipis dan mengikuti theme.
+Gunakan fallback yang aman.
 
 Contoh:
 
-.ip-list-container::-webkit-scrollbar {
-    width: 5px;
+const price = prices?.[plan]?.[duration];
+
+if (price == null) {
+    console.error('[PRICE NOT FOUND]', {
+        plan,
+        duration
+    });
+
+    return;
 }
 
-.ip-list-container::-webkit-scrollbar-thumb {
-    border-radius: 10px;
+Jika harga tidak ditemukan, tampilkan:
+
+Harga tidak tersedia
+
+bukan:
+
+Rp 0
+
+Karena "Rp 0" dapat membuat user mengira paket tersebut gratis.
+
+---
+
+4. CEK CASE SENSITIVITY
+
+Pastikan identifier package konsisten.
+
+Misalnya jangan sampai:
+
+"VIP"
+
+dipakai di UI tetapi pricing menggunakan:
+
+"vip"
+
+atau:
+
+"Vip"
+
+Normalisasi jika diperlukan:
+
+const planKey = String(plan).toLowerCase();
+
+Kemudian gunakan identifier yang konsisten di seluruh pricing flow.
+
+---
+
+5. CEK DURASI YANG DIPILIH
+
+Saat user klik:
+
+3 Hari
+7 Hari
+14 Hari
+30 Hari
+
+pastikan event handler mengirim duration yang benar.
+
+Contoh:
+
+selectDuration('vip', 14)
+
+harus menghasilkan lookup:
+
+prices.vip[14]
+
+bukan:
+
+prices.VIP['14hari']
+prices.vip['14 Hari']
+prices.vip.duration14
+
+kecuali memang struktur backend menggunakan format tersebut.
+
+Ikuti format yang sudah digunakan package Reseller/Premium/Auto Gen.
+
+---
+
+6. SAMAKAN LOGIC DENGAN PACKAGE LAIN
+
+Ini bagian paling penting.
+
+Cari bagaimana:
+
+Reseller → pilih 14 Hari → harga berubah
+Premium → pilih 14 Hari → harga berubah
+Auto Gen → pilih 14 Hari → harga berubah
+
+Kemudian gunakan logic yang sama untuk VIP.
+
+Jangan membuat handler VIP yang berbeda jika tidak diperlukan.
+
+Semua package harus menggunakan satu pricing function:
+
+getPackagePrice(plan, duration)
+
+Contoh:
+
+function getPackagePrice(plan, duration) {
+    const planKey = String(plan).toLowerCase();
+    const days = Number(duration);
+
+    const price = pricing?.[planKey]?.[days];
+
+    if (price == null) {
+        console.error('[PRICE NOT FOUND]', {
+            plan: planKey,
+            duration: days
+        });
+
+        return null;
+    }
+
+    return Number(price);
 }
 
-Gunakan CSS variable existing untuk warna.
+---
 
-Jangan menggunakan warna hardcode jika website sudah mempunyai
-theme variables.
+7. CEK ORDER / PAYMENT
 
+Perbaikan frontend saja tidak cukup.
 
-==================================================
-5. PAGINATION TETAP DI LUAR SCROLL AREA
+Pastikan ketika:
+
+VIP + 14 Hari
+
+dipilih dan user klik:
+
+BELI SEKARANG
+
+nilai yang dikirim ke backend benar:
+
+{
+  "plan": "vip",
+  "duration": 14,
+  "price": <harga-yang-seharusnya>
+}
+
+Backend harus melakukan validasi harga sendiri.
+
+Jangan mempercayai harga yang dikirim dari frontend.
+
+Contoh:
+
+const serverPrice = getPackagePrice(plan, duration);
+
+if (serverPrice == null) {
+    return res.status(400).json({
+        success: false,
+        error: 'Harga paket tidak tersedia'
+    });
+}
+
+Gunakan "serverPrice" untuk transaksi.
+
+---
+
+8. JANGAN MENGUBAH HARGA EXISTING
 
 PENTING:
 
-Pagination jangan ikut scroll bersama list.
+Jangan mengubah harga:
 
-Struktur:
+- Reseller
+- Premium
+- Auto Gen
+- VIP
 
-.ip-management-card
-│
-├── header
-├── toolbar
-├── info
-├── .ip-list-container
-│      ├── row
-│      ├── row
-│      ├── row
-│      └── ...
-│
-└── .ip-pagination
+kecuali memang ditemukan konfigurasi harga yang rusak.
 
+Jangan mengarang harga baru.
 
-Jadi:
+Jika source/backend sudah mempunyai harga VIP per duration, gunakan data tersebut.
 
-LIST = scroll
-PAGINATION = fixed di bawah list
+Jika hanya 30 hari yang memang dikonfigurasi, jangan mengarang harga untuk 3/7/14 hari. Tampilkan "Harga tidak tersedia" sampai konfigurasi resminya tersedia.
 
+---
 
-==================================================
-6. CONTOH LAYOUT
+9. TEST
 
-┌──────────────────────────────────────┐
-│ IP Anggota & Pembersihan             │
-│                                      │
-│ Pantau perangkat dan alamat IP       │
-│ Maksimal 3 akun per IP               │
-│                                      │
-│ [Refresh] [Bersihkan ry_]            │
-│                                      │
-│ [🔍 Cari username, IP...]            │
-│ [Semua IP ▼]                         │
-│                                      │
-│ 10 data per halaman                  │
-│                                      │
-│ ┌──────────────────────────────────┐ │
-│ │ IP       USER       DEVICE       │ │
-│ │ ──────────────────────────────── │ │
-│ │ 127.0.0.1 user1     Unknown      │ │
-│ │ 140.xxx   user2     Android      │ │
-│ │ 114.xxx   user3     Android      │ │
-│ │ 103.xxx   user4     Android      │ │
-│ │ 182.xxx   user5     Android      │ │
-│ │ ...                              │ │
-│ │                                  │ │
-│ │        ↕ scroll                  │ │
-│ └──────────────────────────────────┘ │
-│                                      │
-│       1  2  3  4  5  ... 31  >      │
-└──────────────────────────────────────┘
+Test semua kombinasi:
 
-Kemudian langsung:
+Reseller
 
-┌──────────────────────────────────────┐
-│ IP TERBLOKIR                         │
-│                                      │
-│ [Masukkan IP...] [BAN IP]            │
-│                                      │
-└──────────────────────────────────────┘
+3 Hari
+7 Hari
+14 Hari
+30 Hari
 
+Premium
 
-==================================================
-7. JANGAN MENAMPILKAN SEMUA DATA SEKALIGUS
-==================================================
+3 Hari
+7 Hari
+14 Hari
+30 Hari
 
-Tetap:
+Auto Gen
 
-10 data per halaman.
+3 Hari
+7 Hari
+14 Hari
+30 Hari
 
-Tetapi container tetap dibatasi.
+VIP
 
-Jika backend mengembalikan 10 row:
+3 Hari
+7 Hari
+14 Hari
+30 Hari
 
-→ tampilkan 10 row dalam scroll container.
+Pastikan tidak ada satu pun yang menghasilkan:
 
-Jika row sedikit:
+Rp 0
 
-→ jangan memaksa container menjadi tinggi 420px.
+kecuali memang harga paket tersebut secara resmi benar-benar "0".
 
-Gunakan:
+---
 
-min-height: 0;
-max-height: 420px;
+10. UI
 
-bukan fixed height.
+Format harga tetap seperti sekarang:
 
+Rp 55.000 /30 hari
 
-==================================================
-8. ROW HARUS LEBIH COMPACT
-==================================================
-
-Selain membatasi tinggi, kecilkan row agar lebih compact.
-
-Contoh:
-
-padding:
-10px 12px;
-
-font-size:
-12px / 13px;
-
-line-height:
-1.3;
-
-Jangan menggunakan padding besar.
-
-Desktop row:
-
-height sekitar 48–58px.
-
-Mobile:
-
-height sekitar 55–65px.
-
-Jangan membuat satu row sangat tinggi.
-
-
-==================================================
-9. MOBILE CARD MODE
-
-Pada mobile, jika tabel terlalu lebar, gunakan compact card/row.
-
-Contoh:
-
-┌─────────────────────────────┐
-│ 127.0.0.1          USER     │
-│ Android                     │
-│ 1 akun             [Detail] │
-└─────────────────────────────┘
-
-Jangan menampilkan 6 kolom horizontal yang menyebabkan
-overflow.
-
-Desktop boleh menggunakan table.
-
-Mobile gunakan responsive card/list.
-
-
-==================================================
-10. PAGINATION
-
-Pagination berada setelah list container:
-
-<div class="ip-list-container">
-    ...
-</div>
-
-<div class="ip-pagination">
-    ...
-</div>
-
-Pagination tidak boleh berada di:
-
-- luar card
-- bawah IP Terblokir
-- bawah seluruh admin dashboard
-
-
-==================================================
-11. PAGINATION STYLE
-
-Gunakan pagination yang sama persis dengan:
-
-Daftar Anggota
-Aktivitas Global
-
-Contoh:
-
-[1] [2] [3] [4] [5] ... [31] [>]
-
-Active page menggunakan class/style existing.
-
-Jangan membuat warna baru.
-
-
-==================================================
-12. SEARCH
-
-Search hanya memengaruhi isi:
-
-.ip-list-container
-
-Bukan membuat card semakin tinggi.
-
-Saat search:
-
-→ reset page = 1
-→ render hasil
-→ pagination update
-
-
-==================================================
-13. FILTER
-
-Filter:
-
-Semua IP
-1 Akun
-2 Akun
-3 Akun
->3 Akun
-
-juga hanya mengubah isi list.
-
-Jika hasil sedikit:
-
-container ikut mengecil secara natural.
-
-Jangan tetap memakan ruang kosong besar.
-
-
-==================================================
-14. EMPTY STATE
-
-Jika tidak ada hasil:
-
-┌─────────────────────────────┐
-│                             │
-│      Tidak ada data IP      │
-│                             │
-└─────────────────────────────┘
-
-Container jangan tetap menjadi sangat tinggi.
-
-
-==================================================
-15. LOADING
-
-Saat loading:
-
-┌─────────────────────────────┐
-│                             │
-│      Memuat data IP...      │
-│                             │
-└─────────────────────────────┘
-
-Setelah selesai:
-
-render list.
-
-
-==================================================
-16. JANGAN MENGUBAH BACKEND
+atau sesuai harga duration yang sebenarnya.
 
 Jangan mengubah:
 
-- endpoint
-- database
-- IP detection
-- account limit
-- cleanup logic
-- ban IP logic
+- desain card
+- warna
+- tombol
+- layout
+- QRIS
+- sidebar
+- navigation
 
-Fokus pada frontend rendering/layout.
+---
 
-Jika pagination backend sudah tersedia, gunakan.
+ACCEPTANCE CRITERIA
 
-Jika belum, gunakan pagination frontend berdasarkan data yang
-sudah dikirim backend.
+Fix dianggap berhasil jika:
 
+1. VIP tidak lagi menampilkan "Rp 0" karena missing pricing data.
+2. VIP menggunakan pricing engine yang sama dengan package lain.
+3. Pergantian "3 / 7 / 14 / 30 Hari" langsung memperbarui harga.
+4. Harga yang ditampilkan frontend sama dengan harga yang divalidasi backend.
+5. Order VIP mengirim plan + duration yang benar.
+6. Harga tidak pernah otomatis menjadi "0" ketika data pricing tidak ditemukan.
+7. Tidak ada JavaScript error.
+8. Reseller, Premium, dan Auto Gen tetap berfungsi seperti sebelumnya.
 
-==================================================
-17. IP TERBLOKIR HARUS NAIK
+PRIORITAS
 
-Setelah fix:
+Cari root cause terlebih dahulu.
 
-IP Terblokir harus berada tepat setelah card IP.
+Jangan sekadar mengganti:
 
-Tidak boleh lagi terdorong jauh ke bawah karena IP list.
+0
 
-Layout:
+menjadi angka tertentu.
 
-Daftar Anggota
-↓
-Aktivitas Global
-↓
-Transaksi QRIS
-↓
-IP Anggota & Pembersihan
-↓
-IP Terblokir
-↓
-Duplicate Attempt Logs
-↓
-Pengaturan
-
-
-==================================================
-18. RESPONSIVE
-
-Desktop:
-
-IP card normal.
-List max-height sekitar 420px.
-
-Tablet:
-
-max-height sekitar 380px.
-
-Mobile:
-
-max-height:
-min(360px, 50vh);
-
-Pastikan:
-
-overflow-x: hidden;
-overflow-y: auto;
-
-dan:
-
-box-sizing: border-box;
-
-
-==================================================
-19. IMPORTANT — JANGAN BUAT PAGE TERLALU PANJANG
-
-Tujuan utama:
-
-SEBELUM:
-
-IP 1
-IP 2
-IP 3
-IP 4
-IP 5
-IP 6
-IP 7
-IP 8
-IP 9
-IP 10
-↓
-card sangat panjang
-↓
-IP Terblokir jauh di bawah
-
-
-SESUDAH:
-
-IP 1
-IP 2
-IP 3
-IP 4
-IP 5
-IP 6
-IP 7
-IP 8
-↓ scroll
-IP 9
-IP 10
-
-[ 1 2 3 4 5 ... 31 > ]
-
-↓
-IP Terblokir langsung terlihat di bawahnya.
-
-
-==================================================
-20. FINAL ACCEPTANCE TEST
-
-[ ] IP card tidak memanjang mengikuti seluruh halaman
-[ ] List IP memiliki scroll internal
-[ ] Max-height diterapkan
-[ ] Mobile max-height sekitar 360px / 50vh
-[ ] Pagination berada di dalam card
-[ ] Pagination tidak ikut scroll
-[ ] Pagination sama dengan Daftar Anggota
-[ ] 10 data per halaman tetap
-[ ] Search bekerja
-[ ] Filter bekerja
-[ ] Refresh bekerja
-[ ] Cleanup bekerja
-[ ] Empty state benar
-[ ] IP Terblokir tidak terdorong jauh
-[ ] Tidak ada horizontal overflow
-[ ] Tidak merusak layout admin lain
-
-HASIL YANG DIINGINKAN:
-
-IP Anggota & Pembersihan menjadi card dengan
-TINGGI TERKONTROL.
-
-List IP boleh memiliki banyak data,
-tetapi yang memanjang hanya area scroll internal,
-BUKAN seluruh halaman.
+Cari kenapa "VIP + duration" tidak menemukan harga, lalu perbaiki mapping/configuration/lookup-nya supaya VIP benar-benar bekerja dengan mekanisme yang sama seperti package lainnya.

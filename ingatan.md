@@ -1,6 +1,6 @@
 # 🧠 INGATAN — AM Premium Creator
 
-> Dokumentasi lengkap seluruh state project per **10 Agustus 2026**.
+> Dokumentasi lengkap seluruh state project per **12 Agustus 2026**.
 > Website: [https://am.alwayscodex.my.id](https://am.alwayscodex.my.id)
 
 ---
@@ -56,6 +56,9 @@ src/
     chat.js           → Chat global (SSE, badwords filter)
     logger.js         → Logger utility
     security.js       → Anti-devtools / anti-scraper
+    qris.js            → QRIS statis (TLV, CRC16, PNG)
+    gopay.js           → GoPay merchant utility + watcher
+    autocleanup.js     → Cleanup akun nonaktif + scheduler
   hooks/
     hot-reload.js     → Hot Module Reload (watch file changes)
 services/
@@ -109,8 +112,16 @@ data/                 → ⚠️ STATE RUNTIME (JSON)
 | `src/utils/store.js` | 163 | JSON read/write, ID generator, config |
 | `server.js` | 14 | Entry legacy (redirect ke index.js) |
 | `index.js` | - | Entry point utama + HMR |
-| `services/auth.js` | 140 | AMAuth — magic link + verifikasi alight creative |
-| `services/bulk.js` | - | Puppeteer bulk generator |
+| `services/auth.js` | 140 | AMAuth — magic link + verifikasi Alight Creative |
+| `services/bulk.js` | 362 | Puppeteer bulk generator |
+| `services/telegram/tele.js` | 517 | Runner Telegram legacy/pendukung |
+| `src/utils/gopay.js` | 710 | GoPay Merchant, history, analytics, journal, watcher |
+| `src/utils/autocleanup.js` | 162 | Cleanup akun gratis nonaktif + scheduler |
+| `src/utils/qris.js` | 191 | Parser/encoder QRIS statis + generator PNG |
+| `test/gopay-login.test.js` | 114 | Test import, kredensial kosong, cache, watcher |
+| `ecosystem.config.cjs` | - | Konfigurasi PM2 + AM_HMR=1 |
+| `dec.js` | - | Tool decode halaman referensi ryezenstore.online |
+| `gobiz-probe.mjs` | - | Probe request GoBiz menggunakan Playwright |
 
 ---
 
@@ -222,12 +233,30 @@ data/                 → ⚠️ STATE RUNTIME (JSON)
 - Endpoint: `/get_profile`, `/deposit/metode`
 - QRIS generation untuk pembayaran
 - Profil income di dashboard admin (tersembunyi, tidak tampil domain)
+- QRIS statis dibuat oleh `src/utils/qris.js`, disimpan di `data/qris/`, dan dilayani melalui `/files/*`.
+- Harga QRIS dibaca dari `settings.json` (`qris.prices`), bukan dari amount yang dipercaya dari client.
+- Order QRIS memiliki status `pending/success/failed/expired` dan masa berlaku default 30 menit.
 
 ### 5.14 API Guide (`#apiguide`)
 - Dokumentasi API profesional
 - Code examples: cURL, Node.js, Python, PHP
 - Copy button, syntax highlighting
 - Bisa diakses semua role
+
+### 5.15 GoPay Merchant Utility
+- Implementasi berada di `src/utils/gopay.js` dan berkomunikasi dengan `https://api.gobiz.co.id`.
+- `GoPayMerchant` mendukung login berbasis `GOPAY_EMAIL`/`GOPAY_PASSWORD`, validasi token, deteksi merchant, history transaksi, analytics, dan journal.
+- Cache token/merchant disimpan lokal di `src/utils/.gopay_cache.json`; kredensial dibaca dari `src/utils/.env` dan tidak boleh dimasukkan ke frontend atau dokumentasi publik.
+- `GoPayWatcher` memakai polling/event emitter untuk memantau pembayaran dan memiliki singleton watcher melalui `getGoPayWatcher()`.
+- **Status integrasi:** utility dan test sudah tersedia, tetapi tidak ada route `/api/gopay/*` publik yang terdaftar di `src/routes/api.js`. Endpoint pembayaran publik saat ini adalah QRIS di bawah `/api/payment/*`.
+
+### 5.16 Auto-Cleanup Akun Nonaktif
+- Modul: `src/utils/autocleanup.js`.
+- Hanya menyasar akun gratis dengan role `user` yang sudah melewati batas umur dan belum memiliki sinyal aktivitas.
+- Role berbayar/admin/owner dan akun yang dibanned manual selalu dikecualikan.
+- Sinyal aktivitas meliputi login, riwayat, sesi aktif, kredit yang berubah dari default 20, API aktif, atau aktivitas referral.
+- Konfigurasi berada di `data/settings.json` pada `autoCleanup`: `enabled`, `hours`, `lastRun`, `lastCount`.
+- Scheduler berjalan 1 menit setelah boot, lalu setiap 60 menit. Konfigurasi runtime saat dokumentasi ini diperbarui: aktif, batas 24 jam.
 
 ---
 
@@ -403,6 +432,7 @@ Menu di titik 3 (kanan atas):
 ## 13. DOCKER
 
 - **Base:** Ubuntu 22.04 + Node.js 22 + Google Chrome
+- **Entry:** `npm start` menjalankan `node index.js`; PM2 digunakan untuk deployment host bila diperlukan.
 - **Port:** 5000
 - **Volume:** `am-data:/app/data` (persisten)
 - **Healthcheck:** `curl http://localhost:5000/api/public/stats`
@@ -418,6 +448,61 @@ Menu di titik 3 (kanan atas):
 ---
 
 ## 15. PERUBAHAN TERBARU
+
+### 12 Agustus 2026 — Sinkronisasi Struktur Server Modular
+- ✅ Struktur aktual `index.js` → `src/app/index.js` → middleware/routes didokumentasikan.
+- ✅ Ditambahkan dokumentasi `src/utils/gopay.js`, `src/utils/autocleanup.js`, `ecosystem.config.cjs`, dan `test/gopay-login.test.js`.
+- ✅ Dicatat bahwa GoPay masih berupa utility/test dan belum memiliki route `/api/gopay/*` publik.
+- ✅ QRIS statis, route `/files/*`, scheduler auto-cleanup, dan konfigurasi `AM_HMR=1` didokumentasikan.
+
+### 11 Agustus 2026 — Login/Register Bersih Tanpa Topbar (sesuai git HEAD)
+- ✅ Keputusan user: halaman auth (login/register) TIDAK menampilkan topbar — persis perilaku git HEAD (kotak login bersih, tanpa ⋮/brand/ikon)
+- ✅ Kembalikan `$('mobile-top-bar').classList.add('hidden')` di `updateNavbar` (guest) + `showScreen('auth')`; hapus mekanisme `body.auth-mode` (JS toggle + rule CSS ≥769px) yang kini redundan
+- ✅ Setelah login topbar + ⋮ muncul kembali; setelah logout kembali bersih. Drawer AKSES tamu tetap ada di kode (tapi tidak bisa dibuka dari layar login — per desain, login/register/WA/APK sudah ada di halaman)
+- ✅ Test: guest mobile/desktop bersih full-width tanpa overflow; login → topbar flex + ⋮; logout → bersih; regresi drawer 12/12 PASS; versi `v=20260811-8` live
+
+### 11 Agustus 2026 — Drawer Tamu Terpisah (AKSES)
+- ✅ Menu ⋮ untuk tamu = section **"AKSES"** (label berubah MENU→AKSES): Login · Register · WhatsApp · APK — grup navigasi home TIDAK dirender untuk tamu
+- ✅ Item `data-auth-tab="login|register"` → showScreen('auth') + klik `link-to-login`/`link-to-register` (tab bertukar benar, drawer tertutup); `.mobile-drawer-login-btn` diberi aksen warna
+- ✅ Logout drawer hanya untuk yang login
+
+### 11 Agustus 2026 — FIX MOBILE DASHBOARD BLANK/TERGESER
+- 🔴 **Root cause (bukan CSS responsive, tapi DOM rusak)**: edit pemindahan tombol ⋮ kemarin menghilangkan `</div>` penutup `#mobile-top-bar` → SEMUA `<section class="screen">` terkurung di dalam topbar (flex row `space-between`) → dashboard terdorong ke kanan (x≈261, lebar 33px), card menciut `42px 42px` → terlihat blank/kosong kiri. Gejala persis laporan screenshot
+- ✅ **Fix**: tambah `</div>` tutup topbar sebelum `<section id="screen-auth">`; buang `</div>` yatim setelah `</main>`; tambah 1 `</div>` penutup `admin-control-card` yang kurang (bug template lama di `#admin-duplicates-card` — 5 div buka, 4 tutup)
+- ✅ Verifikasi: stack-walk semua tag balance 355/355; DOM benar (screen→main, drawer/overlay→body); viewport 360/375/390/412/430 → stats grid full width (x=10, 2 kolom), tanpa horizontal overflow, tanpa error JS; invite `?code=dtd-ana` normal (banner muncul, param dipertahankan); regresi drawer 12/12 PASS; guest ⋮ kiri x=21
+- ⚠️ Pelajaran: setelah edit HTML manual WAJIB cek keseimbangan tag + parent chain di browser (script stack-walk di simpan dalam ingatan ini)
+- ✅ Versi asset bump `v=20260811-5`, CF sudah serve
+
+### 11 Agustus 2026 — FIX BLANK PAGE + ⋮ Menu untuk Tamu
+- 🔴 **Root cause blank**: browser user memakai `home.js?v=20260810` LAMA dari cache (URL tidak di-bump) + HTML baru (element `#btn-sidebar-toggle` sudah dihapus) → `Cannot read properties of null (reading 'addEventListener')` → JS init mati → layar blank. Dibuktikan via simulasi Playwright (stale JS + new HTML = blank; keduanya baru = OK)
+- ✅ **Fix**: semua asset di `home.html` di-bump `v=20260811-3` (7 file: home.js, enhance.js, 4 css, security.js) → browser paksa ambil JS baru. CF sudah menyajikan versi baru (md5 cocok dengan lokal)
+- ✅ Duplikat `sweetalert2@11` (2x load) dihapus — cukup 1 di `<head>`
+- ✅ **⋮ untuk tamu**: topbar + `#btn-mobile-menu-trigger` (kanan atas) kini tampil juga di layar login/guest di MOBILE (tadinya `hidden` oleh `updateNavbar`/`showScreen('auth')`); body class `auth-mode` + CSS ≥769px menahan topbar tetap tersembunyi di DESKTOP (desain login lama tidak berubah)
+- ✅ Drawer tamu: item "Masuk / Daftar" (→ `#screen-auth`) + link WhatsApp/APK, tombol Logout di footer drawer disembunyikan
+- ✅ `bindNav` di-hardening: semua binding drawer/trigger pakai null-guard
+- ✅ Test headless: guest (⋮ terlihat x=327/390, drawer 15 item/4 grup, tanpa grup admin, logout hidden, klik "Masuk/Daftar" → login screen) + logged-in (16 item/5 grup) + desktop guest (topbar none) + desktop login (topbar none by design — `.mobile-top-bar` memang mobile-only) + regresi 12/12 PASS
+- ⚠️ Cleanup session: hapus HANYA session hasil test (userId owner-msgsyfbc + mtime <20 menit); session asli (turzz, manustest123) dibiarkan
+
+### 11 Agustus 2026 — Mobile Menu (Drawer ⋮) untuk `home.html`
+- ✅ **UI mobile baru**: topbar kini punya brand (cube AM CREATOR) di kiri + tombol ⋮ (`.mobile-menu-trigger`, 42×42) di kanan; hamburger lama `#btn-sidebar-toggle` dihapus
+- ✅ **Drawer**: `.mobile-drawer` (min(340px,82vw), 100dvh, slide `translateX(-100%) → 0` .22s, z-9999, `--bg-sidebar`) + `.mobile-drawer-overlay` (blur 5px, z-9998); dibuka ⋮ / ditutup overlay / × / ESC (keydown), scroll body di-lock saat terbuka
+- ✅ **Navigasi**: struktur kategori accordion (`.mobile-nav-cat` + chevron rotate 180°), satu-buka-satu (buka 1 → tutup lain), submenu `max-height 0 → 480px` .25s
+- ✅ **Router**: klik item → `location.hash` di-set → drawer auto-tutup + item jadi `.active` (sync via `#app-router` popstate)
+- ✅ **Role-aware**: kategori Pengaturan Admin hanya dirender utk owner; kategori Layanan & API/Support & APK utk admin+owner (aturan sama seperti `.sidebar-nav`)
+- ✅ **CSS**: di `premium-polish.css` (section `MOBILE MENU`); media query: ≤768 `#app-sidebar{display:none!important}` + drawer/trigger tampil; ≥769 elemen mobile disembunyikan
+- ✅ **Test headless (Playwright)**: 12/12 PASS — build drawer per role (owner: 5 grup/16 item), ⋮+overlay+scroll lock, accordion + chevron, satu-buka-satu, routing `#lifetime`, active-sync `#referral`, ESC/overlay/× tutup, desktop flat (16 link sidebar), mobile tidak overflow horizontal, link eksternal (WhatsApp/APK) utuh
+- ⚠️ **Catatan**: `data/sessions/` ter-track git; saat cleanup manual jangan hapus session mtime < 30 menit (bisa session live)
+
+### 11 Agustus 2026 — QRIS Static Payment (update.md Part 7–8)
+- ✅ **`src/utils/qris.js`** (baru): `parseTLV` (tag 2-char), `buildTLV`, `crc16ccitt` (0x1021/0xFFFF — sanity test string DANA = `0343` ✓), `withCRC`, `normalizeAmount` (regex `^\d+$` + safe integer), `setAmount` (tag 54 disisipkan setelah tag 53, CRC dihitung ulang), `generatePaymentQRIS(amount)` → PNG via paket `qrcode` (satu-satunya dep baru) ke `data/qris/`
+- ✅ **`POST /api/payment/qris`** (auth + gate `maintenance.purchase`): body `{role, days}` (klien TIDAK kirim amount); harga dari `settings.qris.prices` (seed = tabel UI `PLAN_PRICES`); order `{refNo 'AM'+8, role, days, plan, amount, status:'pending', createdAt, expiresAt (+30 menit), method:'QRIS'}` di `transactions.json`; respon `{order:{id,refNo,amount,status,expiresAt}, payment:{method:'QRIS',qr:{url:'/files/...png'}}}`
+- ✅ **`GET /api/payment/status/:refNo`** diperluas: `amount/plan/expiresAt` + auto `expired` jika lewat waktu
+- ✅ **`POST /api/payment/cancel`** diisi (dulu stub no-op): pending → `failed` + log
+- ✅ **Approve diperluas** (kompatibel lama): bila `tx.role`+`tx.days` → reseller (web-only, lifetime, tanpa API key) / autogen / premium|admin (`apiPlan` = `lifetime` jika days≥90, else `expired` + `apiExpiresAt = now+days`); jalur lama `lifetime/monthly/autogen` tetap
+- ✅ **Route `/files/*`** → serve `data/qris/` (anti-traversal, gambar utuh utk semua request)
+- ✅ **Frontend**: klik "QRIS (E-Wallet)" di modal metode → `startQRISPayment()` (home.js) → modal "Pembayaran QRIS Otomatis": QR image `min(360px,82vw)`, total `id-ID`, countdown dari `expiresAt`, tombol **Cek Status** (pending→tahan / success→refresh profil+tutup / expired→disable / failed→tutup) & **Batal** (panggil cancel dulu); DANA/GoPay/OVO/Shopee tetap → WhatsApp
+- ✅ CSS `.payment-qris-*` di `premium-polish.css` (pakai CSS vars theme)
+- ⚠️ **Go-live**: set `settings.json` → `maintenance.purchase = false`
 
 ### 10 Agustus 2026
 - ✅ **IP Anggota & Pembersihan dihapus total** dari `#admin` (card, tab, tabel, form ban, cleanup button)
@@ -460,19 +545,20 @@ Menu di titik 3 (kanan atas):
 
 ## 16. CATATAN PENTING
 
-1. **Jangan ubah backend** tanpa sepengetahuan — semua perubahan fokus pada frontend
+1. **Jangan ubah backend** tanpa sepengetahuan — semua perubahan fokus pada frontend, kecuali user meminta perubahan server secara eksplisit
 2. **Data di `data/`** adalah state runtime — wajib di-backup
-3. **Server jalan via PM2** — `pm2 restart am` untuk restart
-4. **HMR aktif** — perubahan file langsung reload tanpa restart PM2
+3. **Server jalan via PM2** — gunakan `ecosystem.config.cjs`; `pm2 restart am` untuk restart penuh
+4. **HMR aktif** — dengan `AM_HMR=1`, perubahan `src/` dan `services/` reload tanpa restart proses
 5. **Chrome** dibutuhkan untuk auto generator (puppeteer-core)
-6. **API pihak ketiga:**
+6. **GoPay credentials** hanya di `src/utils/.env`; jangan expose ke frontend, git, log, atau `ingatan.md`
+7. **API pihak ketiga:**
    - `atlantich2h.com` — H2H payment/deposit
    - `nftools.aroshi.my.id` — Netflix token
    - `generator.email` — Email temporary untuk bulk
    - `ryezenstore.online` — Referensi UI/UX
-7. **Session:** Cookie-based, max 10 sesi per user, cleanup 30 hari tidak aktif
-8. **Password:** bcryptjs (auto-migrasi dari SHA-256)
+8. **Session:** Cookie-based, max 10 sesi per user, cleanup 30 hari tidak aktif
+9. **Password:** bcryptjs (auto-migrasi dari SHA-256)
 
 ---
 
-> **Update terakhir:** 10 Agustus 2026 — IP Anggota & Pembersihan dihapus dari #admin
+> **Update terakhir:** 12 Agustus 2026 — Dokumentasi disinkronkan dengan struktur server modular, GoPay utility, auto-cleanup, PM2/HMR, dan test suite.

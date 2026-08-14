@@ -243,5 +243,47 @@
     "role": "owner",
     "text": "ada tinggal create",
     "createdAt": "2026-08-10 15:03:56"
+  },
+  {
+    "id": "msnuw5l39abfa5",
+    "username": "turzz",
+    "role": "user",
+    "text": "Inpo coli bg",
+    "createdAt": "2026-08-11 07:22:06"
+  },
+  {
+    "id": "mso1gwg7197c66",
+    "username": "alwayscodex",
+    "role": "owner",
+    "text": "?",
+    "createdAt": "2026-08-11 10:26:11"
+  },
+  {
+    "id": "mso1h41y4c0dc2",
+    "username": "alwayscodex",
+    "role": "owner",
+    "text": "error yak",
+    "createdAt": "2026-08-11 10:26:21"
+  },
+  {
+    "id": "mspuuz3a53e8eb",
+    "username": "dzzy",
+    "role": "user",
+    "text": "ga bisa ya sekarang?",
+    "createdAt": "2026-08-12 16:56:43"
+  },
+  {
+    "id": "msrfwmslecf9c0",
+    "username": "alwayscodex",
+    "role": "owner",
+    "text": "ga bisa apa?",
+    "createdAt": "2026-08-13 19:33:39"
+  },
+  {
+    "id": "msrfwqrz67912d",
+    "username": "alwayscodex",
+    "role": "owner",
+    "text": "udah bisa sekarang",
+    "createdAt": "2026-08-13 19:33:44"
   }
 ]

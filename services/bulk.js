@@ -19,7 +19,7 @@ import AMAuth from './auth.js';
 
 /* ---------- Konfigurasi ---------- */
 
-const DEFAULT_DOMAINS = ['jagomail.com', 'softbank.id'];
+const DEFAULT_DOMAINS = ['softbank.id', '1win.life'];
 
 const CHROME_CANDIDATES = [
     process.env.CHROME_PATH,
@@ -247,8 +247,11 @@ async function processOne(email, opts) {
         // Link lama/basi di inbox publik akan gagal (INVALID_OOB_CODE) — lewati,
         // lanjut ke link lain sampai ada yang valid (kiriman terbaru).
         const maxTries = opts.maxTries || 20;
+        const resendEvery = opts.resendEvery || 4; // kirim ulang magic link tiap N putaran
         const tried = new Set();
         let verifyRes = null;
+        let roundsSinceSend = 0;
+        let sendsDone = 1; // sudah dikirim 1x sebelum loop
         for (let i = 0; i < maxTries; i++) {
             await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
             await sleep(3500);
@@ -257,7 +260,6 @@ async function processOne(email, opts) {
             for (const link of links) {
                 if (tried.has(link)) continue;
                 tried.add(link);
-                result.verifyLink = link;
                 verifyRes = await auth.verifyAndFetchProfile(email, link);
                 if (verifyRes.success) break;
                 if (opts.onLog) opts.onLog(`link #${tried.size} gagal: ${String(verifyRes.error || '').slice(0, 70)}`);
@@ -267,6 +269,20 @@ async function processOne(email, opts) {
             }
             if (verifyRes && verifyRes.success) break;
             if (opts.onLog) opts.onLog(`belum ada link valid (putaran ${i + 1}/${maxTries}), reload inbox...`);
+            // Bila link belum muncul setelah beberapa putaran, kirim ulang magic
+            // link agar kiriman terbaru masuk ke inbox (lalu di-poll ulang).
+            roundsSinceSend++;
+            if (roundsSinceSend >= resendEvery) {
+                roundsSinceSend = 0;
+                sendsDone++;
+                try {
+                    const r2 = await auth.sendMagicLink(email);
+                    if (opts.onLog) opts.onLog(`kirim ulang magic link #${sendsDone}: ${r2.success ? 'OK' : (r2.error || 'gagal')}`);
+                } catch (e) {
+                    if (opts.onLog) opts.onLog(`kirim ulang magic link #${sendsDone} gagal: ${String(e.message || e).slice(0, 60)}`);
+                }
+                await sleep(2000);
+            }
             await sleep(5000);
         }
         if (!verifyRes || !verifyRes.success) {
@@ -331,10 +347,17 @@ export async function runBulk(opts) {
         }
         results.push(r);
         if (opts.onResult) opts.onResult(r, i + 1, emails.length);
-        await sleep(3000);
+        if ((i + 1) % 5 === 0 && opts.onLog) {
+            opts.onLog(`Progress: ${i + 1}/${emails.length} selesai`);
+            console.log('[BULK] Progress:', i + 1, '/', emails.length);
+        }
+        await sleep(1000);
     }
 
-    if (opts.onDone) opts.onDone(results);
+    if (opts.onDone) {
+        opts.onDone(results);
+        console.log('[BULK] Batch Selesai - Total:', emails.length, 'Success:', results.filter((r) => r.status === 'success').length, 'Failed:', results.filter((r) => r.status !== 'success').length);
+    }
     await closeBrowser();
     return {
         status: true,

@@ -221,7 +221,6 @@ body.dark-theme .status-pending { background: var(--ds-warning-bg) !important; b
 .btn-secondary,
 .btn-ghost,
 .pagination-container .pag-btn,
-.docs-back-btn,
 .apk-download-btn-auth {
     background: var(--ds-surface-subtle) !important;
     border-color: var(--ds-border) !important;
@@ -230,7 +229,6 @@ body.dark-theme .status-pending { background: var(--ds-warning-bg) !important; b
 
 .btn-secondary:hover,
 .pagination-container .pag-btn:hover,
-.docs-back-btn:hover,
 .apk-download-btn-auth:hover {
     background: var(--ds-accent-soft) !important;
     border-color: var(--ds-accent-line) !important;

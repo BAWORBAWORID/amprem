@@ -13,7 +13,9 @@
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "https-proxy-agent": "^9.1.0",
+    "moment-timezone": "^0.6.3",
     "playwright": "^1.62.1",
-    "puppeteer-core": "^25.5.0"
+    "puppeteer-core": "^25.5.0",
+    "qrcode": "^1.5.4"
   }
 }

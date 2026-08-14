@@ -74,3 +74,31 @@ export function serveStatic(req, res, url) {
         });
     });
 }
+
+/**
+ * Melayani file hasil generate (mis. gambar QRIS dari data/qris) di bawah
+ * /files/* dengan proteksi traversal. Gambar disajikan utuh untuk semua
+ * request agar QR bisa discan dari aplikasi kamera/scanner.
+ */
+export function serveFromDir(req, res, url, dir) {
+    const root = path.resolve(dir);
+    const requested = decodeURIComponent(url.pathname.replace(/^\/files/, ''));
+    let filePath = path.resolve(root, '.' + requested);
+    const relativePath = path.relative(root, filePath);
+    if (relativePath.startsWith('..' + path.sep) || relativePath === '..' || path.isAbsolute(relativePath)) {
+        res.writeHead(403, Object.assign({ 'Content-Type': 'text/plain; charset=utf-8' }, SECURITY_HEADERS));
+        return res.end('Forbidden');
+    }
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            res.writeHead(404, Object.assign({ 'Content-Type': 'text/html; charset=utf-8' }, SECURITY_HEADERS));
+            return res.end('<h1>404 - Halaman tidak ditemukan</h1>');
+        }
+        const ext = path.extname(filePath);
+        res.writeHead(200, Object.assign({
+            'Content-Type': MIME[ext] || 'application/octet-stream',
+            'Cache-Control': 'no-cache',
+        }, SECURITY_HEADERS));
+        res.end(data);
+    });
+}

@@ -3,9 +3,45 @@
     "generator": false,
     "netflix": true,
     "chat": false,
-    "purchase": true
+    "purchase": false,
+    "apikeyUserDisabled": false
   },
   "h2h": {
     "apiKey": "AWd61q7rAnsKPmcjoxuETG0Kg0OLEArU6elDnuYyGx2qcAINwh6uwRoA1grnDskCCYYTjanIANc2717aZVnoiDifPMhgdrZVzsVn"
+  },
+  "qris": {
+    "prices": {
+      "reseller": {
+        "3": 7000,
+        "7": 12000,
+        "14": 18000,
+        "30": 25000
+      },
+      "premium": {
+        "3": 9000,
+        "7": 15000,
+        "14": 20000,
+        "30": 28000
+      },
+      "autogen": {
+        "3": 12000,
+        "7": 20000,
+        "14": 28000,
+        "30": 38000
+      },
+      "vip": {
+        "3": 18000,
+        "7": 30000,
+        "14": 42000,
+        "30": 55000
+      }
+    },
+    "expiresMinutes": 30
+  },
+  "autoCleanup": {
+    "enabled": true,
+    "hours": 72,
+    "lastRun": "2026-08-13T23:34:58.658Z",
+    "lastCount": 0
   }
 }

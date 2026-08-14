@@ -7,14 +7,20 @@ import { sendJSON } from '../utils/store.js';
 import { seedOwner } from '../utils/auth.js';
 import { cleanupExpiredSessions } from '../utils/session.js';
 import { initTelegramBots } from '../utils/telegram.js';
-import { serveStatic } from '../middleware/index.js';
+import { serveStatic, serveFromDir } from '../middleware/index.js';
 import handleAPI from '../routes/api.js';
+import { QRIS_IMAGE_DIR, ensureStaticQRIS } from '../utils/qris.js';
+import { startAutoCleanupScheduler } from '../utils/autocleanup.js';
 
 // Startup task (dulu berjalan di module-scope server.js)
 seedOwner();
 cleanupExpiredSessions();
 // Auto-start semua bot telegram yang berstatus online (aman saat HMR reload).
 initTelegramBots();
+// Pastikan gambar QRIS statis merchant untuk card bawah #purchase tersedia.
+ensureStaticQRIS().catch(() => {});
+// Scheduler Auto-Cleanup akun nonaktif (jalan tiap 60 menit, hormati enabled).
+startAutoCleanupScheduler();
 
 export default function createRequestHandler() {
     return async function requestHandler(req, res) {
@@ -29,6 +35,17 @@ export default function createRequestHandler() {
                 if (!res.headersSent) {
                     sendJSON(res, 500, { success: false, message: 'Terjadi kesalahan pada sistem. Silakan coba beberapa saat lagi.' });
                 }
+            }
+            return;
+        }
+
+        // File hasil generate (gambar QRIS pembayaran) disajikan dari data/qris.
+        if (url.pathname.startsWith('/files/')) {
+            try {
+                serveFromDir(req, res, url, QRIS_IMAGE_DIR);
+            } catch (e) {
+                console.error('[FILES ERROR]', e.message);
+                if (!res.headersSent) sendJSON(res, 500, { success: false, message: 'Terjadi kesalahan pada sistem.' });
             }
             return;
         }

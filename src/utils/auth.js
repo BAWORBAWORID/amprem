@@ -4,7 +4,7 @@
  */
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { getUsers, saveUsers, randomKey, nowISO } from './store.js';
+import { getUsers, saveUsers, randomKey, nowISO, readJSON } from './store.js';
 
 export function hashPassword(password) {
     return bcrypt.hashSync(String(password), 10);
@@ -177,15 +177,30 @@ export function claimReferralRewards(user) {
 /* ============================== ROLE CAPABILITIES ============================== */
 
 export function isUnlimitedRole(role) {
-    return ['reseller', 'premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    return ['reseller', 'premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
 }
 
 export function hasApiRole(role) {
-    return ['premium', 'autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    return ['premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
 }
 
 export function hasBulkRole(role) {
-    return ['autogen', 'admin', 'owner'].indexOf(role) !== -1;
+    return ['autogen', 'vip', 'owner'].indexOf(role) !== -1;
+}
+
+// Apakah user boleh pakai API Key (generate + panggil API bot).
+// Role premium/autogen/vip/owner selalu boleh. Role 'user' (gratis) boleh
+// HANYA bila maintenance.apikeyUserDisabled tidak aktif (toggle "Nonaktifkan
+// Apikey Untuk User" dalam posisi OFF).
+export function canUseApiKey(user) {
+    if (!user) return false;
+    if (hasApiRole(user.role)) return true;
+    if (user.role === 'user') {
+        const settings = readJSON('settings', {});
+        const disabled = !!(settings.maintenance && settings.maintenance.apikeyUserDisabled);
+        return !disabled;
+    }
+    return false;
 }
 
 export function prepareApiRole(user, previousRole) {
@@ -200,7 +215,7 @@ export function prepareApiRole(user, previousRole) {
 }
 
 /**
- * Semua role premium (reseller/premium/autogen/admin) mendukung masa aktif
+ * Semua role premium (reseller/premium/autogen/vip) mendukung masa aktif
  * (expired). Lifetime = apiExpiresAt null. Role apa pun yang punya apiExpiresAt
  * lewat dari waktu sekarang dianggap kedaluwarsa.
  */
@@ -214,5 +229,5 @@ export function canUseGenerator(user) {
 
 export function canUseBatch(user, batch) {
     if (!user || !batch || !hasBulkRole(user.role)) return false;
-    return ['admin', 'owner'].indexOf(user.role) !== -1 || batch.operator === user.username;
+    return ['vip', 'owner'].indexOf(user.role) !== -1 || batch.operator === user.username;
 }

@@ -1055,7 +1055,8 @@ pre code { color: #E5E7EB !important; }
 
 @media (max-width: 767px) {
     .auth-box { padding: 34px 22px !important; border-radius: 22px !important; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .stat-card { min-width: 0; }
     .stat-card-value { font-size: 1.25rem !important; }
     .dashboard-header .section-title { font-size: 1.45rem !important; }
     .table-responsive { overflow-x: auto !important; }

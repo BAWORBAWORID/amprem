@@ -2,6 +2,13 @@
  * Layanan AM: kirim magic link, klaim premium, auto generator (bulk), & demo Netflix.
  * Pindahan verbatim dari server.js monolit — terpisah tapi terintegrasi.
  */
+ 
+import net from 'net';
+import tls from 'tls';
+import zlib from 'zlib';
+import crypto from 'crypto';
+import { URL } from 'url';
+
 import AMAuth from '../../services/auth.js';
 import { runBulk, closeBrowser, buildEmailList } from '../../services/bulk.js';
 import { getUsers, saveUsers, readJSON, writeJSON, newId, nowISO, fmtDateTime, randomKey, generateOrderId, addLog, addActivationLog } from './store.js';
@@ -83,7 +90,7 @@ async function claimPremium(user, email, rawLink) {
     });
     writeJSON('history', history);
 
-    addActivationLog({ operator: user.username, email: email, status: 'success', note: 'claim-premium: lisensi aktif', createdAt: fmtDateTime() });
+    addActivationLog({ operator: user.username, email: email, status: 'success', note: 'Licence Active', createdAt: fmtDateTime() });
     addLog('[' + user.username + '] Aktivasi premium sukses untuk ' + email + ' (codeorder: ' + premiumResult.codeorder + ')');
 
     return { success: true, message: 'Premium berhasil diaktifkan! Code order: ' + premiumResult.codeorder, codeorder: premiumResult.codeorder };
@@ -128,8 +135,15 @@ const GENEMAIL_DOMAINS = [
    Navigation timeout di inbox). Daftar sengaja dijaga hanya yang terbukti. */
 const GENEMAIL_VERIFIED_DOMAINS = [
     'softbank.id', '1win.life', 'jagomail.com', 'gmail-xsniper.site',
-    'bwmyga.com', 'copawoke.com', 'mfeva.com', 'kedaiqq.com', 'gocoiny.com',
+    'bwmyga.com', 'mfeva.com', 'kedaiqq.com', 'gocoiny.com',
     'lnovic.com', 'gmeenramy.com',
+];
+
+/* Domain "jagoan" — paling sering sukses dari data aktivasi nyata
+   (softbank.id 36x, 1win.life 12x). Mode domain 'random' memakai HANYA
+   daftar ini agar batch tidak gagal di domain yang fluktuatif (mis. lnovic.com). */
+const GENEMAIL_JAGOAN_DOMAINS = [
+    'softbank.id', '1win.life', 'jagoanmail.com',
 ];
 
 /* ---- Pelacakan worker batch ----------------
@@ -206,12 +220,12 @@ function startBatch(user, domain, count, prefix, notify) {
     // yang banyak mati) agar batch tidak gagal Navigation timeout.
     const reqDomain = String(domain || '').trim().toLowerCase();
     const isRandom = !reqDomain || reqDomain === 'random' || reqDomain === 'acak';
-    // Weighted: softbank.id & 1win.life paling sering sukses (36x & 12x) —
-    // muncul 2x di pool agar probabilitasnya lebih tinggi saat random.
+    // Mode random: pakai HANYA domain jagoan (softbank.id & 1win.life) yang
+    // terbukti paling sering sukses. softbank.id diberi bobot lebih tinggi.
     const randomPool = [];
-    GENEMAIL_VERIFIED_DOMAINS.forEach(function (d) {
+    GENEMAIL_JAGOAN_DOMAINS.forEach(function (d) {
         randomPool.push(d);
-        if (d === 'softbank.id' || d === '1win.life') randomPool.push(d);
+        if (d === 'softbank.id') randomPool.push(d);
     });
     const batchDomains = isRandom ? randomPool : [reqDomain];
     const newBatch = {
@@ -372,32 +386,256 @@ function serializeBatch(batch) {
 }
 
 
-/* ============================== NETFLIX (DEMO) ============================== */
+/* ============================== NFTOKEN GENERATOR ============================== */
 
-function generateNetflixDemoToken() {
-    const email = randomKey(8) + randomKey(4) + '@' + ['gmail.com', 'outlook.com', 'yahoo.com'][Math.floor(Math.random() * 3)];
-    const months = Math.floor(Math.random() * 6) + 1;
-    const billing = new Date();
-    billing.setMonth(billing.getMonth() + months);
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 30);
-    return {
-        success: true,
-        result: {
-            details: {
-                Email: email,
-                Plan: 'Premium 4K Ultra HD (' + months + ' Bulan)',
-                'Billing Date': billing.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-            },
-            expires: expires.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-            links: {
-                pc: 'https://www.netflix.com/login',
-                android: 'https://www.netflix.com/android',
-                tv: 'https://www.netflix.com/tv',
-            },
-        },
-    };
+const NFT_SITE = process.env.NFT_SITE || 'http://nftools.aroshi.my.id';
+const TARGET_HOST = new URL(NFT_SITE).hostname;
+const TARGET_PORT = Number(new URL(NFT_SITE).port || 80);
+const PROXY_SOURCES = [
+    'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=2000&count=100',
+    'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
+    'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt',
+];
+
+class HttpError extends Error {
+    constructor(status, data) {
+        super(`HTTP ${status}`);
+        this.status = status; this.data = data;
+    }
+}
+class RotateError extends Error {}
+
+function parseProxyLine(line) {
+    line = line.trim();
+    if (!line) return null;
+    if (line.startsWith('http://') || line.startsWith('https://')) {
+        try {
+            const u = new URL(line);
+            const p = { host: u.hostname, port: Number(u.port || 80), https: u.protocol === 'https:' };
+            if (u.username) p.auth = Buffer.from(`${u.username}:${u.password}`).toString('base64');
+            return p;
+        } catch (e) { return null; }
+    }
+    const m = line.match(/^([^:]+):(\d+)(?::([^:]+):([^:]+))?$/);
+    if (!m) return null;
+    const p = { host: m[1], port: Number(m[2]) };
+    if (m[3]) p.auth = Buffer.from(`${m[3]}:${m[4]}`).toString('base64');
+    return p;
+}
+
+async function fetchProxyLines() {
+    let lines = [];
+    for (const src of PROXY_SOURCES) {
+        try {
+            const r = await fetch(src, { signal: AbortSignal.timeout(10000) });
+            lines.push(...(await r.text()).split(/\r?\n/));
+        } catch (e) { /* skip */ }
+    }
+    return lines;
+}
+
+class ProxyPool {
+    constructor(list) {
+        this.list = list; this.idx = 0;
+        this.valid = []; this.validIdx = 0;
+        this.fails = new Map();
+    }
+    nextRaw() {
+        for (let i = 0; i < this.list.length; i++) {
+            const p = this.list[this.idx % this.list.length];
+            this.idx++;
+            if (!this.dead(p)) return p;
+        }
+        return null;
+    }
+    nextValid() {
+        for (let i = 0; i < this.valid.length; i++) {
+            const v = this.valid[this.validIdx % this.valid.length];
+            this.validIdx++;
+            if (!v.used) return v;
+        }
+        return null;
+    }
+    dead(p) { return (this.fails.get(p.host + ':' + p.port) || 0) >= 2; }
+    fail(p) {
+        const k = p.host + ':' + p.port;
+        this.fails.set(k, (this.fails.get(k) || 0) + 1);
+    }
+    reuse(p) { this.fails.set(p.host + ':' + p.port, 0); }
+    addValid(p, session) { this.valid.push({ proxy: p, session, used: false }); }
+    aliveValid() { return this.valid.filter(v => !v.used).length; }
+}
+
+function tunnel(proxy, host, port, timeoutMs = 8000) {
+    return new Promise((resolve, reject) => {
+        let sock = proxy.https 
+            ? tls.connect({ host: proxy.host, port: proxy.port, servername: proxy.host, rejectUnauthorized: false })
+            : net.connect({ host: proxy.host, port: proxy.port });
+        
+        const timer = setTimeout(() => { sock.destroy(); reject(new RotateError('tunnel timeout')); }, timeoutMs);
+        let buf = ''; let settled = false;
+        
+        const fail = (e) => { if (settled) return; settled = true; clearTimeout(timer); sock.destroy(); reject(e); };
+        sock.on('data', d => {
+            buf += d.toString('latin1');
+            const i = buf.indexOf('\r\n\r\n');
+            if (i === -1) { if (buf.length > 8192) fail(new RotateError('bad response')); return; }
+            const status = parseInt(buf.split('\r\n')[0].split(' ')[1], 10);
+            if (status === 200) {
+                if (settled) return; settled = true;
+                clearTimeout(timer); sock.removeAllListeners('data'); resolve(sock);
+            } else fail(new RotateError(`CONNECT ${status}`));
+        });
+        sock.on('error', e => fail(new RotateError(e.message)));
+        const auth = proxy.auth ? `Proxy-Authorization: Basic ${proxy.auth}\r\n` : '';
+        sock.write(`CONNECT ${host}:${port} HTTP/1.1\r\nHost: ${host}:${port}\r\n${auth}\r\n`);
+    });
+}
+
+function solvePow(challenge, prefix = '0000') {
+    for (let n = 0; n < 1000000; n++) {
+        if (crypto.createHash('sha256').update(challenge + n).digest('hex').startsWith(prefix)) return `${challenge}:${n}`;
+    }
+    return null;
+}
+
+async function requestAPI({ proxy, method, path, body, sessionToken, powProof, timeoutMs = 15000 }) {
+    const sock = await tunnel(proxy, TARGET_HOST, TARGET_PORT);
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { sock.destroy(); reject(new RotateError('request timeout')); }, timeoutMs);
+        let buf = Buffer.alloc(0); let headDone = false, status = 0, remain = 0, finished = false;
+        
+        const fail = e => { if (finished) return; finished = true; clearTimeout(timer); sock.destroy(); reject(e); };
+        sock.on('data', d => {
+            buf = Buffer.concat([buf, d]);
+            if (!headDone) {
+                const i = buf.indexOf('\r\n\r\n');
+                if (i === -1) return;
+                headDone = true;
+                const headText = buf.slice(0, i).toString('latin1');
+                status = parseInt(headText.split('\r\n')[0].split(' ')[1], 10);
+                const lenMatch = headText.match(/content-length:\s*(\d+)/i);
+                remain = lenMatch ? parseInt(lenMatch[1], 10) : 0;
+                buf = buf.slice(i + 4);
+            }
+            if (headDone && buf.length >= remain) {
+                if (finished) return; finished = true; clearTimeout(timer); sock.destroy();
+                try {
+                    const text = buf.slice(0, remain).toString('utf8');
+                    const parsed = JSON.parse(text);
+                    if (status >= 400) reject(new HttpError(status, parsed));
+                    else resolve(parsed);
+                } catch (e) { reject(e); }
+            }
+        });
+        sock.on('error', fail);
+        sock.on('close', () => fail(new RotateError('conn closed')));
+        
+        let req = `${method} ${path} HTTP/1.1\r\nHost: ${TARGET_HOST}:${TARGET_PORT}\r\nConnection: close\r\nContent-Type: application/json\r\n`;
+        if (sessionToken) req += `X-NFToken-Session: ${sessionToken}\r\n`;
+        if (powProof) req += `X-PoW-Proof: ${powProof}\r\n`;
+        const payload = body ? Buffer.from(JSON.stringify(body)) : null;
+        if (payload) req += `Content-Length: ${payload.length}\r\n`;
+        sock.write(req + '\r\n');
+        if (payload) sock.write(payload);
+    });
+}
+
+async function prepareProxyPool() {
+    if (!globalThis.__nftPool) {
+        const lines = await fetchProxyLines();
+        const list = [...new Set(lines.map(parseProxyLine).filter(Boolean))];
+        globalThis.__nftPool = new ProxyPool(list);
+    }
+    return globalThis.__nftPool;
+}
+
+/**
+ * Service API terintegrasi untuk generate NFToken
+ * @param {string} plan 'premium', 'standard', atau 'basic'
+ * @param {number} count Jumlah token
+ */
+async function generateNFToken(plan = 'premium', count = 1) {
+    try {
+        const pool = await prepareProxyPool();
+        const results = [];
+        let attempts = 0;
+
+        while (results.length < count && attempts < count * 5) {
+            attempts++;
+            
+            // Validasi & isi pool valid jika kurang
+            if (pool.aliveValid() < 1) {
+                const workers = Array.from({ length: 15 }, async () => {
+                    const p = pool.nextRaw();
+                    if (!p || pool.aliveValid() >= 2) return;
+                    try {
+                        const s = await tunnel(p, TARGET_HOST, TARGET_PORT, 5000);
+                        s.destroy();
+                        const d = await requestAPI({ proxy: p, method: 'POST', path: '/api/session', body: {} });
+                        if (d.success && d.token) pool.addValid(p, d);
+                    } catch (e) { pool.fail(p); }
+                });
+                await Promise.all(workers);
+            }
+
+            const v = pool.nextValid();
+            if (!v) {
+                globalThis.__nftPool = null; // Reset pool jika macet
+                continue;
+            }
+
+            try {
+                let d;
+                try {
+                    d = await requestAPI({ proxy: v.proxy, method: 'POST', path: '/api/random', body: { plan }, sessionToken: v.session.token });
+                } catch (e) {
+                    if (e instanceof HttpError && e.status === 403 && e.data && e.data.powChallenge) {
+                        const proof = solvePow(e.data.powChallenge);
+                        if (!proof) throw new Error('PoW gagal');
+                        d = await requestAPI({ proxy: v.proxy, method: 'POST', path: '/api/random', body: { plan }, sessionToken: v.session.token, powProof: proof });
+                    } else throw e;
+                }
+
+                if (d.success && d.url) {
+                    results.push(d);
+                    pool.reuse(v.proxy);
+                } else if (d.error && /Limit harian/i.test(d.error)) {
+                    break; // Limit server
+                }
+            } catch (e) {
+                if (e instanceof RotateError || /Session/i.test(String(e.data))) pool.fail(v.proxy);
+                v.used = true;
+            }
+        }
+
+        if (results.length === 0) {
+            return { success: false, message: 'Gagal generate token. Proxy limit/habis, silakan coba lagi.' };
+        }
+
+        addLog(`[SYSTEM] Generate NFToken sukses: ${results.length} token plan ${plan}`);
+        return { success: true, count: results.length, results };
+
+    } catch (error) {
+        addLog(`[SYSTEM] NFToken Generator Error: ${error.message}`);
+        return { success: false, message: error.message };
+    }
 }
 
 
-export { sendLink, claimPremium, GENEMAIL_DOMAINS, GENEMAIL_VERIFIED_DOMAINS, getActiveBatch, updateBatch, startBatch, startBatchWorker, progressBatch, serializeBatch, generateNetflixDemoToken };
+export { 
+    sendLink, 
+    claimPremium, 
+    GENEMAIL_DOMAINS,
+    GENEMAIL_VERIFIED_DOMAINS,
+    GENEMAIL_JAGOAN_DOMAINS,
+    getActiveBatch, 
+    updateBatch, 
+    startBatch, 
+    startBatchWorker, 
+    progressBatch, 
+    serializeBatch, 
+    generateNFToken // <--- Terupdate
+};
+
+//export { sendLink, claimPremium, GENEMAIL_DOMAINS, GENEMAIL_VERIFIED_DOMAINS, getActiveBatch, updateBatch, startBatch, startBatchWorker, progressBatch, serializeBatch, generateNetflixDemoToken };

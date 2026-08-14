@@ -321,6 +321,15 @@ textarea {
     .apk-banner-btn {
         width: 100%;
     }
+
+    .lifetime-info-box {
+        margin-top: 18px !important;
+        margin-bottom: 22px !important;
+        align-items: flex-start !important;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

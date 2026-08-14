@@ -11,7 +11,7 @@ const ADMIN_IDS = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(i
 const DB_PATH = path.join(__dirname, 'users_db.json');
 
 // FITUR BARU MULAI DI SINI: Konfigurasi API Key & Header Request serta OWNER_IDS
-const API_KEY = process.env.API_KEY || 'Codex1acb956ed545a3e6a880e9b1341a3ed';
+const API_KEY = process.env.API_KEY;
 const apiHeaders = { 'x-api-key': API_KEY };
 const OWNER_IDS = process.env.OWNER_IDS ? process.env.OWNER_IDS.split(',').map(id => parseInt(id.trim())) : ADMIN_IDS;
 // FITUR BARU SELESAI DI SINI
