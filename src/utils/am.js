@@ -82,7 +82,7 @@ async function claimPremium(user, email, rawLink) {
     }
 
     const history = readJSON('history', []);
-    const orderId = generateOrderId();
+    const orderId = premiumResult.orderId || generateOrderId();
     history.push({
         id: newId(),
         username: user.username,
@@ -98,7 +98,7 @@ async function claimPremium(user, email, rawLink) {
     addActivationLog({ operator: user.username, email: email, status: 'success', note: 'Licence Active', createdAt: fmtDateTime() });
     addLog('[' + user.username + '] Aktivasi premium sukses untuk ' + email + ' (codeorder: ' + premiumResult.codeorder + ')');
 
-    return { success: true, message: 'Premium berhasil diaktifkan! Code order: ' + premiumResult.codeorder, codeorder: premiumResult.codeorder };
+    return { success: true, message: 'Premium berhasil diaktifkan! Code order: ' + premiumResult.codeorder, codeorder: premiumResult.codeorder, orderId: orderId };
 }
 
 /* ============================== AUTO GENERATOR ============================== */

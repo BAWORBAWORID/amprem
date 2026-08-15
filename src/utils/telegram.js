@@ -17,7 +17,10 @@
  */
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { DATA_DIR, PORT, newId, nowISO, generateOrderId, randomKey, getUsers, readJSON } from './store.js';
+
+const gpaSeg = () => String(crypto.randomInt(0, 10000)).padStart(4, '0');
 
 const TELEGRAM_BOTS_FILE = path.join(DATA_DIR, 'telegram_bots.json');
 const TELEGRAM_API = 'https://api.telegram.org';
@@ -1098,9 +1101,11 @@ async function handleWaitingLink(bot, chatId, state, text) {
     const result = await callLocalAPI(bot, 'activate', { email: email, magicLink: link });
     
     if (result && result.success) {
-        // Order ID diteruskan dari hasil API (am.js); bila ada kode, beri prefix Alwayscodex-.
+        // Order ID dalam format GPA.XXXX-XXXX-XXXX-XXXXX (diteruskan dari hasil API am.js).
         const apiCode = result.orderId || result.codeorder || result.data?.orderId || result.data?.codeorder;
-        const orderId = apiCode ? 'Alwayscodex-' + String(apiCode).replace(/^Alwayscodex-/i, '') : generateOrderId();
+        const orderId = apiCode
+            ? (String(apiCode).startsWith('GPA.') ? String(apiCode) : `GPA.${gpaSeg()}-${gpaSeg()}-${gpaSeg()}-${String(apiCode).replace(/^Alwayscodex-/i, '')}`)
+            : generateOrderId();
         
         // Update user stats
         if (!globalThis.__amTelegramUsers[userId]) {

