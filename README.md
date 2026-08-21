@@ -13,7 +13,7 @@ Website: [https://am.alwayscodex.my.id](https://am.alwayscodex.my.id)
 | 🎨 **AM Generator** | Kirim magic link verifikasi ke email, aktivasi premium otomatis |
 | ⚡ **Auto Generator** | Batch generate ribuan akun via `generator.email` (custom prefix + 155+ domain), didukung **puppeteer + Google Chrome** |
 | 🎬 **Netflix (Demo)** | Generate token Netflix demo (4K / billing date) |
-| 🔑 **API Key System** | Generate / revoke API key, paket Lifetime & Monthly, role `premium` / `autogen` |
+| 🔑 **API Key System** | Generate / revoke API key, paket Lifetime & Monthly, role `premium` / `VIP` |
 | 💬 **Chat Global** | Realtime via SSE, sensor kata kasar, moderasi admin |
 | ⭐ **Rating & Ulasan** | Rating 1–5 bintang per user |
 | 📊 **Dashboard Admin** | Statistik live, manajemen user (ban, role, kredit, reset password), IP ban, log aktivasi, transaksi, log duplikat |
@@ -144,8 +144,8 @@ docker rm -f am                   # hapus container (data di volume aman)
 | `POST` | `/api/am/claim-premium` | Sesi | Aktivasi premium via magic link |
 | `GET` | `/api/am/history` | Sesi | Riwayat akun user |
 | `GET` | `/api/am/domains` | - | Daftar domain generator.email (155+) |
-| `POST` | `/api/am/autogen/start-batch` | premium | Mulai batch auto generator |
-| `GET` | `/api/am/autogen/active-batch` | Sesi | Status batch berjalan |
+| `POST` | `/api/am/VIP/start-batch` | premium | Mulai batch auto generator |
+| `GET` | `/api/am/VIP/active-batch` | Sesi | Status batch berjalan |
 | `GET` | `/api/am/netflix/token` | Sesi | Generate token Netflix (demo) |
 | `GET` | `/api/public/stats` | - | Statistik publik |
 | `GET` | `/api/chat/messages` / `POST` `/api/chat/send` | - / Sesi | Chat global |
