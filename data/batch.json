@@ -1,5 +1,5 @@
 {
-  "id": "mstlrrf3505755",
+  "id": "mt2wggzca9a47e",
   "operator": "alwayscodex",
   "domain": "random",
   "domains": [
@@ -10,58 +10,27 @@
   ],
   "count": 1,
   "prefix": "",
-  "done": 1,
-  "status": "completed",
-  "results": [
-    {
-      "email": "amtg95unt@1win.life",
-      "inboxUrl": "https://generator.email/amtg95unt@1win.life",
-      "status": "failed",
-      "messages": [],
-      "error": "verify: link verifikasi tidak ditemukan"
-    }
-  ],
+  "done": 0,
+  "status": "running",
+  "results": [],
   "logs": [
     "[SYSTEM] Logger diinisialisasi...",
     "[SYSTEM] Batch dimulai oleh alwayscodex",
     "[SYSTEM] Target: 1 akun (domain random)",
-    "[2026-08-15 07:53:21] Batch: 1 email (amtg95unt@1win.life ...)",
-    "[2026-08-15 07:53:21] [1/1] amtg95unt@1win.life",
-    "[2026-08-15 07:53:44] inbox opened: amtg95unt@1win.life",
-    "[2026-08-15 07:53:45] magic link terkirim",
-    "[2026-08-15 07:53:48] belum ada link valid (putaran 1/20), reload inbox...",
-    "[2026-08-15 07:53:57] belum ada link valid (putaran 2/20), reload inbox...",
-    "[2026-08-15 07:54:06] belum ada link valid (putaran 3/20), reload inbox...",
-    "[2026-08-15 07:54:14] belum ada link valid (putaran 4/20), reload inbox...",
-    "[2026-08-15 07:54:15] kirim ulang magic link #2: OK",
-    "[2026-08-15 07:54:26] belum ada link valid (putaran 5/20), reload inbox...",
-    "[2026-08-15 07:54:35] belum ada link valid (putaran 6/20), reload inbox...",
-    "[2026-08-15 07:54:43] belum ada link valid (putaran 7/20), reload inbox...",
-    "[2026-08-15 07:54:52] belum ada link valid (putaran 8/20), reload inbox...",
-    "[2026-08-15 07:54:53] kirim ulang magic link #3: OK",
-    "[2026-08-15 07:55:04] belum ada link valid (putaran 9/20), reload inbox...",
-    "[2026-08-15 07:55:12] belum ada link valid (putaran 10/20), reload inbox...",
-    "[2026-08-15 07:55:21] belum ada link valid (putaran 11/20), reload inbox...",
-    "[2026-08-15 07:55:30] belum ada link valid (putaran 12/20), reload inbox...",
-    "[2026-08-15 07:55:31] kirim ulang magic link #4: OK",
-    "[2026-08-15 07:55:41] belum ada link valid (putaran 13/20), reload inbox...",
-    "[2026-08-15 07:55:50] belum ada link valid (putaran 14/20), reload inbox...",
-    "[2026-08-15 07:55:59] belum ada link valid (putaran 15/20), reload inbox...",
-    "[2026-08-15 07:56:07] belum ada link valid (putaran 16/20), reload inbox...",
-    "[2026-08-15 07:56:08] kirim ulang magic link #5: OK",
-    "[2026-08-15 07:56:19] belum ada link valid (putaran 17/20), reload inbox...",
-    "[2026-08-15 07:56:28] belum ada link valid (putaran 18/20), reload inbox...",
-    "[2026-08-15 07:56:36] belum ada link valid (putaran 19/20), reload inbox...",
-    "[2026-08-15 07:56:45] belum ada link valid (putaran 20/20), reload inbox...",
-    "[2026-08-15 07:56:46] kirim ulang magic link #6: OK",
-    "[2026-08-15 07:56:53] verify failed: verify: link verifikasi tidak ditemukan",
-    "[2026-08-15 07:56:53] GAGAL #1 amtg95unt@1win.life (verify: link verifikasi tidak ditemukan)",
-    "[SYSTEM] Selesai! 0/1 akun sukses."
+    "[2026-08-21 20:02:26] Batch: 1 email (am50rvhsd@softbank.id ...)",
+    "[2026-08-21 20:02:26] [1/1] am50rvhsd@softbank.id",
+    "[2026-08-21 20:02:32] inbox opened: am50rvhsd@softbank.id",
+    "[2026-08-21 20:02:33] magic link terkirim",
+    "[2026-08-21 20:02:37] belum ada link valid (putaran 1/20), reload inbox...",
+    "[2026-08-21 20:02:46] belum ada link valid (putaran 2/20), reload inbox...",
+    "[2026-08-21 20:02:56] belum ada link valid (putaran 3/20), reload inbox...",
+    "[2026-08-21 20:03:04] belum ada link valid (putaran 4/20), reload inbox...",
+    "[2026-08-21 20:03:05] kirim ulang magic link #2: OK"
   ],
-  "createdAt": "2026-08-14T23:53:21.807Z",
-  "startedAt": 1786751601807,
+  "createdAt": "2026-08-21T12:02:26.424Z",
+  "startedAt": 1787313746424,
   "notify": null,
   "emails": [
-    "amtg95unt@1win.life"
+    "am50rvhsd@softbank.id"
   ]
 }

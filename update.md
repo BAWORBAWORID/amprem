@@ -1,154 +1,86 @@
-@Pencarian web https://am.alwayscodex.eu.cc/#dashboard
+FIX ONLY BAGIAN RUNTIME
 
-FIX TOTAL BUG "LAYANAN VIP" TIDAK MUNCUL UNTUK ROLE VIP DAN PRO.
+Target:
+https://am.alwayscodex.eu.cc/#dashboard
 
-Masalah:
-Pada halaman #dashboard, card/menu "Layanan VIP" tidak muncul untuk akun dengan role:
-- vip
-- pro
+Referensi Runtime:
+https://api.alwayscodex.eu.cc/stats
 
-Perbaiki seluruh sistem role-gating dari frontend sampai backend.
+PERATURAN UTAMA:
+- HANYA ubah komponen Runtime.
+- Jangan mengubah komponen Dashboard lainnya.
+- Jangan mengubah UI/UX section lain.
+- Jangan mengubah role/permission.
+- Jangan mengubah authentication.
+- Jangan mengubah API key.
+- Jangan mengubah Layanan VIP.
+- Jangan mengubah endpoint/fitur lain.
 
-ROLE HIERARCHY FINAL:
-user < pro < reseller < premium < vip < owner
+RUNTIME:
+Ubah Runtime yang sekarang masih menampilkan "--:--:--" agar menggunakan
+server uptime yang akurat seperti telemetry di:
 
-ATURAN AKSES:
-- user      : TIDAK boleh melihat/mengakses Layanan VIP
-- pro       : BOLEH melihat dan mengakses Layanan VIP
-- reseller  : sesuai permission reseller yang sudah ada
-- premium   : sesuai permission premium yang sudah ada
-- vip       : BOLEH melihat dan mengakses Layanan VIP
-- owner     : BOLEH melihat dan mengakses semuanya
+https://api.alwayscodex.eu.cc/stats
 
-PENTING:
-1. Normalisasi role sebelum pengecekan:
-   - VIP
-   - Vip
-   - vip
-   semuanya harus dianggap sebagai "vip".
-2. Jangan membuat pengecekan hanya:
-   role === "vip"
-   karena role "pro" juga harus mendapat akses.
-3. Gunakan permission/access check terpusat agar frontend dan backend konsisten.
-4. Jangan membuat role baru.
-5. Jangan menghapus role yang sudah ada.
-6. Jangan mengubah hierarchy:
-   user > pro > reseller > premium > vip > owner
-7. Pastikan role yang berasal dari session/API/database sudah selesai dimuat sebelum dashboard menentukan menu yang boleh ditampilkan.
-8. Jika role belum tersedia saat initial render, jangan langsung menganggap user sebagai "user" lalu menyembunyikan VIP secara permanen.
-9. Setelah user/session berhasil dimuat, lakukan re-render/update permission.
-10. Pastikan refresh halaman tetap mempertahankan akses yang benar.
-11. Pastikan logout/login dengan akun berbeda tidak menyebabkan permission role sebelumnya tersimpan di UI/cache.
-12. Bersihkan cache/localStorage/session state yang menyimpan role lama jika memang menyebabkan stale permission.
-13. Pastikan route/endpoint backend Layanan VIP juga menerima role "pro" dan "vip".
-14. Jangan hanya memperbaiki tampilan card. Test akses endpoint sebenarnya.
-15. Jika ada middleware seperti:
-    requireRole()
-    hasRole()
-    canAccess()
-    checkPermission()
-    isVip()
-    isPremium()
-    atau sejenisnya,
-    audit semuanya dan gunakan satu sumber permission yang konsisten.
+Tampilan Runtime dibuat seperti referensi:
 
-BUAT ACCESS CHECK TERPUSAT:
+Runtime
 
-const normalizeRole = (role) =>
-  String(role || "")
-    .trim()
-    .toLowerCase();
+2 Hari, 02:09:41
+Waktu Aktif Server
 
-const ROLE_LEVEL = {
-  user: 0,
-  pro: 1,
-  reseller: 2,
-  premium: 3,
-  vip: 4,
-  owner: 5
-};
+[ICON STOPWATCH]
 
-const canAccessVipService = (role) => {
-  const normalized = normalizeRole(role);
-  return ["pro", "reseller", "premium", "vip", "owner"].includes(normalized);
-};
+DETAIL:
+1. Ambil uptime dari server/backend, bukan waktu sejak browser membuka halaman.
+2. Refresh halaman tidak boleh mereset Runtime.
+3. Runtime harus terus bertambah secara realtime setiap detik.
+4. Gunakan data uptime server yang sama/selaras dengan /stats.
+5. Sinkronisasi ulang secara berkala untuk mencegah timer frontend drift.
+6. Jika server restart, uptime otomatis kembali dari awal.
+7. Hilangkan tampilan "--:--:--".
+8. Jika data sedang dimuat, tampilkan "Memuat..." sementara.
+9. Jika gagal mengambil uptime, tampilkan status error yang wajar tanpa angka palsu.
 
-ATAU gunakan role level jika sistem memang menggunakan hierarchy.
+FORMAT:
+< 1 menit:
+XX Detik
 
-FRONTEND:
-Pastikan menu/card "Layanan VIP" muncul untuk:
-pro, reseller, premium, vip, owner.
+< 1 jam:
+XX Menit, XX Detik
 
-Jangan render:
-user.
+< 24 jam:
+HH:MM:SS
 
-BACKEND:
-Endpoint Layanan VIP harus menggunakan permission yang sama.
-Role pro dan vip wajib lolos authentication + authorization.
+>= 24 jam:
+X Hari, HH:MM:SS
 
-CEK JUGA:
-- API response user.role
-- session/JWT role
-- database role
-- middleware authorization
-- dashboard permission loader
-- menu/card visibility
-- route guard
-- API endpoint guard
-- localStorage/sessionStorage
-- React/Vue/JS state jika ada
-- cache service worker jika ada
+Contoh:
+2 Hari, 02:09:41
 
-TEST WAJIB:
+DESAIN:
+- Pertahankan posisi Runtime yang sekarang.
+- Buat tampilannya seperti referensi /stats.
+- Judul "Runtime".
+- Angka uptime besar dan jelas.
+- Subtitle "Waktu Aktif Server".
+- Icon stopwatch di sisi kanan.
+- Rounded card.
+- Shadow halus.
+- Responsive untuk mobile.
+- Sesuaikan dengan theme Dashboard yang sudah ada.
 
-1. Login sebagai user
-   → Layanan VIP TIDAK muncul
-   → endpoint VIP ditolak
+IMPORTANT:
+JANGAN melakukan perubahan apa pun di luar komponen Runtime.
+Jangan refactor Dashboard secara keseluruhan.
+Jangan mengganti CSS global.
+Jangan mengubah layout section lain.
+Jangan mengubah JavaScript fitur lain.
 
-2. Login sebagai pro
-   → Layanan VIP MUNCUL
-   → endpoint VIP bisa digunakan
-
-3. Login sebagai reseller
-   → sesuai permission reseller
-   → jangan merusak permission existing
-
-4. Login sebagai premium
-   → sesuai permission premium
-   → jangan merusak permission existing
-
-5. Login sebagai vip
-   → Layanan VIP MUNCUL
-   → endpoint VIP bisa digunakan
-
-6. Login sebagai owner
-   → semua layanan yang memang diperbolehkan owner MUNCUL
-
-7. Test role uppercase/mixed case:
-   VIP / Vip / vip
-   → semuanya diperlakukan sebagai vip.
-
-8. Logout dari VIP lalu login PRO
-   → permission berubah menjadi PRO
-   → tidak menggunakan permission VIP lama.
-
-9. Logout dari PRO lalu login USER
-   → Layanan VIP hilang
-   → endpoint VIP ditolak.
-
-10. Hard refresh dashboard pada setiap role
-    → hasil permission tetap benar.
-
-JANGAN mengubah fitur lain yang sudah berjalan.
-JANGAN menghapus autogen karena autogen memang sudah dihapus.
-JANGAN membuat role "VIP" tambahan.
-Satukan semua variasi VIP menjadi role canonical "vip".
-
-Setelah selesai:
-- audit seluruh role/permission system
-- fix semua mismatch frontend/backend
-- build production
-- cek console error
-- cek network/API error
-- test semua role
-- pastikan "Layanan VIP" benar-benar muncul untuk PRO dan VIP.
+Setelah fix, test hanya:
+- Runtime muncul.
+- Runtime mengambil uptime server yang benar.
+- Runtime bertambah setiap detik.
+- Refresh tidak mereset angka.
+- Tidak ada console error terkait Runtime.
+- Tampilan mobile tetap rapi.

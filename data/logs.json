@@ -1,30 +1,5 @@
 [
   {
-    "id": "msomovj7cb5286",
-    "createdAt": "2026-08-11 20:20:15",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): inzztejih404 dari 172.71.81.25"
-  },
-  {
-    "id": "msomp3ht19c3a5",
-    "createdAt": "2026-08-11 20:20:26",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): inzztejih404 dari 172.71.81.26"
-  },
-  {
-    "id": "mson2g5gd1750e",
-    "createdAt": "2026-08-11 20:30:49",
-    "message": "[SISTEM] Login: alwayscodex"
-  },
-  {
-    "id": "mson3c1ka01696",
-    "createdAt": "2026-08-11 20:31:30",
-    "message": "[ADMIN alwayscodex] Update maintenance settings & auto-cleanup"
-  },
-  {
-    "id": "mson8m6i4f9a26",
-    "createdAt": "2026-08-11 20:35:36",
-    "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): kano dari 162.158.88.13"
-  },
-  {
     "id": "mson8w7v938e2b",
     "createdAt": "2026-08-11 20:35:49",
     "message": "[SISTEM] Registrasi ditolak (limit 3 akun/IP): kano dari 162.158.88.13"
@@ -2498,5 +2473,30 @@
     "id": "mt278vqu196b6e",
     "createdAt": "2026-08-21 08:16:41",
     "message": "[SISTEM] Login: alwayscodex"
+  },
+  {
+    "id": "mt2q3yek3dbc01",
+    "createdAt": "2026-08-21 17:04:44",
+    "message": "[SISTEM] Login: apinnn"
+  },
+  {
+    "id": "mt2q5rnd6e2a6e",
+    "createdAt": "2026-08-21 17:06:09",
+    "message": "[SISTEM] apinnn generate ulang API Key (API Key 1 bot otomatis diperbarui)"
+  },
+  {
+    "id": "mt2r1rgx9a1a7f",
+    "createdAt": "2026-08-21 17:31:02",
+    "message": "[SISTEM] Registrasi baru: skay"
+  },
+  {
+    "id": "mt2r1y1kef831f",
+    "createdAt": "2026-08-21 17:31:10",
+    "message": "[SISTEM] Login: skay"
+  },
+  {
+    "id": "mt2wggzl54d3d8",
+    "createdAt": "2026-08-21 20:02:26",
+    "message": "[alwayscodex] Auto generator batch dimulai (1 akun @random)"
   }
 ]

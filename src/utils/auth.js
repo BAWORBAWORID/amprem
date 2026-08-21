@@ -206,7 +206,7 @@ export function canDeployTelegramBot(role) {
 
 export function hasBulkAccess(role) {
     const normalized = normalizeRole(role);
-    return ['vip', 'owner'].includes(normalized);
+    return ['reseller', 'vip', 'owner'].includes(normalized);
 }
 
 export function isUnlimitedRole(role) {

@@ -226,7 +226,7 @@
 
     function hasBulkAccess(role) {
         const normalized = normalizeRole(role);
-        return ['vip', 'owner'].includes(normalized);
+        return ['reseller', 'vip', 'owner'].includes(normalized);
     }
 
     function isUnlimitedRole(role) {
@@ -325,6 +325,10 @@
         if (name !== 'dashboard' && window._statsPollInterval) {
             clearInterval(window._statsPollInterval);
             window._statsPollInterval = null;
+        }
+        if (name !== 'dashboard' && _runtimeTimer) {
+            clearInterval(_runtimeTimer);
+            _runtimeTimer = null;
         }
         if (loader) loader();
     }
@@ -737,17 +741,63 @@
         }
     }
 
+    var _runtimeServerUptime = null;
+    var _runtimeSyncTime = null;
+    var _runtimeTimer = null;
+
+    function formatUptime(totalSeconds) {
+        var s = Math.floor(totalSeconds);
+        var pad2 = function (v) { return String(v).padStart(2, '0'); };
+        var ss = s % 60;
+        var mm = Math.floor((s % 3600) / 60);
+        var hh = Math.floor((s % 86400) / 3600);
+        var totalDays = Math.floor(s / 86400);
+        var years = Math.floor(totalDays / 365);
+        var remainDaysAfterYear = totalDays - (years * 365);
+        var months = Math.floor(remainDaysAfterYear / 30);
+        var days = remainDaysAfterYear - (months * 30);
+        if (years > 0) {
+            return years + ' Year, ' + months + ' Months, ' + days + ' Days, ' + pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
+        }
+        if (months > 0) {
+            return months + ' Months, ' + days + ' Days, ' + pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
+        }
+        if (days > 0) {
+            return days + ' Days, ' + pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
+        }
+        if (totalDays === 0 && hh === 0 && mm === 0) {
+            return ss + ' Seconds';
+        }
+        if (totalDays === 0 && hh === 0) {
+            return mm + ' Minutes, ' + ss + ' Seconds';
+        }
+        return pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
+    }
+
+    function tickRuntime() {
+        if (_runtimeServerUptime == null || _runtimeSyncTime == null) return;
+        var elapsed = (Date.now() - _runtimeSyncTime) / 1000;
+        var current = _runtimeServerUptime + elapsed;
+        var el = $('stat-runtime');
+        if (el) el.textContent = formatUptime(current);
+    }
+
     function loadPublicStats() {
         api('/api/public/stats').then(function (data) {
             if (data.totalUsers != null) $('stat-total-users').textContent = data.totalUsers;
             if (data.totalSuccess != null) $('stat-total-requests').textContent = data.totalSuccess;
             if (data.uptime != null) {
-                var s = Math.floor(data.uptime);
-                var h = String(Math.floor(s / 3600)).padStart(2, '0');
-                var m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-                var sec = String(s % 60).padStart(2, '0');
-                $('stat-runtime').textContent = h + ':' + m + ':' + sec;
+                _runtimeServerUptime = Math.floor(data.uptime);
+                _runtimeSyncTime = Date.now();
+                var el = $('stat-runtime');
+                if (el) el.textContent = formatUptime(_runtimeServerUptime);
+                if (!_runtimeTimer) {
+                    _runtimeTimer = setInterval(tickRuntime, 1000);
+                }
             }
+        }).catch(function () {
+            var el = $('stat-runtime');
+            if (el && el.textContent === 'Memuat...') el.textContent = 'Error';
         });
         if ($('stat-your-credits')) $('stat-your-credits').textContent = creditsDisplay();
     }
