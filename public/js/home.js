@@ -1,41 +1,8 @@
 (function () {
     'use strict';
 
-    window.addEventListener("error", function(e) { 
-        console.error("[AM][UI] Uncaught Error:", e.message || e.error);
-        document.documentElement.classList.remove('theme-pending');
-    });
-    window.addEventListener("unhandledrejection", function(e) { 
-        console.error("[AM][UI] Unhandled Promise Rejection:", e.reason); 
-        document.documentElement.classList.remove('theme-pending');
-    });
-    // Fallback safe function for finding elements
-    function safeAddListener(id, event, handler) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener(event, handler);
-    }
-
-
     var API_BASE = window.API_BASE_URL || '';
 
-    
-    function safeFetch(path, options) {
-        return new Promise(function(resolve, reject) {
-            var timeout = setTimeout(function() {
-                reject(new Error("Request Timeout"));
-            }, 10000); // 10s timeout
-            
-            api(path, options).then(function(data) {
-                clearTimeout(timeout);
-                resolve(data);
-            }).catch(function(err) {
-                clearTimeout(timeout);
-                console.error("[AM][API] SafeFetch Error on " + path + ":", err);
-                reject(err);
-            });
-        });
-    }
-    
     function api(path, options) {
         var opts = options || {};
         opts.headers = Object.assign({}, opts.headers || {});
@@ -161,12 +128,12 @@
 
     var ROLE_BADGE = {
         owner: 'badge-owner', vip: 'badge-admin', premium: 'badge-premium',
-        reseller: 'badge-reseller', user: 'badge-normal'
+        autogen: 'badge-autogen', reseller: 'badge-reseller', user: 'badge-normal'
     };
-    var ROLE_LABEL = { owner: 'Owner', vip: 'VIP', premium: 'Premium', reseller: 'Reseller', user: 'User' };
-    var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', reseller: 'Reseller', pro: 'Pro', user: 'Anggota' };
+    var ROLE_LABEL = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
+    var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', pro: 'Pro', user: 'Anggota' };
 
-    var VALID_SCREENS = ['dashboard', 'generator', 'vip', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'contributors', 'history', 'settings', 'reviews', ];
+    var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews', ];
 
     function setLastScreenCookie(name) {
         try { document.cookie = 'last_page=' + encodeURIComponent(name) + '; Path=/; Max-Age=2592000; SameSite=Lax'; } catch (e) {}
@@ -178,73 +145,24 @@
         } catch (e) { return ''; }
     }
 
-    function $(id) { 
-        var el = document.getElementById(id); 
-        if (el) return el;
-        // Null Object Pattern for DOM safety
-        return {
-            addEventListener: function(){},
-            classList: { add: function(){}, remove: function(){}, contains: function(){ return false; } },
-            style: {},
-            value: '',
-            dataset: {},
-            innerHTML: '',
-            innerText: '',
-            textContent: '',
-            setAttribute: function(){},
-            getAttribute: function(){ return null; },
-            removeAttribute: function(){},
-            querySelector: function(){ return null; },
-            querySelectorAll: function(){ return []; },
-            focus: function(){}
-        };
-    }
+    function $(id) { return document.getElementById(id); }
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-    function normalizeRole(role) {
-        return String(role || '').trim().toLowerCase();
-    }
-
-    const ROLE_LEVEL = {
-        user: 0,
-        pro: 1,
-        reseller: 2,
-        premium: 3,
-        vip: 4,
-        owner: 5
-    };
-
-    function canAccessVipService(role) {
-        const normalized = normalizeRole(role);
-        return ['pro', 'reseller', 'premium', 'vip', 'owner'].includes(normalized);
-    }
-
-    function canDeployTelegramBot(role) {
-        const normalized = normalizeRole(role);
-        return ['pro', 'vip', 'owner'].includes(normalized);
-    }
-
-    function hasBulkAccess(role) {
-        const normalized = normalizeRole(role);
-        return ['reseller', 'vip', 'owner'].includes(normalized);
-    }
-
     function isUnlimitedRole(role) {
-        return ['reseller', 'premium', 'vip', 'owner'].indexOf(role) !== -1;
+        return ['reseller', 'premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
     }
     function hasApiRole(role) {
-        return ['premium', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
+        return ['premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
+    }
+    function hasBulkRole(role) {
+        return ['autogen', 'vip', 'owner'].indexOf(role) !== -1;
     }
     function isPrivileged() {
         return currentUser && isUnlimitedRole(currentUser.role);
     }
-    function isVipOrOwner() {
-        return currentUser && (currentUser.role === 'vip' || currentUser.role === 'owner');
-    }
     function isAdminOrOwner() {
-        return currentUser && ['owner', 'vip'].indexOf(currentUser.role) !== -1;
+        return currentUser && ['owner'].indexOf(currentUser.role) !== -1;
     }
-    function isVip() { return currentUser && currentUser.role === 'vip'; }
     function isOwner() { return currentUser && currentUser.role === 'owner'; }
     function creditsDisplay() { return isPrivileged() ? 'Unlimited' : (currentUser ? currentUser.credits : 0); }
 
@@ -282,7 +200,7 @@
         name = normalizeScreen(name);
         if (name === 'auth') {
             currentScreen = 'auth';
-            // Hapus hash agar URL bersih; simpan niat (intended) agar direct-access #referal/#vip
+            // Hapus hash agar URL bersih; simpan niat (intended) agar direct-access #referal/#lifetime
             // tetap pulih setelah login (lihat handler login).
             if (!window.location.hash) setLastScreenCookie('');
             document.querySelectorAll('.screen').forEach(function (s) { s.classList.add('hidden'); });
@@ -317,19 +235,11 @@
         closeSidebar();
 
         var loader = {
-            dashboard: loadDashboard, generator: loadGenerator, vip: loadVipScreen, netflix: loadNetflix,
+            dashboard: loadDashboard, generator: loadGenerator, lifetime: loadLifetimeScreen, netflix: loadNetflix,
             purchase: loadAPIPanel, chat: loadChatPanel, apiguide: loadAPIGuide,
             profile: loadProfile, referral: loadReferralScreen, admin: loadAdminPanel, history: loadHistoryScreen,
             settings: loadAdminSettings, reviews: loadReviewsScreen
         }[name];
-        if (name !== 'dashboard' && window._statsPollInterval) {
-            clearInterval(window._statsPollInterval);
-            window._statsPollInterval = null;
-        }
-        if (name !== 'dashboard' && _runtimeTimer) {
-            clearInterval(_runtimeTimer);
-            _runtimeTimer = null;
-        }
         if (loader) loader();
     }
 
@@ -346,7 +256,7 @@
         { label: 'Statistik Live', leaf: 'dashboard' },
         { label: 'AM Generator', children: ['generator', 'netflix', 'history'] },
         { label: 'Layanan & API', children: ['purchase', 'apiguide', 'chat'] },
-        { label: 'Akun & Aplikasi', children: ['profile', 'referral', 'vip', 'reviews', 'contributors'] },
+        { label: 'Akun & Aplikasi', children: ['profile', 'referral', 'lifetime', 'reviews', 'contributors'] },
         { label: 'Support & APK', children: ['whatsapp', 'apk'] },
         { label: 'Pengaturan Admin', children: ['admin', 'settings'] }
     ];
@@ -527,9 +437,6 @@
         }
         $('btn-topbar-chat').addEventListener('click', function () { showScreen('chat'); });
         $('btn-topbar-profile').addEventListener('click', function () { showScreen('profile'); });
-        if ($('btn-vip-view')) {
-            $('btn-vip-view').addEventListener('click', function () { showScreen('vip'); });
-        }
     }
 
     // Ambil status maintenance ringan (tanpa auth) untuk keperluan UI sisi klien,
@@ -678,7 +585,7 @@
                         applyThemePreference(readThemePreference());
                         revealThemePage();
                         updateNavbar();
-                        // Restore halaman yang dituju (mis. #referal / #vip) setelah login
+                        // Restore halaman yang dituju (mis. #referal / #lifetime) setelah login
                         var intended = normalizeScreen(window.location.hash.replace('#', '').split('?')[0]);
                         showScreen(intended && VALID_SCREENS.indexOf(intended) !== -1 ? intended : 'dashboard');
                     } else {
@@ -735,69 +642,14 @@
         loadBattery();
         loadClock();
         loadYourIP();
+        loadRuntime();
         loadCreditsCountdown();
-        if (!window._statsPollInterval) {
-            window._statsPollInterval = setInterval(loadPublicStats, 5000);
-        }
-    }
-
-    var _runtimeServerUptime = null;
-    var _runtimeSyncTime = null;
-    var _runtimeTimer = null;
-
-    function formatUptime(totalSeconds) {
-        var s = Math.floor(totalSeconds);
-        var pad2 = function (v) { return String(v).padStart(2, '0'); };
-        var ss = s % 60;
-        var mm = Math.floor((s % 3600) / 60);
-        var hh = Math.floor((s % 86400) / 3600);
-        var totalDays = Math.floor(s / 86400);
-        var years = Math.floor(totalDays / 365);
-        var remainDaysAfterYear = totalDays - (years * 365);
-        var months = Math.floor(remainDaysAfterYear / 30);
-        var days = remainDaysAfterYear - (months * 30);
-        if (years > 0) {
-            return years + ' Year, ' + months + ' Months, ' + days + ' Days, ' + pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
-        }
-        if (months > 0) {
-            return months + ' Months, ' + days + ' Days, ' + pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
-        }
-        if (days > 0) {
-            return days + ' Days, ' + pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
-        }
-        if (totalDays === 0 && hh === 0 && mm === 0) {
-            return ss + ' Seconds';
-        }
-        if (totalDays === 0 && hh === 0) {
-            return mm + ' Minutes, ' + ss + ' Seconds';
-        }
-        return pad2(hh) + ':' + pad2(mm) + ':' + pad2(ss);
-    }
-
-    function tickRuntime() {
-        if (_runtimeServerUptime == null || _runtimeSyncTime == null) return;
-        var elapsed = (Date.now() - _runtimeSyncTime) / 1000;
-        var current = _runtimeServerUptime + elapsed;
-        var el = $('stat-runtime');
-        if (el) el.textContent = formatUptime(current);
     }
 
     function loadPublicStats() {
         api('/api/public/stats').then(function (data) {
             if (data.totalUsers != null) $('stat-total-users').textContent = data.totalUsers;
             if (data.totalSuccess != null) $('stat-total-requests').textContent = data.totalSuccess;
-            if (data.uptime != null) {
-                _runtimeServerUptime = Math.floor(data.uptime);
-                _runtimeSyncTime = Date.now();
-                var el = $('stat-runtime');
-                if (el) el.textContent = formatUptime(_runtimeServerUptime);
-                if (!_runtimeTimer) {
-                    _runtimeTimer = setInterval(tickRuntime, 1000);
-                }
-            }
-        }).catch(function () {
-            var el = $('stat-runtime');
-            if (el && el.textContent === 'Memuat...') el.textContent = 'Error';
         });
         if ($('stat-your-credits')) $('stat-your-credits').textContent = creditsDisplay();
     }
@@ -862,6 +714,19 @@
             .catch(function () { $('stat-your-ip').textContent = 'Gagal membaca IP'; });
     }
 
+    var runtimeStart = Date.now();
+    function loadRuntime() {
+        function tick() {
+            var s = Math.floor((Date.now() - runtimeStart) / 1000);
+            var h = String(Math.floor(s / 3600)).padStart(2, '0');
+            var m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+            var sec = String(s % 60).padStart(2, '0');
+            $('stat-runtime').textContent = h + ':' + m + ':' + sec;
+        }
+        tick();
+        setInterval(tick, 1000);
+    }
+
     function loadCreditsCountdown() {
         var el = $('stat-credits-reset-countdown');
         if (!el || isPrivileged()) { if (el) el.textContent = ''; return; }
@@ -882,6 +747,26 @@
     function loadGenerator() {
         loadUserHistory();
         bindGeneratorTabs();
+        setupAutoGenerator();
+    }
+
+    function bindGeneratorTabs() {
+        $('tab-btn-manual').addEventListener('click', function () {
+            $('tab-btn-manual').classList.add('active');
+            $('tab-btn-auto').classList.remove('active');
+            $('tab-manual-content').classList.remove('hidden');
+            $('tab-auto-content').classList.add('hidden');
+        });
+        $('tab-btn-auto').addEventListener('click', function () {
+            $('tab-btn-auto').classList.add('active');
+            $('tab-btn-manual').classList.remove('active');
+            $('tab-auto-content').classList.remove('hidden');
+            $('tab-manual-content').classList.add('hidden');
+        });
+    }
+
+    function bindGeneratorManual() {
+        var btn = $('btn-send-link');
         if (!btn || btn.dataset.bound) return;
         btn.dataset.bound = '1';
         $('form-send-link').addEventListener('submit', function (e) {
@@ -934,15 +819,132 @@
                 });
         });
     }
+        function setupAutoGenerator() {
+        bindGeneratorManual();
+        if (!currentUser) return;
+        var unlocked = currentUser && hasBulkRole(currentUser.role);
+        $('autogen-locked-container').classList.toggle('hidden', unlocked);
+        $('autogen-unlocked-container').classList.toggle('hidden', !unlocked);
+        if (!unlocked) {
+            $('btn-buy-autogen-shortcut').addEventListener('click', function () { showScreen('purchase'); });
+            return;
+        }
+        var sel = $('autogen-domain-select');
+        if (sel && !sel.dataset.loaded) {
+            sel.dataset.loaded = '1';
+            var fillDomains = function (list) {
+                sel.innerHTML = '';
+                list.forEach(function (d) {
+                    var opt = document.createElement('option');
+                    opt.value = d; opt.textContent = d;
+                    sel.appendChild(opt);
+                });
+            };
+            api('/api/am/domains').then(function (data) {
+                fillDomains(data.domains && data.domains.length ? data.domains : ['jagomail.com', 'softbank.id', 'premiummail.id']);
+            }).catch(function () {
+                fillDomains(['jagomail.com', 'softbank.id', 'premiummail.id']);
+            });
+        }
+        if (!$('autogen-custom-toggle').dataset.bound) {
+            $('autogen-custom-toggle').dataset.bound = '1';
+            $('autogen-custom-toggle').addEventListener('change', function () {
+                $('autogen-prefix-container').classList.toggle('hidden', !this.checked);
+            });
+            $('btn-autogen-run').addEventListener('click', function () {
+                var domain = $('autogen-domain-select').value;
+                var count = Math.min(500, Math.max(1, parseInt($('autogen-count-input').value, 10) || 5));
+                var prefix = $('autogen-custom-toggle').checked ? $('autogen-prefix-input').value.trim() : '';
+                var runBtn = this;
+                runBtn.disabled = true;
+                runBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menghubungkan...';
+                api('/api/am/autogen/start-batch', { method: 'POST', body: { domain: domain, count: count, prefix: prefix } })
+                    .then(function (data) {
+                        if (data.success) {
+                            currentBatch = data.batch;
+                            $('autogen-hud').classList.remove('hidden');
+                            $('autogen-log-container').classList.remove('hidden');
+                            $('autogen-download-area').classList.add('hidden');
+                            $('autogen-log-container').innerHTML = '';
+                            pollActiveBatch();
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal memulai batch.' });
+                        }
+                    })
+                    .catch(function (err) { Swal.fire({ icon: 'error', title: 'KESALAHAN', text: errMsg(err) }); })
+                    .finally(function () {
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = '<i class="fa-solid fa-play"></i> Mulai Generate';
+                    });
+            });
+        }
+        var downloadBtn = $('btn-autogen-download');
+        if (downloadBtn && !downloadBtn.dataset.bound) {
+            downloadBtn.dataset.bound = '1';
+            downloadBtn.addEventListener('click', function () {
+                if (!currentBatch || !currentBatch.results.length) return;
+                var lines = ['AM PREMIUM ACCOUNTS BATCH GENERATED - ' + new Date().toLocaleString()];
+                currentBatch.results.forEach(function (r, i) {
+                    var ok = r.status === 'success';
+                    var inbox = r.inboxUrl || ('https://generator.email/' + r.email);
+                    lines.push((i + 1) + '. Email: ' + r.email + (r.password ? ' | Password: ' + r.password : '') + (ok ? ' | PREMIUM AKTIF' : ' | GAGAL: ' + (r.error || 'unknown')) + (r.codeorder ? ' | Alwayscodex: ' + r.codeorder : '') + ' | Inbox: ' + inbox + ' | Login Link: ' + (r.verifyLink || '-'));
+                });
+                lines.push('Total Berhasil: ' + currentBatch.results.length + ' Akun');
+                downloadText(lines.join('\n'), 'am-premium-batch.txt');
+            });
+        }
+    }
+
+    function pollActiveBatch() {
+        clearInterval(batchPollTimer);
+        function poll() {
+            api('/api/am/autogen/active-batch').then(function (data) {
+                if (data.success && data.batch) {
+                    currentBatch = data.batch;
+                    $('autogen-hud-remaining').textContent = data.batch.remaining;
+                    $('autogen-hud-total').textContent = data.batch.total;
+                    var eta = Math.ceil(data.batch.remaining * 7);
+                    $('autogen-hud-eta').textContent = Math.floor(eta / 60) + 'm ' + (eta % 60) + 's';
+                    var log = $('autogen-log-container');
+                    data.batch.logs.forEach(function (line) {
+                        if (!log.dataset.lastLine || log.dataset.lastLine !== line) {
+                            log.dataset.lastLine = line;
+                            var div = document.createElement('div');
+                            div.textContent = line;
+                            log.appendChild(div);
+                            log.scrollTop = log.scrollHeight;
+                        }
+                    });
+                    if (data.batch.status === 'completed') {
+                        clearInterval(batchPollTimer);
+                        $('autogen-hud-remaining').textContent = '0';
+                        $('autogen-download-area').classList.remove('hidden');
+                        Swal.fire({ icon: 'success', title: 'SELESAI!', text: 'Batch selesai. ' + data.batch.results.length + ' akun berhasil dibuat.', timer: 2500, showConfirmButton: false });
+                    }
+                } else if (data.isStalled) {
+                    api('/api/am/autogen/resume-batch', { method: 'POST' });
+                } else if (!data.batch) {
+                    clearInterval(batchPollTimer);
+                    $('autogen-hud').classList.add('hidden');
+                }
+            }).catch(function () {});
+        }
+        poll();
+        batchPollTimer = setInterval(poll, 3000);
+    }
+
+    /* ============================== NETFLIX ============================== */
 
     function loadNetflix() {
-        var content = $('netflix-content-container');
-        var maintBox = $('netflix-maintenance-container');
-        api('/api/public/stats').then(function (data) {
-            var isDown = !!(data.maintenance && data.maintenance.netflix);
+        // Cek status maintenance fitur Netflix (tampilkan halaman maintenance jika aktif)
+        api('/api/auth/system/settings').then(function (data) {
+            var maint = (data && data.maintenance) || {};
+            var isDown = !!maint.netflix;
+            var content = $('netflix-content-container');
+            var maintBox = $('netflix-maintenance-container');
             if (content) content.classList.toggle('hidden', isDown);
             if (maintBox) maintBox.classList.toggle('hidden', !isDown);
-        }).catch(function () { });
+        }).catch(function () { /* server offline: biarkan konten normal */ });
 
         var btn = $('btn-netflix-generate');
         if (btn && !btn.dataset.bound) {
@@ -1038,6 +1040,7 @@
     var PLAN_PRICES = {
         reseller: { 3: 7000, 7: 12000, 14: 18000, 30: 25000 },
         premium: { 3: 9000, 7: 15000, 14: 20000, 30: 28000 },
+        autogen: { 3: 12000, 7: 20000, 14: 28000, 30: 38000 },
         vip: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 },
         pro: { 30: 15000 }
     };
@@ -1458,7 +1461,7 @@
         // Verified Badge ala Meta AI (rosette) — hanya untuk role terverifikasi
         var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span.profile-verified-badge');
         if (profileCheckBadge) {
-            var isVerifiedRole = ['owner', 'vip', 'premium', 'reseller', 'pro'].indexOf(u.role) !== -1;
+            var isVerifiedRole = ['owner', 'vip', 'premium', 'autogen', 'reseller', 'pro'].indexOf(u.role) !== -1;
             profileCheckBadge.style.display = isVerifiedRole ? 'inline-flex' : 'none';
         }
 
@@ -1485,7 +1488,7 @@
                 user: '50 credits / harian',
                 reseller: 'Unlimited Web',
                 premium: 'Unlimited Web + API single',
-                
+                autogen: 'Unlimited Web + API bulk',
                 vip: 'Unlimited + VIP Feature',
                 pro: '200 Credits + 1 Bot',
                 owner: 'Unlimited + Superuser'
@@ -1528,7 +1531,7 @@
         $('api-key-input').value = u.apiKey || 'Belum ada API Key. Silahkan beli di menu Beli API Key.';
 
         var apiSection = $('profile-apikey-section');
-        // Role premium/vip selalu boleh. 'user' boleh bila toggle
+        // Role premium/autogen/vip/owner selalu boleh. 'user' boleh bila toggle
         // "Nonaktifkan Apikey Untuk User" dalam posisi OFF (APP_MAINT.apikeyUserDisabled false).
         var canManageApiKey = hasApiRole(u.role) || (u.role === 'user' && APP_MAINT && !APP_MAINT.apikeyUserDisabled);
         if (apiSection) apiSection.classList.toggle('hidden', !canManageApiKey);
@@ -1663,61 +1666,28 @@
 
     }
 
-    /* ============================== VIP (Layanan VIP) ============================== */
+    /* ============================== LIFETIME (Layanan Lifetime) ============================== */
 
-    function loadVipScreen() {
+    function loadLifetimeScreen() {
         if (!currentUser) return;
-        // Check if user can access VIP service
-        if (!canAccessVipService(currentUser.role)) {
-            showScreen('dashboard');
-            return;
-        }
-
-        var st = $('vip-plan-status');
+        var st = $('lifetime-plan-status');
         if (st) {
-            if (currentUser.role === 'owner') {
-                st.textContent = 'Owner';
+            if (currentUser.apiPlan === 'lifetime' || currentUser.role === 'owner') {
+                st.textContent = 'Lifetime';
             } else if (currentUser.apiPlan) {
                 st.textContent = String(currentUser.apiPlan).charAt(0).toUpperCase() + String(currentUser.apiPlan).slice(1);
             } else {
-                st.textContent = 'VIP';
+                st.textContent = '-'; // belum punya paket
             }
         }
-        // ===== Telegram Bot Deploy (Pro/VIP/Owner) =====
+        // ===== Telegram Bot Deploy (khusus Admin/Owner) =====
         var tgSection = $('telegram-deploy-section');
         if (tgSection) {
-            var canDeploy = canDeployTelegramBot(currentUser.role);
-            var userRole = currentUser ? currentUser.role : 'none';
-            if (!canDeploy) {
-                var warningMsg = 'Hanya role <b>Pro</b>, <b>VIP</b>, dan <b>Owner</b> yang dapat men-deploy bot Telegram.';
-                var existingWarning = $('telegram-deploy-warning');
-                if (existingWarning) {
-                    existingWarning.textContent = warningMsg;
-                    existingWarning.style.display = 'block';
-                } else {
-                    var warningDiv = document.createElement('div');
-                    warningDiv.id = 'telegram-deploy-warning';
-                    warningDiv.style = 'padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); margin-top: 12px; color: #ef4444; font-size: 0.85rem;';
-                    warningDiv.textContent = warningMsg;
-                    tgSection.parentNode.insertBefore(warningDiv, tgSection);
-                }
-            }
-            var vipInfo = '';
-            if (currentUser.role === 'vip') {
-                vipInfo = ' (Maksimal 3 bot)';
-            } else if (currentUser.role === 'pro') {
-                vipInfo = ' (Maksimal 1 bot)';
-            } else if (currentUser.role === 'owner') {
-                vipInfo = ' (Limitless)';
-            }
+            var canDeploy = isAdminOrOwner();
             tgSection.classList.toggle('hidden', !canDeploy);
             if (canDeploy) {
                 bindTelegramDeploy();
                 loadTelegramBots();
-                var btnText = $('#btn-telegram-deploy .btn-text');
-                if (btnText) {
-                    btnText.textContent = 'Deploy / Update Bot' + vipInfo;
-                }
             }
         }
     }
@@ -2068,7 +2038,7 @@
         var form = $('form-telegram-deploy');
         if (!form || form.dataset.bound) return;
         form.dataset.bound = '1';
-        var checkBtn = $('btn-check-vip-bot');
+        var checkBtn = $('btn-check-lifetime-bot');
         if (checkBtn) {
             checkBtn.addEventListener('click', function () {
                 var badge = $('telegram-bot-status-badge');
@@ -2836,7 +2806,7 @@
                     }
                 });
             } else {
-                var selectedRole = role.toLowerCase();
+                var selectedRole = role === 'AUTOGEN' ? 'autogen' : role.toLowerCase();
                 api('/api/admin/user/role', { method: 'POST', body: { userId: userId, role: selectedRole } }).then(function (res) {
                     Swal.fire({ icon: res.success ? 'success' : 'error', title: res.success ? 'DIUBAH!' : 'GAGAL', text: res.message, timer: 1500, showConfirmButton: false });
                     loadAdminUsers();
@@ -3183,12 +3153,6 @@
     /* ============================== INIT ============================== */
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Fallback timeout to guarantee UI shows up even if everything crashes
-        var safetyTimeout = setTimeout(function() {
-            document.documentElement.classList.remove('theme-pending');
-        }, 3000);
-        
-        try { 
         bindNav();
         bindAuth();
         restoreAuthView(); // Refresh tetap di view login/register + draft form dipulihkan
@@ -3225,7 +3189,7 @@
                 });
             }
         } catch (err) {}
-        // Router hash: dukung akses langsung #vip / #referal & edit manual hash.
+        // Router hash: dukung akses langsung #lifetime / #referal & edit manual hash.
         // Guard: jangan pindah screen non-auth saat belum login (hindari error 401 tampil ke guest).
         window.addEventListener('hashchange', function () {
             // Link referral dibuka di tab yang sama: #...?ref= → deteksi ulang kode.
@@ -3248,13 +3212,6 @@
             if (VALID_SCREENS.indexOf(n) === -1) return;
             showScreen(n);
         });
-         } catch (e) {
-            console.error('[AM][UI] Fatal Error during initialization:', e);
-        } finally {
-            try { checkSession(); } catch (e) {
-                console.error('[AM][UI] Error in checkSession:', e);
-                document.documentElement.classList.remove('theme-pending');
-            }
-        }
+        checkSession();
     });
 })();

@@ -19,7 +19,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { DATA_DIR, PORT, newId, nowISO, generateOrderId, randomKey, getUsers, readJSON } from './store.js';
-import { canDeployTelegramBot, hasBulkAccess, normalizeRole } from './auth.js';
 
 const gpaSeg = () => String(crypto.randomInt(0, 10000)).padStart(4, '0');
 
@@ -286,7 +285,7 @@ async function deployBot(input) {
 
     // Hanya role VIP (maks 3 bot), Pro (maks 1 bot), dan Owner (unlimited) yang boleh deploy.
     // Bot dengan token yang sama (flow update/replace) tidak dihitung sebagai bot tambahan.
-    if (!canDeployTelegramBot(role)) {
+    if (role !== 'owner' && role !== 'vip' && role !== 'pro') {
         throw new Error('Hanya akun VIP, Pro, dan Owner yang dapat men-deploy bot Telegram.');
     }
     if (role === 'vip') {
@@ -736,8 +735,8 @@ async function handleStart(bot, chatId, fromId, text, isCallback = false, msg = 
             await handleWaitingVoucher(bot, chatId, state, text);
         } else if (state.step === 'waiting_autocount') {
             await handleWaitingAutoCount(bot, chatId, state, text);
-        } else if (state.step === 'running') {
-            // Biarkan proses berjalan; abaikan /start di tengah generator.
+        } else if (state.step === 'autogen_running') {
+            // Biarkan proses berjalan; abaikan /start di tengah auto generator.
         }
     } else {
         // No ongoing process, show main menu
@@ -839,6 +838,7 @@ function buildRecapFile(results) {
         const isOk = r.status === 'success';
         const inbox = r.inboxUrl || ('https://generator.email/' + r.email);
         const line = (i + 1) + '. Email: ' + r.email +
+            (r.password ? ' | Password: ' + r.password : '') +
             (isOk ? ' | PREMIUM AKTIF' : ' | GAGAL: ' + (r.error || 'unknown')) +
             (r.codeorder ? ' | Alwayscodex: ' + r.codeorder : '') +
             ' | Inbox: ' + inbox +
@@ -1007,7 +1007,7 @@ async function handleWaitingAutoCount(bot, chatId, state, text) {
         disable_web_page_preview: true,
     });
     const progressMsgId = (startMsg && startMsg.ok) ? startMsg.result.message_id : state.messageId;
-    state.step = 'running';
+    state.step = 'autogen_running';
     state.batchId = (res.batch || {}).id;
     state.progressMsgId = progressMsgId;
     state.count = count;
@@ -1305,12 +1305,12 @@ async function handleBulkExternal(bot, chatId, fromId, args) {
         return sendText(bot.token, chatId, '⛔ Hanya Owner yang boleh menggunakan perintah /bulk.');
     }
     // Batasi /bulk berdasarkan role website pemilik bot. Hanya role bulk-capable
-    // (VIP/Owner) yang boleh; role lain (termasuk Pro) tidak bisa bulk.
+    // (Autogen/VIP/Owner) yang boleh; role lain (termasuk Pro) tidak bisa bulk.
     const users = getUsers();
     const ownerUser = users[bot.deployedBy];
     const ownerRole = ownerUser && ownerUser.role;
-    if (!hasBulkAccess(ownerRole)) {
-        return sendText(bot.token, chatId, '⛔ Fitur /bulk hanya untuk role VIP dan Owner.');
+    if (['autogen', 'vip', 'owner'].indexOf(ownerRole) === -1) {
+        return sendText(bot.token, chatId, '⛔ Fitur /bulk hanya untuk role Autogen, VIP, dan Owner.');
     }
     const parts = String(args || '').trim().split(/\s+/);
     const count = Math.min(5, Math.max(1, parseInt(parts[0], 10) || 5));
@@ -1362,7 +1362,7 @@ async function handleUpdate(bot, msg) {
             await handleWaitingVoucher(bot, chatId, state, text);
         } else if (state.step === 'waiting_autocount') {
             await handleWaitingAutoCount(bot, chatId, state, text);
-        } else if (state.step === 'running') {
+        } else if (state.step === 'autogen_running') {
             if (text.toLowerCase() === '/cancel') {
                 await sendText(bot.token, chatId, '⚠️ Proses auto generator sedang berjalan. Mohon tunggu hingga selesai.');
             }

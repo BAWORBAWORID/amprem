@@ -12,8 +12,8 @@
     "id": "5323386592",
     "username": "AlwaysCodex404",
     "first_name": "𐌰𐌻𐍅𐌰𐍅𐍃 𐌲𐍉𐌳𐌴𐍇 -",
-    "quota": 41,
-    "totalAccounts": 31,
+    "quota": 38,
+    "totalAccounts": 34,
     "referredBy": null,
     "referrals": []
   },
@@ -22,7 +22,7 @@
     "username": "apinnCS",
     "first_name": "indo fs @.mzodu 467",
     "quota": 0,
-    "totalAccounts": 16,
+    "totalAccounts": 48,
     "referredBy": null,
     "referrals": []
   },
@@ -149,6 +149,15 @@
     "first_name": "Takes it all",
     "quota": 7,
     "totalAccounts": 0,
+    "referredBy": null,
+    "referrals": []
+  },
+  "8238324862": {
+    "id": "8238324862",
+    "username": "ZyiroStore",
+    "first_name": "ditzz",
+    "quota": 0,
+    "totalAccounts": 1,
     "referredBy": null,
     "referrals": []
   }

@@ -1,36 +1,39 @@
 {
-  "id": "mt2wggzca9a47e",
+  "id": "mt5382k334f8ed",
   "operator": "alwayscodex",
-  "domain": "random",
+  "domain": "softbank.id",
   "domains": [
-    "softbank.id",
-    "softbank.id",
-    "1win.life",
-    "jagoanmail.com"
+    "softbank.id"
   ],
   "count": 1,
   "prefix": "",
-  "done": 0,
-  "status": "running",
-  "results": [],
+  "done": 1,
+  "status": "completed",
+  "results": [
+    {
+      "email": "melloneyunconscious@emalupe.com",
+      "inboxUrl": "https://mail.tm",
+      "status": "success",
+      "messages": [],
+      "password": "a=bzWot<O0",
+      "codeorder": "27310"
+    }
+  ],
   "logs": [
     "[SYSTEM] Logger diinisialisasi...",
     "[SYSTEM] Batch dimulai oleh alwayscodex",
-    "[SYSTEM] Target: 1 akun (domain random)",
-    "[2026-08-21 20:02:26] Batch: 1 email (am50rvhsd@softbank.id ...)",
-    "[2026-08-21 20:02:26] [1/1] am50rvhsd@softbank.id",
-    "[2026-08-21 20:02:32] inbox opened: am50rvhsd@softbank.id",
-    "[2026-08-21 20:02:33] magic link terkirim",
-    "[2026-08-21 20:02:37] belum ada link valid (putaran 1/20), reload inbox...",
-    "[2026-08-21 20:02:46] belum ada link valid (putaran 2/20), reload inbox...",
-    "[2026-08-21 20:02:56] belum ada link valid (putaran 3/20), reload inbox...",
-    "[2026-08-21 20:03:04] belum ada link valid (putaran 4/20), reload inbox...",
-    "[2026-08-21 20:03:05] kirim ulang magic link #2: OK"
+    "[SYSTEM] Target: 1 akun @softbank.id",
+    "[2026-08-23 08:47:24] Batch: 1 akun via mail.tm (child worker)",
+    "[2026-08-23 08:47:24] [1/1] memproses akun baru...",
+    "[2026-08-23 08:47:24] spawn worker mail.tm...",
+    "[2026-08-23 08:47:54] PREMIUM AKTIF (codeorder 27310)",
+    "[2026-08-23 08:47:54] OK #1 melloneyunconscious@emalupe.com -> Alwayscodex 27310",
+    "[SYSTEM] Selesai! 1/1 akun sukses."
   ],
-  "createdAt": "2026-08-21T12:02:26.424Z",
-  "startedAt": 1787313746424,
+  "createdAt": "2026-08-23T00:47:24.147Z",
+  "startedAt": 1787446044147,
   "notify": null,
   "emails": [
-    "am50rvhsd@softbank.id"
+    "am8dows20@mail.tm"
   ]
 }

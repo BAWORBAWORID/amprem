@@ -181,48 +181,20 @@ export function claimReferralRewards(user) {
 
 /* ============================== ROLE CAPABILITIES ============================== */
 
-export function normalizeRole(role) {
-    return String(role || '').trim().toLowerCase();
-}
-
-const ROLE_LEVEL = {
-    user: 0,
-    pro: 1,
-    reseller: 2,
-    premium: 3,
-    vip: 4,
-    owner: 5
-};
-
-export function canAccessVipService(role) {
-    const normalized = normalizeRole(role);
-    return ['pro', 'reseller', 'premium', 'vip', 'owner'].includes(normalized);
-}
-
-export function canDeployTelegramBot(role) {
-    const normalized = normalizeRole(role);
-    return ['pro', 'vip', 'owner'].includes(normalized);
-}
-
-export function hasBulkAccess(role) {
-    const normalized = normalizeRole(role);
-    return ['reseller', 'vip', 'owner'].includes(normalized);
-}
-
 export function isUnlimitedRole(role) {
-    return ['reseller', 'premium', 'vip', 'owner'].indexOf(role) !== -1;
+    return ['reseller', 'premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
 }
 
 export function hasApiRole(role) {
-    return ['premium', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
+    return ['premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
 }
 
 export function hasBulkRole(role) {
-    return ['vip', 'owner'].indexOf(role) !== -1;
+    return ['autogen', 'vip', 'owner'].indexOf(role) !== -1;
 }
 
 // Apakah user boleh pakai API Key (generate + panggil API bot).
-// Role premium/vip/owner selalu boleh. Role 'user' (gratis) boleh
+// Role premium/autogen/vip/owner selalu boleh. Role 'user' (gratis) boleh
 // HANYA bila maintenance.apikeyUserDisabled tidak aktif (toggle "Nonaktifkan
 // Apikey Untuk User" dalam posisi OFF).
 export function canUseApiKey(user) {
@@ -248,7 +220,7 @@ export function prepareApiRole(user, previousRole) {
 }
 
 /**
- * Semua role premium (reseller/premium/vip) mendukung masa aktif
+ * Semua role premium (reseller/premium/autogen/vip) mendukung masa aktif
  * (expired). Lifetime = apiExpiresAt null. Role apa pun yang punya apiExpiresAt
  * lewat dari waktu sekarang dianggap kedaluwarsa.
  */

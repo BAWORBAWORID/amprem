@@ -539,6 +539,7 @@ async function handleAPI(req, res, url) {
         const PLAN_PRICES = {
             reseller: { 3: 7000, 7: 12000, 14: 18000, 30: 25000 },
             premium: { 3: 9000, 7: 15000, 14: 20000, 30: 28000 },
+            autogen: { 3: 12000, 7: 20000, 14: 28000, 30: 38000 },
             vip: { 3: 18000, 7: 30000, 14: 42000, 30: 55000 },
             pro: { 30: 15000 },
         };
@@ -718,6 +719,8 @@ async function handleAPI(req, res, url) {
                 u.role = 'premium'; u.apiPlan = 'monthly'; u.apiExpiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(); prepareApiRole(u, previousRole);
             } else if (tx.plan === 'reseller') {
                 u.role = 'reseller'; u.apiPlan = 'reseller'; u.apiExpiresAt = null; prepareApiRole(u, previousRole);
+            } else if (tx.plan === 'autogen') {
+                u.role = 'autogen'; u.apiPlan = 'autogen'; u.apiExpiresAt = null; prepareApiRole(u, previousRole);
             } else if (tx.plan === 'vip') {
                 u.role = 'vip'; u.apiPlan = 'lifetime'; u.apiExpiresAt = null; prepareApiRole(u, previousRole);
             } else if (tx.plan === 'pro') {
@@ -864,13 +867,13 @@ async function handleAPI(req, res, url) {
         if (admin.role === 'vip' && ['vip', 'owner'].indexOf(target.role) !== -1) return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat mengelola akun admin atau owner.' });
         const role = String(body.role || '');
         const previousRole = target.role;
-        if (['user', 'reseller', 'premium', 'vip', 'owner', 'pro'].indexOf(role) === -1) return sendJSON(res, 400, { success: false, message: 'Role tidak valid.' });
+        if (['user', 'reseller', 'premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) === -1) return sendJSON(res, 400, { success: false, message: 'Role tidak valid.' });
         if (admin.role === 'vip' && role === 'vip') return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat memberikan role Admin.' });
         target.role = role;
-        // Semua role premium (reseller/premium/vip/pro) mendukung
+        // Semua role premium (reseller/premium/autogen/admin) mendukung
         // masa aktif: apiPlan 'lifetime' (selamanya) atau expired dgn durasi.
         // Default admin/owner tanpa body.apiPlan = lifetime (kompatibel lama).
-        const premiumRoles = ['reseller', 'premium', 'vip', 'pro'];
+        const premiumRoles = ['reseller', 'premium', 'autogen', 'vip', 'pro'];
         if (premiumRoles.indexOf(role) !== -1) {
             // Default lifetime bila apiPlan tidak dikirim (kompatibel lama).
             const plan = body.apiPlan === 'expired' ? 'expired' : 'lifetime';
@@ -881,7 +884,7 @@ async function handleAPI(req, res, url) {
                 const days = Math.max(1, parseInt(body.expiresInDays, 10) || 30);
                 target.apiExpiresAt = new Date(Date.now() + days * 24 * 3600 * 1000).toISOString();
             }
-            // Reseller = web only (tanpa API key). Premium/vip dapat API key.
+            // Reseller = web only (tanpa API key). Premium/autogen/admin dapat API key.
             if (role === 'reseller') {
                 target.apiKey = '';
                 target.apiKeyRevoked = false;
