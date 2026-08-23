@@ -272,6 +272,7 @@ function startBatchWorker(batch, extra) {
     markWorkerActive(batch.id);
     runBulk({
         name: batch.prefix || 'am',
+        orderId: batch.prefix || undefined,
         domains: (batch.domains && batch.domains.length ? batch.domains : [batch.domain]),
         // Hanya kirim email yang BELUM diproses: saat resume (done > 0) jangan
         // mengulang email yang sudah selesai (runBulk mengiterasi semua opts.emails).

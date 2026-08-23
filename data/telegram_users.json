@@ -12,8 +12,8 @@
     "id": "5323386592",
     "username": "AlwaysCodex404",
     "first_name": "𐌰𐌻𐍅𐌰𐍅𐍃 𐌲𐍉𐌳𐌴𐍇 -",
-    "quota": 38,
-    "totalAccounts": 34,
+    "quota": 31,
+    "totalAccounts": 41,
     "referredBy": null,
     "referrals": []
   },
@@ -158,6 +158,24 @@
     "first_name": "ditzz",
     "quota": 0,
     "totalAccounts": 1,
+    "referredBy": null,
+    "referrals": []
+  },
+  "8763545048": {
+    "id": "8763545048",
+    "username": "top1_ban",
+    "first_name": "R?",
+    "quota": 1,
+    "totalAccounts": 0,
+    "referredBy": null,
+    "referrals": []
+  },
+  "8735293412": {
+    "id": "8735293412",
+    "username": "zenwkwk",
+    "first_name": "zen",
+    "quota": 3,
+    "totalAccounts": 0,
     "referredBy": null,
     "referrals": []
   }

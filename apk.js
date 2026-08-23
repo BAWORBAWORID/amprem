@@ -66,7 +66,7 @@ class Web2ApkService {
         },
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
-        timeout: 180000,
+        timeout: 600000,
       })
 
       const data = response.data
@@ -177,21 +177,22 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
         Accept: "*/*",
       },
-      timeout: 180000,
+      timeout: 600000,
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
     })
     const apkBuffer = Buffer.from(apkRes.data)
     console.log("  downloaded:", apkBuffer.length, "bytes")
 
-    const outPath = path.resolve("src/apk/alwayscodex.apk")
+    const outPath = path.resolve("public/alwayscodex.apk")
     fs.mkdirSync(path.dirname(outPath), { recursive: true })
     fs.writeFileSync(outPath, apkBuffer)
     console.log("> Saved APK ->", outPath)
 
-    const publicPath = path.resolve("public/createamryezen.apk")
-    fs.copyFileSync(outPath, publicPath)
-    console.log("> Deployed copy ->", publicPath)
+    const archivePath = path.resolve("src/apk/alwayscodex.apk")
+    fs.mkdirSync(path.dirname(archivePath), { recursive: true })
+    fs.copyFileSync(outPath, archivePath)
+    console.log("> Archive copy ->", archivePath)
 
     console.log("DONE")
   }

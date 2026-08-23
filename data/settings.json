@@ -34,8 +34,8 @@
   },
   "autoCleanup": {
     "enabled": true,
-    "hours": 72,
-    "lastRun": "2026-08-23T04:25:44.335Z",
+    "hours": 168,
+    "lastRun": "2026-08-23T16:40:13.655Z",
     "lastCount": 0
   }
 }

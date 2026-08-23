@@ -74,12 +74,12 @@ function updateBotStatus(id, status, error) {
 
 /* ============================== TELEGRAM API ============================== */
 
-async function tgRequest(token, method, params) {
+async function tgRequest(token, method, params, abortSignal) {
     const resp = await fetch(TELEGRAM_API + '/bot' + token + '/' + method, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params || {}),
-        signal: AbortSignal.timeout(45000),
+        signal: abortSignal || AbortSignal.timeout(45000),
     });
     return resp.json().catch(() => ({}));
 }
@@ -197,12 +197,13 @@ function checkRateLimit(chatId) {
 async function runPollLoop(bot, runner) {
     while (!runner.stopped) {
         try {
+            runner.ac = new AbortController(); // siklus poll baru = controller baru
             const data = await tgRequest(bot.token, 'getUpdates', {
                 timeout: 30,
                 limit: 100,
                 offset: runner.offset,
                 allowed_updates: ['message', 'callback_query'],
-            });
+            }, runner.ac.signal);
             if (runner.stopped) break;
             if (!data.ok) {
                 if (data.error_code === 409) {
@@ -238,6 +239,10 @@ async function runPollLoop(bot, runner) {
                 }
             }
         } catch (e) {
+            // Abort dari stop() = shutdown normal saat HMR restart — jangan log error.
+            if (runner.stopped || /abort/i.test(e.name === 'AbortError' ? 'AbortError' : String(e.message))) {
+                if (runner.stopped) break;
+            }
             runner.failCount++;
             console.error('[TELEGRAM] Bot ' + bot.name + ' polling error: ' + e.message);
             if (runner.stopped) break;
@@ -253,8 +258,10 @@ function startBotRunner(bot) {
     const existing = registry.runners.get(bot.id);
     if (existing && !existing.stopped) return existing;
     if (existing) registry.runners.delete(bot.id);
-    const runner = { botId: bot.id, stopped: false, offset: 0, failCount: 0, loop: null };
-    runner.stop = function () { this.stopped = true; };
+    const runner = { botId: bot.id, stopped: false, offset: 0, failCount: 0, loop: null, ac: new AbortController() };
+    // stop() langsung abort getUpdates yang sedang long-poll (tanpa nunggu
+    // timeout 30-45s), supaya runner baru dari HMR tidak kena konflik 409.
+    runner.stop = function () { this.stopped = true; try { this.ac.abort(); } catch (e) {} };
     registry.runners.set(bot.id, runner);
     runner.loop = runPollLoop(bot, runner);
     return runner;
@@ -578,8 +585,11 @@ function getMainKeyboard() {
                 { text: '🚀 Mulai Generate Akun', callback_data: 'menu_generator' },
             ],
             [
-                { text: '🎁 Voucher', callback_data: 'menu_voucher' },
-                { text: '🤝 Undang Teman', callback_data: 'menu_referral' },
+                { text: '🎁 Redeem Voucher', callback_data: 'menu_voucher' },
+                { text: '🛒 Sewa Bot', callback_data: 'menu_sewa_bot' },
+            ],
+            [
+                { text: '🎬 Netflix Generator', callback_data: 'menu_netflixgen' },
             ],
             [
                 { text: '⚙️ Fitur Owner', callback_data: 'menu_owner' },
@@ -736,7 +746,15 @@ async function handleStart(bot, chatId, fromId, text, isCallback = false, msg = 
         } else if (state.step === 'waiting_autocount') {
             await handleWaitingAutoCount(bot, chatId, state, text);
         } else if (state.step === 'autogen_running') {
-            // Biarkan proses berjalan; abaikan /start di tengah auto generator.
+            // Bulk tetap berjalan di background — menu utama TETAP tampil.
+            if (!autoGenPollers[chatId]) {
+                // Safety net: poller sudah tidak ada -> state basi, bersihkan.
+                delete globalThis.__amUserStates[chatId];
+                sendText(bot.token, chatId, getMenuMainText(bot, { from: { id: fromId, first_name: from.first_name || '', username: from.username || '' } }), 'HTML', getMainKeyboard());
+            } else {
+                const note = '\n\n⚙️ <i>Bulk sedang berjalan di background — progress ada di pesan terpisah. Menu lain tetap bisa dipakai.</i>';
+                sendText(bot.token, chatId, getMenuMainText(bot, { from: { id: fromId, first_name: from.first_name || '', username: from.username || '' } }) + note, 'HTML', getMainKeyboard());
+            }
         }
     } else {
         // No ongoing process, show main menu
@@ -808,7 +826,18 @@ function startAutoGenPoller(bot, chatId, state) {
     const timer = setInterval(async function () {
         try {
             const batch = readBatchJSON();
-            if (!batch || batch.id !== state.batchId) return;
+            if (!batch || batch.id !== state.batchId) {
+                // Data batch hilang/id beda — tunggu maks ~30 detik; bila
+                // tetap hilang anggap sesi berakhir & bersihkan state anti-stuck.
+                state.missing = (state.missing || 0) + 1;
+                if (state.missing >= 10) {
+                    stopAutoGenPoller(chatId);
+                    delete globalThis.__amUserStates[chatId];
+                    try { await editMessageText(bot.token, chatId, state.progressMsgId, '⚠️ Sesi bulk berakhir (data batch tidak ditemukan).'); } catch (e) {}
+                }
+                return;
+            }
+            state.missing = 0;
             const text = buildAutoProgress(batch);
             await editMessageText(bot.token, chatId, state.progressMsgId, text);
             if (batch.status === 'completed' || batch.status === 'failed' || batch.status === 'aborted') {
@@ -1314,9 +1343,9 @@ async function handleBulkExternal(bot, chatId, fromId, args) {
     }
     const parts = String(args || '').trim().split(/\s+/);
     const count = Math.min(5, Math.max(1, parseInt(parts[0], 10) || 5));
-    await sendText(bot.token, chatId, '⏳ <b>MEMULAI AUTO GENERATOR...</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🔢 <b>Jumlah:</b> ' + count + '\n⚙️ Diproses oleh server eksternal (api.alwayscodex.my.id).');
+    await sendText(bot.token, chatId, '⏳ <b>MEMULAI AUTO GENERATOR...</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🔢 <b>Jumlah:</b> ' + count + '\n⚙️ Diproses oleh server eksternal (api.alwayscodex.eu.cc).');
     try {
-        const resp = await fetch('https://api.alwayscodex.my.id/api/am/bulk', {
+        const resp = await fetch('https://api.alwayscodex.eu.cc/api/am/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ count: count, apikey: 'adm' }),
@@ -1351,9 +1380,9 @@ async function handleUpdate(bot, msg) {
         return;
     }
     
-    // Handle waiting states
+    // Handle waiting states + guard bulk-running.
     const state = globalThis.__amUserStates?.[chatId];
-    if (state) {
+    if (state && state.step !== 'autogen_running') {
         if (state.step === 'waiting_email') {
             await handleWaitingEmail(bot, chatId, state, text);
         } else if (state.step === 'waiting_link') {
@@ -1362,14 +1391,19 @@ async function handleUpdate(bot, msg) {
             await handleWaitingVoucher(bot, chatId, state, text);
         } else if (state.step === 'waiting_autocount') {
             await handleWaitingAutoCount(bot, chatId, state, text);
-        } else if (state.step === 'autogen_running') {
-            if (text.toLowerCase() === '/cancel') {
-                await sendText(bot.token, chatId, '⚠️ Proses auto generator sedang berjalan. Mohon tunggu hingga selesai.');
-            }
-            return;
         }
+        // Step waiting sudah ditangani — jangan jatuh ke pemrosesan perintah.
         return;
     }
+    // Saat bulk berjalan: /cancel = stop notifikasi (proses server tetap jalan),
+    // selain itu SEMUA perintah/menu tetap diproses normal (tidak diblokir).
+    if (state && state.step === 'autogen_running' && text.toLowerCase() === '/cancel') {
+        stopAutoGenPoller(chatId);
+        delete globalThis.__amUserStates[chatId];
+        await sendText(bot.token, chatId, '⏹ Notifikasi bulk dihentikan.\nProses di server tetap berjalan di background.\nKirim /start untuk menu utama.');
+        return;
+    }
+    // (autogen_running non-cancel / tanpa state) -> lanjut ke perintah normal.
     
     // Perintah lainnya — tiap perintah dipisah (mirip /start), dengan
     // normalisasi @botusername agar jalan di chat grup.
@@ -1501,6 +1535,29 @@ async function handleCallbackQuery(bot, callbackQuery) {
 ${referralLink}
 `, getBackKeyboard());
             break;
+
+        case 'menu_netflixgen':
+        {
+            await editMessageText(bot.token, chatId, messageId, '🎬 Netflix Generator\n\n⏳ Membuat token PREMIUM...\nMencari proxy + generate (1–3 menit), mohon tunggu.', null);
+            try {
+                const { generateNetflixToken } = await import('../../services/netflix.js');
+                const r = await generateNetflixToken({ plan: 'premium' });
+                if (!r.success) {
+                    await editMessageText(bot.token, chatId, messageId, '❌ Gagal: ' + r.error + '\n\nCoba lagi beberapa saat lagi.', getBackKeyboard());
+                } else {
+                    await editMessageText(bot.token, chatId, messageId,
+                        '✅ TOKEN NETFLIX PREMIUM BERHASIL DIBUAT\n\n' +
+                        '📺 Kualitas : ' + (r.quality || '-') + '\n' +
+                        '🌍 Negara   : ' + (r.country || '-') + '\n' +
+                        '⏳ Expired  : ' + (r.expires || '-') + ' (~1 jam)\n\n' +
+                        '🔗 LINK LOGIN:\n' + r.url + '\n\n' +
+                        '⚠️ Wajib gunakan VPN saat membuka link!', getBackKeyboard());
+                }
+            } catch (e) {
+                await editMessageText(bot.token, chatId, messageId, '❌ Error: ' + e.message, getBackKeyboard());
+            }
+            break;
+        }
 
         case 'menu_owner':
             if (isOwner) {

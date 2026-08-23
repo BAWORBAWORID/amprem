@@ -79,16 +79,16 @@ server.listen(PORT, '0.0.0.0', () => {
     logger.info('Local: http://localhost:' + PORT);
 });
 
-// Global error handlers — di produksi, biarkan PM2 merestart proses agar
-// kondisi server yang tidak stabil tidak terus dipakai.
+// Global error handlers — JANGAN exit proses: update telegram via HMR harus
+// hot-swap tanpa kill/restart. Error dicatat, runtime tetap online.
+// (Bot polling punya try/catch + AbortController sendiri; error struktural
+// muncul di log dan bisa diperbaiki via reload berikutnya.)
 process.on('uncaughtException', (err) => {
-    logger.error('[CRITICAL] Uncaught Exception: ' + (err && err.stack ? err.stack : err));
-    process.exit(1);
+    logger.error('[CRITICAL] Uncaught Exception (proses tetap jalan): ' + (err && err.stack ? err.stack : err));
 });
 
 process.on('unhandledRejection', (reason) => {
-    logger.error('[CRITICAL] Unhandled Rejection: ' + String(reason));
-    process.exit(1);
+    logger.error('[CRITICAL] Unhandled Rejection (proses tetap jalan): ' + String(reason && reason.stack ? reason.stack : reason));
 });
 
 server.on('error', (err) => {
@@ -97,5 +97,4 @@ server.on('error', (err) => {
         process.exit(1);
     }
     logger.error('Server error: ' + err.message);
-    process.exit(1);
 });

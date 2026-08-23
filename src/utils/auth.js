@@ -237,25 +237,24 @@ export function canUseBatch(user, batch) {
     return ['vip', 'owner'].indexOf(user.role) !== -1 || batch.operator === user.username;
 }
 
-// Kredit per-role: grant harian +50, dibatasi kapasitas tiap role (tidak di-reset/overwrite).
-export const DAILY_USER_CREDIT_GRANT = 50;
-export const MAX_USER_CREDITS = 150; // kapasitas default role 'user'
-export const ROLE_CREDIT_CAP = { user: 150, pro: 200 };
+// Kredit harian per role — RESET PENUH ke nilai ini setiap jam 00.00 WIB
+// (lazy reset via ensureDailyUserCredits saat user mengakses).
+export const ROLE_DAILY_CREDITS = { user: 50, pro: 100 };
+export const DAILY_USER_CREDIT_GRANT = 50; // kompatibilitas lama (= role user)
 export const DEFAULT_USER_CREDITS = DAILY_USER_CREDIT_GRANT; // nilai awal / reset admin
 
-// Top-up kredit harian secara lazy (saat diakses), tiap jam 00:00 WIB.
-// Berlaku untuk role yang punya entri di ROLE_CREDIT_CAP. Saldo yang sudah >= kapasitas
-// role tidak pernah dikurangi. Mengembalikan true jika kredit baru saja di-top-up.
+/**
+ * Reset kredit harian (jam 00.00 WIB, timezone Asia/Jakarta).
+ * Berlaku utk role dgn entri di ROLE_DAILY_CREDITS. Bukan top-up:
+ * saldo DI-SET ulang persis ke jumlah harian role tsb.
+ * Mengembalikan true jika kredit baru saja di-reset.
+ */
 export function ensureDailyUserCredits(user) {
-    if (!user || !ROLE_CREDIT_CAP[user.role]) return false;
-    const cap = ROLE_CREDIT_CAP[user.role];
+    const grant = user ? ROLE_DAILY_CREDITS[user.role] : null;
+    if (!grant) return false;
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
     if (user.creditResetDate !== today) {
-        const current = parseInt(user.credits, 10) || 0;
-        // Top-up ke atas saja; saldo yang sudah >= cap tidak pernah dikurangi.
-        if (current < cap) {
-            user.credits = Math.min(cap, current + DAILY_USER_CREDIT_GRANT);
-        }
+        user.credits = grant;
         user.creditResetDate = today;
         return true;
     }
