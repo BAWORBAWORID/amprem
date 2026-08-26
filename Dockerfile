@@ -6,7 +6,7 @@
 # Run   : docker run -d --name am -p 5000:5000 am-creator
 #
 # Persistence:
-#   Railway Volume -> /app/data
+#   Railway Volume -> /root/data
 #
 # CHROME_PATH:
 #   /usr/bin/google-chrome
@@ -69,7 +69,7 @@ RUN curl -fsSL \
 # ------------------------------------------------------------
 # 3) Application
 # ------------------------------------------------------------
-WORKDIR /app
+WORKDIR /root
 
 # Copy dependency manifests first for Docker layer caching
 COPY package.json package-lock.json ./
@@ -91,9 +91,9 @@ COPY public ./public
 #
 # IMPORTANT:
 # Do NOT use Docker VOLUME here.
-# Railway Volume must be mounted to /app/data.
+# Railway Volume must be mounted to /root/data.
 # ------------------------------------------------------------
-RUN mkdir -p /app/data/sessions
+RUN mkdir -p /root/data/sessions
 
 # ------------------------------------------------------------
 # 6) Railway / container configuration
