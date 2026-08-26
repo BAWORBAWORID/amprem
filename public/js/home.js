@@ -130,8 +130,8 @@
         owner: 'badge-owner', vip: 'badge-admin', premium: 'badge-premium',
         autogen: 'badge-autogen', reseller: 'badge-reseller', user: 'badge-normal'
     };
-    var ROLE_LABEL = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', user: 'User' };
-    var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', autogen: 'Auto Gen', reseller: 'Reseller', pro: 'Pro', user: 'Anggota' };
+    var ROLE_LABEL = { owner: 'Owner', vip: 'VIP', premium: 'Premium', reseller: 'Reseller', user: 'User' };
+    var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', reseller: 'Reseller', pro: 'Pro', user: 'Anggota' };
 
     var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews', ];
 
@@ -149,13 +149,13 @@
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
     function isUnlimitedRole(role) {
-        return ['reseller', 'premium', 'autogen', 'vip', 'owner'].indexOf(role) !== -1;
+        return ['reseller', 'premium', 'vip', 'owner'].indexOf(role) !== -1;
     }
     function hasApiRole(role) {
-        return ['premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
+        return ['premium', 'vip', 'owner', 'pro'].indexOf(role) !== -1;
     }
     function hasBulkRole(role) {
-        return ['autogen', 'vip', 'owner'].indexOf(role) !== -1;
+        return ['vip', 'owner'].indexOf(role) !== -1;
     }
     function isPrivileged() {
         return currentUser && isUnlimitedRole(currentUser.role);
@@ -164,6 +164,8 @@
         return currentUser && ['owner'].indexOf(currentUser.role) !== -1;
     }
     function isOwner() { return currentUser && currentUser.role === 'owner'; }
+    // Layanan VIP (screen lifetime + deploy bot): khusus pro/vip/owner
+    function isVipTier() { return currentUser && ['pro', 'vip', 'owner'].indexOf(currentUser.role) !== -1; }
     function creditsDisplay() { return isPrivileged() ? 'Unlimited' : (currentUser ? currentUser.credits : 0); }
 
     /* ============================== SIDEBAR & ROUTING ============================== */
@@ -191,6 +193,8 @@
         $('sidebar-admin-category').classList.toggle('hidden', !isAdmin);
         $('btn-admin-view').classList.toggle('hidden', !isAdmin);
         $('btn-settings-view').classList.toggle('hidden', !isAdmin);
+        var vipBtn = $('btn-lifetime-view');
+        if (vipBtn) vipBtn.classList.toggle('hidden', !isVipTier());
 
         buildMobileMenu();
         syncMobileActive(currentScreen);
@@ -214,6 +218,7 @@
         }
         if (VALID_SCREENS.indexOf(name) === -1) name = 'dashboard';
         if ((name === 'admin' || name === 'settings') && !isAdminOrOwner()) name = 'dashboard';
+        if (name === 'lifetime' && !isVipTier()) name = 'dashboard';
         if (name === 'apiguide' && (!currentUser || !hasApiRole(currentUser.role)) && !(currentUser && currentUser.role === 'user' && APP_MAINT && !APP_MAINT.apikeyUserDisabled)) name = 'dashboard';
         $('main-content').classList.toggle('profile-screen-active', name === 'profile');
         if (name !== 'chat') closeChatStream();
@@ -235,7 +240,7 @@
         closeSidebar();
 
         var loader = {
-            dashboard: loadDashboard, generator: loadGenerator, lifetime: loadLifetimeScreen, netflix: loadNetflix,
+            dashboard: loadDashboard, generator: loadGenerator, lifetime: loadVipScreen, netflix: loadNetflix,
             purchase: loadAPIPanel, chat: loadChatPanel, apiguide: loadAPIGuide,
             profile: loadProfile, referral: loadReferralScreen, admin: loadAdminPanel, history: loadHistoryScreen,
             settings: loadAdminSettings, reviews: loadReviewsScreen
@@ -955,14 +960,17 @@
                 api('/api/am/netflix/token')
                     .then(function (data) {
                         if (data.success && data.result) {
+                            // Bentuk nyata dari backend: { url, expires?, quality?, country? } (lihat src/utils/am.js generateNFToken)
+                            var r = data.result;
                             $('netflix-result-container').classList.remove('hidden');
-                            $('netflix-email').textContent = data.result.details.Email || '-';
-                            $('netflix-plan').textContent = data.result.details.Plan || '-';
-                            $('netflix-billing').textContent = data.result.details['Billing Date'] || '-';
-                            $('netflix-expires').textContent = data.result.expires || '-';
-                            $('netflix-link-pc').href = data.result.links.pc || '#';
-                            $('netflix-link-android').href = data.result.links.android || '#';
-                            $('netflix-link-tv').href = data.result.links.tv || '#';
+                            $('netflix-email').textContent = r.email || '-';
+                            $('netflix-plan').textContent = r.plan || r.quality || '-';
+                            $('netflix-billing').textContent = r.billing || '-';
+                            $('netflix-expires').textContent = r.expires || '-';
+                            var tokUrl = r.url || '#';
+                            $('netflix-link-pc').href = tokUrl;
+                            $('netflix-link-android').href = tokUrl;
+                            $('netflix-link-tv').href = tokUrl;
                             Swal.fire({ icon: 'success', title: 'TOKEN DIBUAT!', text: 'Akun Netflix token berhasil digenerate.', timer: 2000, showConfirmButton: false });
                         } else {
                             Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Gagal mengambil token Netflix.' });
@@ -1461,7 +1469,7 @@
         // Verified Badge ala Meta AI (rosette) — hanya untuk role terverifikasi
         var profileCheckBadge = document.querySelector('#profile-avatar-circle + div span.profile-verified-badge');
         if (profileCheckBadge) {
-            var isVerifiedRole = ['owner', 'vip', 'premium', 'autogen', 'reseller', 'pro'].indexOf(u.role) !== -1;
+            var isVerifiedRole = ['owner', 'vip', 'premium', 'reseller', 'pro'].indexOf(u.role) !== -1;
             profileCheckBadge.style.display = isVerifiedRole ? 'inline-flex' : 'none';
         }
 
@@ -1523,7 +1531,7 @@
         if (rolePill) rolePill.textContent = (PROFILE_ROLE[u.role] || 'Anggota').toUpperCase();
         var masaPill = $('pc-badge-masa');
         if (masaPill) {
-            var isLife = u.apiPlan === 'lifetime';
+            var isLife = u.apiPlan === 'VIP';
             masaPill.textContent = isLife ? 'LIFETIME' : 'AKTIF';
             masaPill.className = 'pc-pill ' + (isLife ? 'pc-pill-lifetime' : 'pc-pill-active');
         }
@@ -1668,22 +1676,23 @@
 
     /* ============================== LIFETIME (Layanan Lifetime) ============================== */
 
-    function loadLifetimeScreen() {
+    function loadVipScreen() {
         if (!currentUser) return;
+        if (!isVipTier()) { showScreen('dashboard'); return; }
         var st = $('lifetime-plan-status');
         if (st) {
-            if (currentUser.apiPlan === 'lifetime' || currentUser.role === 'owner') {
-                st.textContent = 'Lifetime';
+            if (currentUser.role === 'vip' || currentUser.role === 'owner') {
+                st.textContent = 'VIP';
             } else if (currentUser.apiPlan) {
                 st.textContent = String(currentUser.apiPlan).charAt(0).toUpperCase() + String(currentUser.apiPlan).slice(1);
             } else {
                 st.textContent = '-'; // belum punya paket
             }
         }
-        // ===== Telegram Bot Deploy (khusus Admin/Owner) =====
+        // ===== Telegram Bot Deploy (khusus Owner/VIP/Pro — sesuai guard backend requireBotUser) =====
         var tgSection = $('telegram-deploy-section');
         if (tgSection) {
-            var canDeploy = isAdminOrOwner();
+            var canDeploy = !!currentUser && ['owner', 'vip', 'pro'].indexOf(currentUser.role) !== -1;
             tgSection.classList.toggle('hidden', !canDeploy);
             if (canDeploy) {
                 bindTelegramDeploy();

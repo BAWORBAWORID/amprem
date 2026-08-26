@@ -1,9 +1,12 @@
 {
-  "id": "mt5382k334f8ed",
+  "id": "mta2g8a57e235c",
   "operator": "alwayscodex",
-  "domain": "softbank.id",
+  "domain": "random",
   "domains": [
-    "softbank.id"
+    "softbank.id",
+    "softbank.id",
+    "1win.life",
+    "jagoanmail.com"
   ],
   "count": 1,
   "prefix": "",
@@ -11,29 +14,29 @@
   "status": "completed",
   "results": [
     {
-      "email": "melloneyunconscious@emalupe.com",
+      "email": "anabelpartial@emalupe.com",
       "inboxUrl": "https://mail.tm",
       "status": "success",
       "messages": [],
-      "password": "a=bzWot<O0",
-      "codeorder": "27310"
+      "password": "ve9mG`c8ak",
+      "codeorder": "40321"
     }
   ],
   "logs": [
     "[SYSTEM] Logger diinisialisasi...",
     "[SYSTEM] Batch dimulai oleh alwayscodex",
-    "[SYSTEM] Target: 1 akun @softbank.id",
-    "[2026-08-23 08:47:24] Batch: 1 akun via mail.tm (child worker)",
-    "[2026-08-23 08:47:24] [1/1] memproses akun baru...",
-    "[2026-08-23 08:47:24] spawn worker mail.tm...",
-    "[2026-08-23 08:47:54] PREMIUM AKTIF (codeorder 27310)",
-    "[2026-08-23 08:47:54] OK #1 melloneyunconscious@emalupe.com -> Alwayscodex 27310",
+    "[SYSTEM] Target: 1 akun (domain random)",
+    "[2026-08-26 20:24:36] Batch: 1 akun via mail.tm (child worker)",
+    "[2026-08-26 20:24:36] [1/1] memproses akun baru...",
+    "[2026-08-26 20:24:36] spawn worker mail.tm...",
+    "[2026-08-26 20:25:10] PREMIUM AKTIF (codeorder 40321)",
+    "[2026-08-26 20:25:10] OK #1 anabelpartial@emalupe.com -> Alwayscodex 40321",
     "[SYSTEM] Selesai! 1/1 akun sukses."
   ],
-  "createdAt": "2026-08-23T00:47:24.147Z",
-  "startedAt": 1787446044147,
+  "createdAt": "2026-08-26T12:24:36.077Z",
+  "startedAt": 1787747076077,
   "notify": null,
   "emails": [
-    "am8dows20@mail.tm"
+    "amgstzlgp@mail.tm"
   ]
 }

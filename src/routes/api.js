@@ -3,6 +3,7 @@
  * Pindahan verbatim dari server.js monolit — memakai helper dari utils.
  */
 import { getClientIP, sendJSON, readBody, getUsers, saveUsers, readJSON, writeJSON, newId, nowISO, fmtDateTime, randomKey, getClientDevice, isLocalIP, requireNoMaintenance, addLog, addDuplicateLog, generateOrderId } from '../utils/store.js';
+import { runAutoCleanup } from '../utils/autocleanup.js';
 import { CHAT_CLIENTS, createTransaction } from '../utils/chat.js';
 import { generatePaymentQRIS } from '../utils/qris.js';
 
@@ -507,10 +508,10 @@ async function handleAPI(req, res, url) {
                 return sendJSON(res, 400, { success: false, message: response.message });
             }
 
-            return sendJSON(res, 200, { 
-                success: true, 
-                message: 'Token berhasil dibuat!', 
-                result: response.result // Data memuat { url, expires, quality, country }
+            return sendJSON(res, 200, {
+                success: true,
+                message: 'Token berhasil dibuat!',
+                result: (response.results && response.results[0]) || null // item: { url, expires?, quality?, country? }
             });
         } catch (error) {
             // Error dari sistem proxy/tunnel
@@ -771,6 +772,14 @@ async function handleAPI(req, res, url) {
         const records = getBannedIPRecords().filter(function (entry) { return entry.ip !== ip; });
         saveBannedIPRecords(records);
         return sendJSON(res, 200, { success: true, message: 'IP ' + ip + ' berhasil di-unban.' });
+    }
+
+    if (pathname === '/api/admin/autocleanup/run' && method === 'POST') {
+        const admin = requireAdmin(res);
+        if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        const out = await runAutoCleanup(true);
+        addLog('[ADMIN ' + admin.username + '] Jalankan auto-cleanup manual');
+        return sendJSON(res, 200, Object.assign({ success: true }, out));
     }
 
     if (pathname === '/api/admin/cleanup-ry' && method === 'POST') {
