@@ -42,6 +42,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # 2) Google Chrome stable — dibutuhkan puppeteer-core
 #    (fitur Auto Generator / email bulk di services/bulk.js)
 # ------------------------------------------------------------
+# ------------------------------------------------------------
+# 2) Google Chrome stable — dibutuhkan puppeteer-core
+#    (fitur Auto Generator / email bulk di services/bulk.js)
+#    + library runtime yang sering kurang di image minimal
+# ------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        fonts-liberation \
+        libasound2 \
+        libatk-bridge2.0-0 \
+        libatk1.0-0 \
+        libcups2 \
+        libdbus-1-3 \
+        libdrm2 \
+        libgbm1 \
+        libgtk-3-0 \
+        libnspr4 \
+        libnss3 \
+        libx11-xcb1 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxrandr2 \
+        xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN curl -fsSL -o /tmp/google-chrome.deb \
         "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
     && apt-get update \
@@ -61,8 +85,14 @@ RUN npm ci --omit=dev \
 
 # ------------------------------------------------------------
 # 4) Salin source aplikasi
+#    server.js  -> shim yang import ./index.js
+#    index.js   -> entry point (HTTP server + HMR watcher)
+#    src/       -> app engine, routes, utils (inti aplikasi)
+#    services/  -> auth native AM + bulk workers (puppeteer-core)
+#    public/    -> frontend + security.js
 # ------------------------------------------------------------
-COPY server.js security.js ./
+COPY server.js index.js ./
+COPY src ./src
 COPY services ./services
 COPY public ./public
 

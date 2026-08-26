@@ -1,6 +1,6 @@
 {
   "name": "am-premium-creator",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "description": "AM Premium Creator - clone lokal ryezenstore.online",
   "type": "module",
   "main": "server.js",

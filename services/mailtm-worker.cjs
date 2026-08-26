@@ -13,8 +13,6 @@
 const puppeteer = require('puppeteer-core');
 
 const MAILTM_URL = 'https://mail.tm/id/';
-const AM_SEND_URL = 'https://api.alwayscodex.eu.cc/api/am/send';
-const AM_VERIFY_URL = 'https://api.alwayscodex.eu.cc/api/am/verify';
 
 function emit(result) {
   console.log('###RESULT###' + JSON.stringify(result));
@@ -62,9 +60,7 @@ async function createTempEmail() {
 }
 
 async function sendMagicLink(email) {
-  const url = `${AM_SEND_URL}?email=${encodeURIComponent(email)}&apikey=adm`;
-  const res = await fetch(url);
-  return res.json();
+  return svc.sendMagicLink(email);
 }
 
 async function getMessageList(token) {
@@ -114,20 +110,32 @@ async function pollInbox(token, maxRetries = 20, interval = 5000) {
 }
 
 async function verifyEmail(email, link) {
-  const url = `${AM_VERIFY_URL}?email=${encodeURIComponent(email)}&link=${encodeURIComponent(link)}&apikey=adm`;
-  const res = await fetch(url);
-  return res.json();
+  return svc.verifyAndFetchProfile(email, link);
 }
 
 (async () => {
   if (process.env.MAILTM_NAME) console.log(`[note] MAILTM_NAME=${process.env.MAILTM_NAME} (alamat final ditentukan UI mail.tm)`);
+
+  // Service NATIVE (direct Google/Firebase) — ORDER_ID custom dari env.
+  const { default: AlightMotionService } = await import('./auth.js');
+  // Order ID custom dibaca dari STDIN baris pertama (opsional).
+  // Tanpa stdin -> default GPA acak. Hanya 2 mode: custom / default.
+  let customOrderId = null;
+  if (!process.stdin.isTTY) {
+    const chunks = [];
+    for await (const chunk of process.stdin) chunks.push(chunk);
+    const line = Buffer.concat(chunks).toString().trim();
+    if (line) customOrderId = line.split('\n')[0].trim();
+  }
+  const svc = new AlightMotionService(customOrderId);
+  console.log(`[note] ORDER_ID=${svc.ORDER_ID}`);
 
   // [1] Akun mail.tm via UI (browser ditutup sebelum kirim)
   const acct = await createTempEmail();
   console.log(`[acct] ${acct.email}`);
 
   // [2] Kirim magic link
-  const sent = await sendMagicLink(acct.email);
+  const sent = await svc.sendMagicLink(acct.email);
   console.log(`[send] ${JSON.stringify(sent).slice(0, 120)}`);
   if (!sent.success) return emit({ status: 'failed', email: acct.email, password: acct.password, error: 'send: ' + (sent.error || sent.message || 'gagal') });
 
@@ -136,11 +144,13 @@ async function verifyEmail(email, link) {
   if (!link) return emit({ status: 'failed', email: acct.email, password: acct.password, error: 'verify: link tidak ditemukan' });
   console.log('[link] ditemukan');
 
-  // [4] Verifikasi + aktivasi premium
-  const v = await verifyEmail(acct.email, link);
+  // [4] Verifikasi (oobCode -> idToken) + aktivasi premium native
+  const v = await svc.verifyAndFetchProfile(acct.email, link);
   if (!v.success) return emit({ status: 'failed', email: acct.email, password: acct.password, error: 'verify: ' + (v.error || 'gagal').toString().slice(0, 120), verifyLink: link });
+  const p = await svc.applyPremium(v.idToken);
+  if (!p.success) return emit({ status: 'failed', email: acct.email, password: acct.password, error: 'premium: ' + (p.error || 'gagal').toString().slice(0, 120), verifyLink: link });
   console.log('[done] PREMIUM AKTIF');
-  emit({ status: 'success', email: acct.email, password: acct.password, codeorder: v.code_order, verifyLink: link });
+  emit({ status: 'success', email: acct.email, password: acct.password, codeorder: p.codeorder, verifyLink: link, orderId: svc.ORDER_ID });
 })().catch(err => {
   emit({ status: 'error', error: err.message });
   process.exit(1);

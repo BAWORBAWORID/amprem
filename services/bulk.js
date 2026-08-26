@@ -13,12 +13,10 @@
  *   buildEmailList(opts), runBulk(opts), closeBrowser()
  */
 
-import { execFile } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_PATH = path.join(__dirname, 'mailtm-worker.cjs');
 
@@ -89,10 +87,19 @@ async function processOne(_placeholderEmail, opts) {
 
     try {
         if (opts.onLog) opts.onLog('spawn worker mail.tm...');
-        const { stdout } = await execFileAsync(process.execPath, [WORKER_PATH], {
+        // Order ID custom dikirim via STDIN (tanpa env/args).
+        const child = spawn(process.execPath, [WORKER_PATH], {
             timeout: WORKER_TIMEOUT_MS,
             maxBuffer: 4 * 1024 * 1024,
             env: Object.assign({}, process.env), // CHROME_PATH dsb ikut
+        });
+        if (opts.orderId) child.stdin.write(opts.orderId + '\n');
+        child.stdin.end();
+        const stdout = await new Promise((resolve, reject) => {
+            let out = '';
+            child.stdout.on('data', (d) => { out += d; });
+            child.on('error', reject);
+            child.on('close', () => resolve(out));
         });
 
         const r = parseWorkerStdout(stdout) || { status: 'error', error: 'worker tidak menghasilkan RESULT' };

@@ -808,7 +808,6 @@ async function handleAPI(req, res, url) {
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
         if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
         if (target.role === 'owner' || target.id === admin.id) return sendJSON(res, 403, { success: false, message: 'Tidak bisa menghapus akun ini.' });
-        if (admin.role === 'vip' && target.role !== 'user') return sendJSON(res, 403, { success: false, message: 'Admin hanya bisa menghapus member biasa.' });
         delete users[target.username];
         saveUsers(users);
         addLog('[ADMIN ' + admin.username + '] Hapus user ' + target.username);
@@ -823,7 +822,6 @@ async function handleAPI(req, res, url) {
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
         if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
-        if (admin.role === 'vip' && ['vip', 'owner'].indexOf(target.role) !== -1) return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat mengelola akun admin atau owner.' });
         target.credits = Math.max(0, parseInt(body.credits, 10) || 0);
         users[target.username] = target;
         saveUsers(users);
@@ -840,7 +838,6 @@ async function handleAPI(req, res, url) {
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
         if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
-        if (admin.role === 'vip' && ['vip', 'owner'].indexOf(target.role) !== -1) return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat mengelola akun admin atau owner.' });
         target.password = hashPassword(String(body.newPassword));
         users[target.username] = target;
         saveUsers(users);
@@ -873,11 +870,9 @@ async function handleAPI(req, res, url) {
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
         if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
         if (target.role === 'owner' || target.id === admin.id) return sendJSON(res, 403, { success: false, message: 'Tidak bisa mengubah role akun ini.' });
-        if (admin.role === 'vip' && ['vip', 'owner'].indexOf(target.role) !== -1) return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat mengelola akun admin atau owner.' });
         const role = String(body.role || '');
         const previousRole = target.role;
         if (['user', 'reseller', 'premium', 'autogen', 'vip', 'owner', 'pro'].indexOf(role) === -1) return sendJSON(res, 400, { success: false, message: 'Role tidak valid.' });
-        if (admin.role === 'vip' && role === 'vip') return sendJSON(res, 403, { success: false, message: 'Admin tidak dapat memberikan role Admin.' });
         target.role = role;
         // Semua role premium (reseller/premium/autogen/admin) mendukung
         // masa aktif: apiPlan 'lifetime' (selamanya) atau expired dgn durasi.

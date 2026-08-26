@@ -14,8 +14,12 @@ import crypto from "crypto";
  */
 
 class AlightMotionService {
-  constructor() {
-    this.ORDER_ID = "alwayscodex";
+  /**
+   * @param {string} [orderId] Order ID custom utk aktivasi premium.
+   *                            Prioritas: argumen > format GPA acak.
+   */
+  constructor(orderId) {
+    this.ORDER_ID = String(orderId || "").trim() || this.defaultOrderId();
     this.API_KEY = "AIzaSyDtG1AU22ErnQD60AzBAcaknySiz9_CEq0";
     this.PRODUCT_ID = "am.full.sub.annual.19q4";
     this.TOKEN = "mmgaobamlahbbeccfplmbkbb.AO-J1OzqG0or_GJJIx-ms8GrTm-jaglCRfhQSRPUZKpl2YspYS-oN7_94uv8RC5vQbvd_Ios2pPDStZ2n7F0hLE3FiOU7HS3R6Fquulv5xLXFECSv4ctElw";
@@ -27,6 +31,14 @@ class AlightMotionService {
       "X-Android-Cert": "ECA6BF91B8715A6F810ED0BBFC65B6CD578F52A8",
       "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 15; 23127PN0CC Build/BP1A.250505.005)",
     };
+  }
+
+  /** Default order id gaya Google Play: GPA.<4>.<4>.<4>.<5> */
+  defaultOrderId() {
+    const digit = (length) =>
+      Math.floor(Math.random() * 9 + 1) +
+      Array.from({ length: length - 1 }, () => Math.floor(Math.random() * 10)).join('');
+    return `GPA.${digit(4)}.${digit(4)}.${digit(4)}.${digit(5)}`;
   }
 
   /** Native fetch POST dengan timeout; melempar { response: { status, data } } saat gagal. */
@@ -161,7 +173,7 @@ class AlightMotionService {
           productId: this.PRODUCT_ID,
           token: this.TOKEN,
           skuType: this.SKU_TYPE,
-          orderId: this.ORDER_ID + "-" + codeorder,
+          orderId: this.ORDER_ID,
         },
       }, headers, 45000);
       return { success: true, data: response.data, codeorder: codeorder };

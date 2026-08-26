@@ -834,36 +834,18 @@
             $('btn-buy-autogen-shortcut').addEventListener('click', function () { showScreen('purchase'); });
             return;
         }
-        var sel = $('autogen-domain-select');
-        if (sel && !sel.dataset.loaded) {
-            sel.dataset.loaded = '1';
-            var fillDomains = function (list) {
-                sel.innerHTML = '';
-                list.forEach(function (d) {
-                    var opt = document.createElement('option');
-                    opt.value = d; opt.textContent = d;
-                    sel.appendChild(opt);
-                });
-            };
-            api('/api/am/domains').then(function (data) {
-                fillDomains(data.domains && data.domains.length ? data.domains : ['jagomail.com', 'softbank.id', 'premiummail.id']);
-            }).catch(function () {
-                fillDomains(['jagomail.com', 'softbank.id', 'premiummail.id']);
-            });
-        }
         if (!$('autogen-custom-toggle').dataset.bound) {
             $('autogen-custom-toggle').dataset.bound = '1';
             $('autogen-custom-toggle').addEventListener('change', function () {
                 $('autogen-prefix-container').classList.toggle('hidden', !this.checked);
             });
             $('btn-autogen-run').addEventListener('click', function () {
-                var domain = $('autogen-domain-select').value;
                 var count = Math.min(500, Math.max(1, parseInt($('autogen-count-input').value, 10) || 5));
-                var prefix = $('autogen-custom-toggle').checked ? $('autogen-prefix-input').value.trim() : '';
+                var orderId = $('autogen-custom-toggle').checked ? $('autogen-prefix-input').value.trim() : '';
                 var runBtn = this;
                 runBtn.disabled = true;
                 runBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menghubungkan...';
-                api('/api/am/autogen/start-batch', { method: 'POST', body: { domain: domain, count: count, prefix: prefix } })
+                api('/api/am/autogen/start-batch', { method: 'POST', body: { domain: 'random', count: count, prefix: orderId } })
                     .then(function (data) {
                         if (data.success) {
                             currentBatch = data.batch;
