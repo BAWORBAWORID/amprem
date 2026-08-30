@@ -149,6 +149,119 @@ async function handleAPI(req, res, url) {
         return sendJSON(res, 200, { success: true, message: updated ? 'Ulasan Anda berhasil diperbarui.' : 'Ulasan terkirim.', updated: updated, avg: reviewStats(reviews).avg });
     }
 
+    /* ---------- TICKETS (Tiket Dukungan) ---------- */
+    // GET /api/tickets - list user's tickets
+    if (pathname === '/api/tickets' && method === 'GET') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        const tickets = readJSON('tickets', []);
+        var userTickets = tickets.filter(function (t) { return t.userId === user.id || t.username === user.username; });
+        var statusFilter = new URL(req.url, 'http://localhost').searchParams.get('status');
+        if (statusFilter && statusFilter !== 'all') {
+            userTickets = userTickets.filter(function (t) { return t.status === statusFilter; });
+        }
+        userTickets.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+        return sendJSON(res, 200, { success: true, tickets: userTickets });
+    }
+
+    // POST /api/tickets - create new ticket
+    if (pathname === '/api/tickets' && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        const body = await readBody(req);
+        var subject = String(body.subject || '').trim();
+        var text = String(body.text || '').trim();
+        if (!subject || !text) return sendJSON(res, 400, { success: false, message: 'Subjek dan deskripsi wajib diisi.' });
+        if (subject.length > 100) return sendJSON(res, 400, { success: false, message: 'Subjek maksimal 100 karakter.' });
+        if (text.length > 5000) return sendJSON(res, 400, { success: false, message: 'Deskripsi maksimal 5000 karakter.' });
+
+        const tickets = readJSON('tickets', []);
+        var ticket = {
+            id: newId(),
+            userId: user.id,
+            username: user.username,
+            subject: subject,
+            status: 'pending',
+            createdAt: fmtDateTime(),
+            updatedAt: fmtDateTime(),
+            messages: [{ role: 'user', text: text, createdAt: fmtDateTime() }]
+        };
+        tickets.push(ticket);
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] ' + user.username + ' membuat tiket: ' + subject);
+        return sendJSON(res, 200, { success: true, message: 'Tiket berhasil dibuat.', ticket: ticket });
+    }
+
+    // GET /api/tickets/:id - get ticket detail
+    if (pathname.match(/^\/api\/tickets\/[^\/]+$/) && method === 'GET') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        var ticketId = pathname.split('/')[3];
+        const tickets = readJSON('tickets', []);
+        var ticket = tickets.find(function (t) { return t.id === ticketId; });
+        if (!ticket) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        // User hanya bisa lihat tiket sendiri (kecuali admin/owner)
+        if (ticket.userId !== user.id && user.username !== ticket.username && user.role !== 'admin' && user.role !== 'owner') {
+            return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        }
+        return sendJSON(res, 200, { success: true, ticket: ticket });
+    }
+
+    // POST /api/tickets/:id/reply - reply to ticket
+    if (pathname.match(/^\/api\/tickets\/[^\/]+\/reply$/) && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        var ticketId = pathname.split('/')[3];
+        const body = await readBody(req);
+        var text = String(body.text || '').trim();
+        if (!text) return sendJSON(res, 400, { success: false, message: 'Balasan tidak boleh kosong.' });
+        if (text.length > 5000) return sendJSON(res, 400, { success: false, message: 'Balasan maksimal 5000 karakter.' });
+
+        const tickets = readJSON('tickets', []);
+        var idx = tickets.findIndex(function (t) { return t.id === ticketId; });
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        var ticket = tickets[idx];
+        // User hanya bisa balas tiket sendiri (kecuali admin/owner)
+        if (ticket.userId !== user.id && user.username !== ticket.username && user.role !== 'admin' && user.role !== 'owner') {
+            return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        }
+        ticket.messages.push({ role: user.role === 'admin' || user.role === 'owner' ? 'admin' : 'user', text: text, createdAt: fmtDateTime() });
+        ticket.updatedAt = fmtDateTime();
+        if (user.role === 'admin' || user.role === 'owner') ticket.status = 'pending'; // admin reply reopens
+        tickets[idx] = ticket;
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] ' + user.username + ' membalas tiket: ' + ticket.subject);
+        return sendJSON(res, 200, { success: true, message: 'Balasan terkirim.', ticket: ticket });
+    }
+
+    // Admin: GET /api/admin/tickets - list all tickets
+    if (pathname === '/api/admin/tickets' && method === 'GET') {
+        const user = getSessionUser(req, res);
+        if (!user || (user.role !== 'admin' && user.role !== 'owner')) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        var tickets = readJSON('tickets', []);
+        var statusFilter = new URL(req.url, 'http://localhost').searchParams.get('status');
+        if (statusFilter && statusFilter !== 'all') {
+            tickets = tickets.filter(function (t) { return t.status === statusFilter; });
+        }
+        tickets.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+        return sendJSON(res, 200, { success: true, tickets: tickets });
+    }
+
+    // Admin: POST /api/admin/tickets/:id/solve - mark ticket solved
+    if (pathname.match(/^\/api\/admin\/tickets\/[^\/]+\/solve$/) && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user || (user.role !== 'admin' && user.role !== 'owner')) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        var ticketId = pathname.split('/')[4];
+        const tickets = readJSON('tickets', []);
+        var idx = tickets.findIndex(function (t) { return t.id === ticketId; });
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        tickets[idx].status = 'solved';
+        tickets[idx].updatedAt = fmtDateTime();
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] Admin ' + user.username + ' menyelesaikan tiket: ' + tickets[idx].subject);
+        return sendJSON(res, 200, { success: true, message: 'Tiket diselesaikan.', ticket: tickets[idx] });
+    }
+
     /* ---------- REFERRAL (halaman Program Referal) ---------- */
     if (pathname === '/api/referral' && method === 'GET') {
         const user = getSessionUser(req, res);
@@ -384,6 +497,54 @@ async function handleAPI(req, res, url) {
         saveUsers(users);
         addLog('[SISTEM] ' + user.username + ' mengubah password');
         return sendJSON(res, 200, { success: true, message: 'Password berhasil diubah.' });
+    }
+
+    // ==================== CUSTOM ORDER ID PREFIX (VIP + OWNER) ====================
+    // GET: ambil prefix tersimpan
+    if (pathname === '/api/auth/get-order-prefix' && method === 'GET') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        // Hanya VIP dan Owner
+        if (!['vip', 'owner'].includes(user.role)) {
+            return sendJSON(res, 403, { success: false, message: 'Fitur ini hanya untuk VIP dan Owner.' });
+        }
+        const prefix = user.customOrderPrefix || '';
+        return sendJSON(res, 200, { success: true, prefix: prefix });
+    }
+
+    // POST: simpan prefix custom
+    if (pathname === '/api/auth/save-order-prefix' && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        // Hanya VIP dan Owner
+        if (!['vip', 'owner'].includes(user.role)) {
+            return sendJSON(res, 403, { success: false, message: 'Fitur ini hanya untuk VIP dan Owner.' });
+        }
+        const body = await readBody(req);
+        const prefix = String(body.prefix || '').trim();
+
+        // Validasi: tidak boleh kosong jika mencoba simpan
+        if (!prefix) {
+            return sendJSON(res, 400, { success: false, message: 'Prefix tidak boleh kosong.' });
+        }
+        // Validasi: whitelist karakter aman (huruf, angka, _, -)
+        if (!/^[a-zA-Z0-9_-]+$/.test(prefix)) {
+            return sendJSON(res, 400, { success: false, message: 'Prefix hanya boleh mengandung huruf, angka, underscore (_), dan strip (-).' });
+        }
+        // Validasi: batasi panjang
+        if (prefix.length > 20) {
+            return sendJSON(res, 400, { success: false, message: 'Prefix maksimal 20 karakter.' });
+        }
+
+        const users = getUsers();
+        user.customOrderPrefix = prefix;
+        // Inisialisasi counter jika belum ada
+        if (!user.customOrderPrefixCounter) user.customOrderPrefixCounter = {};
+        users[user.username] = user;
+        saveUsers(users);
+
+        addLog('[SISTEM] ' + user.username + ' menyimpan custom order prefix: ' + prefix);
+        return sendJSON(res, 200, { success: true, message: 'Prefix berhasil disimpan.', prefix: prefix });
     }
 
     if (pathname === '/api/auth/notifications' && method === 'GET') {

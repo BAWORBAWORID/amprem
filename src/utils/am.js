@@ -270,15 +270,23 @@ function startBatchWorker(batch, extra) {
         return;
     }
     markWorkerActive(batch.id);
+    // Get user's custom prefix and counter
+    const users = getUsers();
+    const operatorUser = users[batch.operator];
+    const customPrefix = (operatorUser && operatorUser.customOrderPrefix) ? operatorUser.customOrderPrefix : null;
+    const startCounter = (operatorUser && operatorUser.customOrderPrefixCounter && operatorUser.customOrderPrefixCounter[customPrefix]) 
+        ? operatorUser.customOrderPrefixCounter[customPrefix] : 0;
+    
     runBulk({
         name: batch.prefix || 'am',
         orderId: batch.prefix || undefined,
+        customPrefix: customPrefix,
+        startIndex: startCounter + 1,
         domains: (batch.domains && batch.domains.length ? batch.domains : [batch.domain]),
         // Hanya kirim email yang BELUM diproses: saat resume (done > 0) jangan
         // mengulang email yang sudah selesai (runBulk mengiterasi semua opts.emails).
         emails: batch.emails && batch.emails.length ? batch.emails.slice(batch.done) : undefined,
         count: opts.count || remaining,
-        startIndex: opts.startIndex || batch.done + 1,
         maxTries: 20,
         onLog: function (msg) {
             markWorkerPing();
@@ -308,6 +316,17 @@ function startBatchWorker(batch, extra) {
         onDone: async function (results) {
             const ok = results.filter(function (r) { return r.status === 'success'; }).length;
             let notifyTarget = null;
+            
+            // Persist custom prefix counter ke users.json
+            if (customPrefix) {
+                const users = getUsers();
+                if (users[batch.operator]) {
+                    if (!users[batch.operator].customOrderPrefixCounter) users[batch.operator].customOrderPrefixCounter = {};
+                    users[batch.operator].customOrderPrefixCounter[customPrefix] = startCounter + results.length;
+                    saveUsers(users);
+                }
+            }
+            
             updateBatch(function (b) {
                 if (b.id !== batch.id) return;
                 b.status = 'completed';

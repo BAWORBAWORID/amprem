@@ -37,7 +37,7 @@
     "transaction_id": "GPA.6021-4409-9533-02285",
     "amount": 15700,
     "plan": "pro",
-    "status": "pending",
+    "status": "rejected",
     "createdAt": "2026-08-20 13:48:04"
   },
   {
@@ -46,7 +46,7 @@
     "transaction_id": "GPA.7000-6163-6668-56591",
     "amount": 25500,
     "plan": "reseller",
-    "status": "pending",
+    "status": "rejected",
     "createdAt": "2026-08-20 19:01:54"
   },
   {
@@ -55,7 +55,52 @@
     "transaction_id": "GPA.9058-8191-0555-20538",
     "amount": 55700,
     "plan": "vip",
-    "status": "pending",
+    "status": "rejected",
     "createdAt": "2026-08-23 12:38:59"
+  },
+  {
+    "id": "mtb7nogn2f8b2f",
+    "username": "reza",
+    "transaction_id": "GPA.4169-3997-1325-66904",
+    "amount": 15400,
+    "plan": "pro",
+    "status": "rejected",
+    "createdAt": "2026-08-27 15:38:07"
+  },
+  {
+    "id": "mtbhbe6r294791",
+    "username": "rilz789",
+    "transaction_id": "GPA.0561-9426-7184-13723",
+    "amount": 15200,
+    "plan": "pro",
+    "status": "rejected",
+    "createdAt": "2026-08-27 20:08:30"
+  },
+  {
+    "id": "mtbpb8saac4795",
+    "username": "alwayscodex",
+    "transaction_id": "GPA.1982-0312-8163-11808",
+    "amount": 55800,
+    "plan": "vip",
+    "status": "rejected",
+    "createdAt": "2026-08-27 23:52:20"
+  },
+  {
+    "id": "mtc6b4p7bb837c",
+    "username": "alwayscodex",
+    "transaction_id": "GPA.6598-9784-2765-66738",
+    "amount": 15500,
+    "plan": "pro",
+    "status": "pending",
+    "createdAt": "2026-08-28 07:48:08"
+  },
+  {
+    "id": "mtcszqc9918339",
+    "username": "kyra",
+    "transaction_id": "GPA.8875-5439-6034-39710",
+    "amount": 55600,
+    "plan": "vip",
+    "status": "pending",
+    "createdAt": "2026-08-28 18:23:08"
   }
 ]

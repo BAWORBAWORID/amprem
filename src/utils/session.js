@@ -129,5 +129,5 @@ export function cleanupExpiredSessions() {
 }
 
 export function setSessionCookie(res, token) {
-    res.setHeader('Set-Cookie', 'connect.sid=' + encodeURIComponent(token) + '; HttpOnly; Path=/; Max-Age=' + (30 * 24 * 3600));
+    res.setHeader('Set-Cookie', 'connect.sid=' + encodeURIComponent(token) + '; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=' + (30 * 24 * 3600));
 }

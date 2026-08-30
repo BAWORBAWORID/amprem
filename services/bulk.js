@@ -144,13 +144,26 @@ export async function runBulk(opts) {
     const results = [];
     const started = Date.now();
 
-    if (opts.onLog) opts.onLog(`Batch: ${emails.length} akun via mail.tm (child worker)`);
+    // Sequential order ID counter untuk custom prefix
+    let orderCounter = 0;
+    const prefix = opts.customPrefix || null;
+    const startIndex = opts.startIndex || 1;
+
+    if (opts.onLog) opts.onLog(`Batch: ${emails.length} akun via mail.tm (child worker)${prefix ? ' | Prefix: ' + prefix : ''}`);
 
     for (let i = 0; i < emails.length; i++) {
         if (opts.onLog) opts.onLog(`[${i + 1}/${emails.length}] memproses akun baru...`);
+        
+        // Generate sequential orderId untuk custom prefix
+        let currentOrderId = opts.orderId;
+        if (prefix) {
+            orderCounter++;
+            currentOrderId = `${prefix}-${String(startIndex + orderCounter - 1).padStart(4, '0')}`;
+        }
+
         let r;
         try {
-            r = await processOne(emails[i], opts);
+            r = await processOne(emails[i], { ...opts, orderId: currentOrderId });
         } catch (err) {
             // Satu akun error tidak boleh membunuh seluruh batch.
             r = { email: emails[i], inboxUrl: 'https://mail.tm', status: 'error', error: err.message, messages: [] };

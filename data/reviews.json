@@ -62,5 +62,21 @@
     "rating": 5,
     "comment": "bagus",
     "createdAt": "2026-08-26 18:34:23"
+  },
+  {
+    "id": "mtbh7krh159ef7",
+    "username": "wizz",
+    "role": "user",
+    "rating": 5,
+    "comment": "bagus 👍",
+    "createdAt": "2026-08-27 20:05:32"
+  },
+  {
+    "id": "mtcdjasu68c2a8",
+    "username": "janjaco",
+    "role": "user",
+    "rating": 1,
+    "comment": "copaste",
+    "createdAt": "2026-08-28 11:10:27"
   }
 ]

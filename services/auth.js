@@ -15,11 +15,23 @@ import crypto from "crypto";
 
 class AlightMotionService {
   /**
-   * @param {string} [orderId] Order ID custom utk aktivasi premium.
-   *                            Prioritas: argumen > format GPA acak.
+   * AlightMotionService — native Google Play Billing verifikasi + premium activation.
+   * @param {string} [orderId] Order ID custom utk aktivasi premium (format GPA.xxxx...).
+   *                            Prioritas: argumen > prefix sequential > format GPA acak.
+   * @param {string} [prefix] Custom prefix dari user (VIP/Owner) — generate sequential: Prefix-0001, Prefix-0002, ...
+   * @param {Function} [getNextCounter] Async function(prefix) -> nextNumber (untuk persist counter)
    */
-  constructor(orderId) {
-    this.ORDER_ID = String(orderId || "").trim() || this.defaultOrderId();
+  constructor(orderId, prefix, getNextCounter) {
+    // Kalau ada prefix custom, generate sequential: Prefix-0001, Prefix-0002, ...
+    if (prefix && getNextCounter) {
+      this._prefix = prefix;
+      this._getNextCounter = getNextCounter;
+      this.ORDER_ID = null; // akan di-generate lazy saat pertama kali dipakai
+    } else {
+      this.ORDER_ID = String(orderId || "").trim() || this.defaultOrderId();
+      this._prefix = null;
+      this._getNextCounter = null;
+    }
     this.API_KEY = "AIzaSyDtG1AU22ErnQD60AzBAcaknySiz9_CEq0";
     this.PRODUCT_ID = "am.full.sub.annual.19q4";
     this.TOKEN = "mmgaobamlahbbeccfplmbkbb.AO-J1OzqG0or_GJJIx-ms8GrTm-jaglCRfhQSRPUZKpl2YspYS-oN7_94uv8RC5vQbvd_Ios2pPDStZ2n7F0hLE3FiOU7HS3R6Fquulv5xLXFECSv4ctElw";
@@ -39,6 +51,18 @@ class AlightMotionService {
       Math.floor(Math.random() * 9 + 1) +
       Array.from({ length: length - 1 }, () => Math.floor(Math.random() * 10)).join('');
     return `GPA.${digit(4)}.${digit(4)}.${digit(4)}.${digit(5)}`;
+  }
+
+  /** Generate next sequential order ID dari prefix custom (async karena counter di DB). */
+  async _ensureOrderId() {
+    if (this.ORDER_ID) return this.ORDER_ID; // sudah ada (custom orderId atau sudah di-generate)
+    if (!this._prefix || !this._getNextCounter) {
+      this.ORDER_ID = this.defaultOrderId();
+      return this.ORDER_ID;
+    }
+    const nextNum = await this._getNextCounter(this._prefix);
+    this.ORDER_ID = `${this._prefix}-${String(nextNum).padStart(4, '0')}`;
+    return this.ORDER_ID;
   }
 
   /** Native fetch POST dengan timeout; melempar { response: { status, data } } saat gagal. */
@@ -159,6 +183,7 @@ class AlightMotionService {
 
   async applyPremium(idToken) {
     try {
+      await this._ensureOrderId();
       const codeorder = this.generateCodeOrder();
       const url = "https://us-central1-alight-creative.cloudfunctions.net/verifyPurchase";
       const headers = {

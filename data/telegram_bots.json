@@ -1,22 +1,5 @@
 [
   {
-    "id": "mslo5tf929303b",
-    "name": "apinnn Bot",
-    "token": "8775256334:AAGOT3mcSoRenEbu9pVPW95VZbnD9KS9lkE",
-    "ownerId": "8916857020",
-    "apiKey": "Codex237b81de8ddefb71963fca36bf31b27",
-    "deployedBy": "apinnn",
-    "me": {
-      "id": 8775256334,
-      "username": "amApin_bot",
-      "first_name": "Am ApinMD - AlwayCodex"
-    },
-    "status": "online",
-    "error": null,
-    "createdAt": "2026-08-09T10:38:07.427Z",
-    "startedAt": "2026-08-25T23:04:54.278Z"
-  },
-  {
     "id": "mspe2co43058dc",
     "name": "alwayscodex Bot",
     "token": "8672100802:AAHnS-_MwAhk7w2G7PyI_N7ILlby9UayxYw",
@@ -32,5 +15,22 @@
     "error": null,
     "createdAt": "2026-08-12T01:06:34.276Z",
     "startedAt": "2026-08-25T23:04:57.284Z"
+  },
+  {
+    "id": "mtbdorp2f20d8a",
+    "name": "kyra Bot",
+    "token": "8926727555:AAGuCMjv98F7OW6USOiuW9T4K8KQWTWEuuk",
+    "ownerId": "7688006329",
+    "apiKey": "Codex337b29989f6b736cc3a7c491c2923c9",
+    "deployedBy": "kyra",
+    "me": {
+      "id": 8926727555,
+      "username": "Kyverse_bot",
+      "first_name": "ky"
+    },
+    "status": "online",
+    "error": null,
+    "createdAt": "2026-08-27T10:26:56.439Z",
+    "startedAt": "2026-08-27T10:26:56.439Z"
   }
 ]

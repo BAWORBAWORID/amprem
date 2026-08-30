@@ -6,11 +6,14 @@
     function api(path, options) {
         var opts = options || {};
         opts.headers = Object.assign({}, opts.headers || {});
+        opts.credentials = 'include'; // send session cookie
         if (opts.body && typeof opts.body !== 'string') {
             opts.headers['Content-Type'] = 'application/json';
             opts.body = JSON.stringify(opts.body);
         }
-        return fetch(API_BASE + path, opts).then(function (res) {
+        // Allow overriding API base URL via window.API_BASE_URL
+        var base = (window.API_BASE_URL || '').replace(/\/$/, '');
+        return fetch(base + path, opts).then(function (res) {
             return res.json().catch(function () { return {}; }).then(function (data) {
                 if (!res.ok && !(data && data.success)) {
                     var err = new Error((data && (data.message || data.error)) || ('HTTP ' + res.status));
@@ -164,22 +167,25 @@
         return currentUser && ['owner'].indexOf(currentUser.role) !== -1;
     }
     function isOwner() { return currentUser && currentUser.role === 'owner'; }
-    // Layanan VIP (screen lifetime + deploy bot): khusus pro/vip/owner
-    function isVipTier() { return currentUser && ['pro', 'vip', 'owner'].indexOf(currentUser.role) !== -1; }
+    // Layanan VIP (screen lifetime + deploy bot): khusus vip/owner saja
+    function isVipTier() { return currentUser && ['vip', 'owner'].indexOf(currentUser.role) !== -1; }
     function creditsDisplay() { return isPrivileged() ? 'Unlimited' : (currentUser ? currentUser.credits : 0); }
 
     /* ============================== SIDEBAR & ROUTING ============================== */
 
     function updateNavbar() {
+        var sidebar = $('app-sidebar');
+        var mobileBar = $('mobile-top-bar');
+        var layout = $('app-layout');
         if (!currentUser) {
-            $('app-sidebar').classList.add('hidden');
-            $('mobile-top-bar').classList.add('hidden');
-            $('app-layout').classList.remove('sidebar-active');
+            if (sidebar) sidebar.classList.add('hidden');
+            if (mobileBar) mobileBar.classList.add('hidden');
+            if (layout) layout.classList.remove('sidebar-active');
             return;
         }
-        $('app-sidebar').classList.remove('hidden');
-        $('mobile-top-bar').classList.remove('hidden');
-        $('app-layout').classList.add('sidebar-active');
+        if (sidebar) sidebar.classList.remove('hidden');
+        if (mobileBar) mobileBar.classList.remove('hidden');
+        if (layout) layout.classList.add('sidebar-active');
 
         var navUsername = $('nav-username'), navCredits = $('nav-credits'), navRoleBadge = $('nav-role-badge');
         if (navUsername) navUsername.textContent = currentUser.username;
@@ -190,9 +196,12 @@
         }
 
         var isAdmin = isAdminOrOwner();
-        $('sidebar-admin-category').classList.toggle('hidden', !isAdmin);
-        $('btn-admin-view').classList.toggle('hidden', !isAdmin);
-        $('btn-settings-view').classList.toggle('hidden', !isAdmin);
+        var adminCat = $('sidebar-admin-category');
+        if (adminCat) adminCat.classList.toggle('hidden', !isAdmin);
+        var adminBtn = $('btn-admin-view');
+        if (adminBtn) adminBtn.classList.toggle('hidden', !isAdmin);
+        var settingsBtn = $('btn-settings-view');
+        if (settingsBtn) settingsBtn.classList.toggle('hidden', !isAdmin);
         var vipBtn = $('btn-lifetime-view');
         if (vipBtn) vipBtn.classList.toggle('hidden', !isVipTier());
 
@@ -204,15 +213,18 @@
         name = normalizeScreen(name);
         if (name === 'auth') {
             currentScreen = 'auth';
-            // Hapus hash agar URL bersih; simpan niat (intended) agar direct-access #referal/#lifetime
-            // tetap pulih setelah login (lihat handler login).
             if (!window.location.hash) setLastScreenCookie('');
             document.querySelectorAll('.screen').forEach(function (s) { s.classList.add('hidden'); });
-            $('screen-auth').classList.remove('hidden');
-            $('app-sidebar').classList.add('hidden');
-            $('mobile-top-bar').classList.add('hidden');
-            $('app-layout').classList.remove('sidebar-active');
-            $('main-content').classList.remove('profile-screen-active');
+            var authScreen = $('screen-auth');
+            if (authScreen) authScreen.classList.remove('hidden');
+            var appSidebar = $('app-sidebar');
+            if (appSidebar) appSidebar.classList.add('hidden');
+            var mobileTopBar = $('mobile-top-bar');
+            if (mobileTopBar) mobileTopBar.classList.add('hidden');
+            var appLayout = $('app-layout');
+            if (appLayout) appLayout.classList.remove('sidebar-active');
+            var mainContent = $('main-content');
+            if (mainContent) mainContent.classList.remove('profile-screen-active');
             closeSidebar();
             return;
         }
@@ -227,12 +239,13 @@
         // Hash kanonik: referral → #referal (tetap terima #referral saat masuk)
         window.location.hash = (name === 'referral') ? 'referal' : name;
         document.querySelectorAll('.screen').forEach(function (s) { s.classList.add('hidden'); });
-        $('screen-' + name).classList.remove('hidden');
+        var screenEl = $('screen-' + name);
+        if (screenEl) screenEl.classList.remove('hidden');
+        else console.warn('Screen not found:', 'screen-' + name);
         document.querySelectorAll('.sidebar-link').forEach(function (b) { b.classList.remove('active'); });
         var btn = $('btn-' + name + '-view');
         if (btn) {
             btn.classList.add('active');
-            // Pastikan item menu aktif selalu terlihat (anti-tertutup footer di layar pendek)
             try { btn.scrollIntoView({ block: 'nearest' }); } catch (e) { btn.scrollIntoView(); }
         }
         syncMobileActive(name);
@@ -249,14 +262,27 @@
     }
 
     function closeSidebar() {
-        $('app-sidebar').classList.remove('active');
-        $('sidebar-overlay').classList.remove('active');
+        var sidebar = $('app-sidebar');
+        if (sidebar) sidebar.classList.remove('active');
+        var overlay = $('sidebar-overlay');
+        if (overlay) overlay.classList.remove('active');
         closeMobileMenu();
     }
 
+    function openSidebar() {
+        var sidebar = $('app-sidebar');
+        if (sidebar) sidebar.classList.add('active');
+        var overlay = $('sidebar-overlay');
+        if (overlay) overlay.classList.add('active');
+    }
+
     /* ============================== MOBILE MENU (⋮ DRAWER) ============================== */
-    // Drawer mobile di-render dari DATA MENU EXISTING (#nav-menu) — satu sumber
-    // kebenaran, bukan menu kedua yang hardcoded. Grup mengikuti struktur update.md.
+    // Mobile & Desktop menu TERSELINYA dari DATA SAMA (#nav-menu),
+    // satu sumber kebenaran yang di-render berbeda per viewport:
+    //   • Desktop: sidebar vertikal dengan kategori tetap
+    //   • Mobile: drawer collapse dengan grup meng-collapse
+    // Struktur grup diatur oleh MOBILE_MENU_GROUPS / update.md,
+    // bukan hardcoded kedua-dua.
     var MOBILE_MENU_GROUPS = [
         { label: 'Statistik Live', leaf: 'dashboard' },
         { label: 'AM Generator', children: ['generator', 'netflix', 'history'] },
@@ -442,6 +468,23 @@
         }
         $('btn-topbar-chat').addEventListener('click', function () { showScreen('chat'); });
         $('btn-topbar-profile').addEventListener('click', function () { showScreen('profile'); });
+
+        // ==================== SIDEBAR DROPDOWNS ====================
+        document.querySelectorAll('.sidebar-dropdown-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var dropdown = btn.closest('.sidebar-dropdown');
+                var isExpanded = dropdown.classList.contains('expanded');
+                document.querySelectorAll('.sidebar-dropdown').forEach(function (d) {
+                    if (d !== dropdown) d.classList.remove('expanded');
+                });
+                if (isExpanded) {
+                    dropdown.classList.remove('expanded');
+                } else {
+                    dropdown.classList.add('expanded');
+                }
+            });
+        });
     }
 
     // Ambil status maintenance ringan (tanpa auth) untuk keperluan UI sisi klien,
@@ -649,14 +692,57 @@
         loadYourIP();
         loadRuntime();
         loadCreditsCountdown();
+        bindQuickActions();
     }
+
+
+
 
     function loadPublicStats() {
         api('/api/public/stats').then(function (data) {
-            if (data.totalUsers != null) $('stat-total-users').textContent = data.totalUsers;
-            if (data.totalSuccess != null) $('stat-total-requests').textContent = data.totalSuccess;
+            if (data.totalUsers != null) {
+                var el = $('dash-stat-total-registered') || $('stat-total-users');
+                if (el) el.textContent = data.totalUsers;
+            }
+            if (data.totalSuccess != null) {
+                var el = $('dash-stat-total-service') || $('stat-total-requests');
+                if (el) el.textContent = data.totalSuccess;
+            }
+        }).catch(function (err) {
+            console.error('[loadPublicStats] Failed to load public stats:', err);
+            // Set fallback values
+            var el1 = $('dash-stat-total-registered') || $('stat-total-users');
+            if (el1) el1.textContent = '--';
+            var el2 = $('dash-stat-total-service') || $('stat-total-requests');
+            if (el2) el2.textContent = '--';
         });
-        if ($('stat-your-credits')) $('stat-your-credits').textContent = creditsDisplay();
+        var credEl = $('dash-stat-your-balance') || $('stat-your-credits');
+        if (credEl) credEl.textContent = creditsDisplay();
+        var txnEl = $('dash-stat-your-transaction');
+        if (txnEl && currentUser) {
+            api('/api/am/history').then(function (data) {
+                if (data.success && data.history) {
+                    txnEl.textContent = data.history.length;
+                } else {
+                    txnEl.textContent = '0';
+                }
+            }).catch(function (err) {
+                console.error('[loadPublicStats] Failed to load history:', err);
+                txnEl.textContent = '0';
+            });
+        }
+    }
+
+
+
+    function bindQuickActions() {
+        document.querySelectorAll('.action-card[data-screen]').forEach(function (card) {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', function () {
+                var screen = this.getAttribute('data-screen');
+                if (screen) showScreen(screen);
+            });
+        });
     }
 
     function loadBattery() {
@@ -834,18 +920,18 @@
             $('btn-buy-autogen-shortcut').addEventListener('click', function () { showScreen('purchase'); });
             return;
         }
-        if (!$('autogen-custom-toggle').dataset.bound) {
-            $('autogen-custom-toggle').dataset.bound = '1';
-            $('autogen-custom-toggle').addEventListener('change', function () {
-                $('autogen-prefix-container').classList.toggle('hidden', !this.checked);
-            });
-            $('btn-autogen-run').addEventListener('click', function () {
+
+        // Load custom order prefix for VIP/Owner
+        loadCustomOrderPrefix();
+        if (!$('btn-autogen-run').dataset.bound) {
+            $('btn-autogen-run').dataset.bound = '1';
+            $('btn-autogen-run').addEventListener('click', function (e) {
+                e.preventDefault();
                 var count = Math.min(500, Math.max(1, parseInt($('autogen-count-input').value, 10) || 5));
-                var orderId = $('autogen-custom-toggle').checked ? $('autogen-prefix-input').value.trim() : '';
                 var runBtn = this;
                 runBtn.disabled = true;
                 runBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menghubungkan...';
-                api('/api/am/autogen/start-batch', { method: 'POST', body: { domain: 'random', count: count, prefix: orderId } })
+                api('/api/am/autogen/start-batch', { method: 'POST', body: { domain: 'random', count: count } })
                     .then(function (data) {
                         if (data.success) {
                             currentBatch = data.batch;
@@ -880,6 +966,81 @@
                 downloadText(lines.join('\n'), 'am-premium-batch.txt');
             });
         }
+    }
+
+    // ==================== CUSTOM ORDER PREFIX (VIP + OWNER) ====================
+    function loadCustomOrderPrefix() {
+        var isVipOwner = currentUser && (currentUser.role === 'vip' || currentUser.role === 'owner');
+        var input = $('custom-order-prefix-input');
+        var btn = $('btn-save-order-prefix');
+        var badge = $('prefix-vip-badge');
+        var feedback = $('prefix-save-feedback');
+
+        if (!isVipOwner) {
+            if (badge) badge.classList.remove('hidden');
+            if (input) input.disabled = true;
+            if (btn) btn.disabled = true;
+            return;
+        }
+
+        // Enable for VIP/Owner
+        if (input) input.disabled = false;
+        if (btn) btn.disabled = false;
+        if (badge) badge.classList.add('hidden');
+
+        // Load saved prefix
+        api('/api/auth/get-order-prefix').then(function (data) {
+            if (data.success && data.prefix) {
+                if (input) input.value = data.prefix;
+            }
+        }).catch(function () {});
+
+        // Save handler
+        if (btn && !btn.dataset.bound) {
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function () {
+                var prefix = input.value.trim();
+                if (!prefix) {
+                    showFeedback(feedback, 'Prefix tidak boleh kosong.', 'error');
+                    return;
+                }
+                // Basic client-side validation (server validates too)
+                if (!/^[a-zA-Z0-9_-]+$/.test(prefix)) {
+                    showFeedback(feedback, 'Prefix hanya boleh huruf, angka, _, -', 'error');
+                    return;
+                }
+                if (prefix.length > 20) {
+                    showFeedback(feedback, 'Prefix maksimal 20 karakter.', 'error');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="btn-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...</span>';
+
+                api('/api/auth/save-order-prefix', { method: 'POST', body: { prefix: prefix } })
+                    .then(function (data) {
+                        if (data.success) {
+                            showFeedback(feedback, '✓ Prefix berhasil disimpan', 'success');
+                        } else {
+                            showFeedback(feedback, '✗ ' + (data.message || 'Gagal menyimpan'), 'error');
+                        }
+                    })
+                    .catch(function (err) {
+                        showFeedback(feedback, '✗ ' + errMsg(err), 'error');
+                    })
+                    .finally(function () {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span class="btn-text"><i class="fa-solid fa-floppy-disk"></i> SIMPAN PREFIX</span>';
+                    });
+            });
+        }
+    }
+
+    function showFeedback(el, msg, type) {
+        if (!el) return;
+        el.textContent = msg;
+        el.style.color = type === 'success' ? 'var(--ds-success)' : 'var(--error)';
+        setTimeout(function () { el.textContent = ''; }, 4000);
     }
 
     function pollActiveBatch() {
@@ -2159,6 +2320,209 @@
             }).join('');
             myReview = reviews.find(function (r) { return r.username === (currentUser ? currentUser.username : ''); }) || null;
             prefillReviewForm();
+        });
+    }
+
+    /* ============================== TICKETS ============================== */
+
+    var currentTicketId = null;
+    var currentTicketStatusFilter = 'all';
+
+    function loadTickets(statusFilter) {
+        var status = statusFilter || currentTicketStatusFilter || 'all';
+        currentTicketStatusFilter = status;
+
+        var tabs = document.querySelectorAll('.status-tab');
+        tabs.forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-status') === status); });
+
+        var wrapper = $('ticket-items-wrapper');
+        if (wrapper) wrapper.innerHTML = '<p class="text-muted text-center" style="margin: auto; font-size: 0.85rem;">Memuat tiket...</p>';
+        var detail = $('ticket-active-content');
+        if (detail) detail.classList.add('hidden');
+        var empty = $('ticket-empty-state');
+        if (empty) empty.style.display = 'flex';
+
+        var endpoint = ['admin', 'owner'].includes(currentUser.role) ? '/api/admin/tickets' : '/api/tickets';
+        var params = '?status=' + status;
+        api(endpoint + params).then(function (data) {
+            if (!data.success) return;
+            var tickets = data.tickets || [];
+            var wrapper = $('ticket-items-wrapper');
+            if (!tickets.length) {
+                if (wrapper) wrapper.innerHTML = '<p class="text-muted text-center" style="margin: auto; font-size: 0.85rem;">Tidak ada tiket.</p>';
+                return;
+            }
+            if (wrapper) wrapper.innerHTML = tickets.map(function (t) {
+                var badgeClass = t.status === 'solved' ? 'status-success' : 'status-pending';
+                var badgeText = t.status === 'solved' ? 'Selesai' : 'Pending';
+                var date = new Date(t.createdAt).toLocaleString('id-ID');
+                return '<div class="ticket-item" data-ticket-id="' + esc(t.id) + '" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-secondary);cursor:pointer;transition:all 0.2s;">' +
+                    '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+                    '<span class="badge ' + badgeClass + '" style="font-size:0.7rem;">' + badgeText + '</span>' +
+                    '<span class="text-muted" style="font-size:0.7rem;">' + esc(t.subject) + '</span></div>' +
+                    '<div style="font-size:0.8rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;">' + esc(t.messages[t.messages.length-1]?.text || '') + '</div>' +
+                    '<div class="text-muted" style="font-size:0.65rem;">' + new Date(t.createdAt).toLocaleString('id-ID') + '</div></div>' +
+                    '<span class="badge badge-normal" style="font-size:0.65rem;">' + t.messages.length + ' pesan</span></div>';
+            }).join('');
+
+            // Bind click
+            document.querySelectorAll('.ticket-item').forEach(function (item) {
+                item.addEventListener('click', function () {
+                    document.querySelectorAll('.ticket-item').forEach(function (i) { i.style.borderColor = 'var(--border-color)'; });
+                    this.style.borderColor = 'var(--accent-primary)';
+                    loadTicketDetail(this.getAttribute('data-ticket-id'));
+                });
+            });
+        });
+    }
+
+    function loadTicketDetail(ticketId) {
+        currentTicketId = ticketId;
+        var empty = $('ticket-empty-state');
+        var detail = $('ticket-active-content');
+        if (empty) empty.style.display = 'none';
+        if (detail) detail.classList.add('hidden');
+
+        var isAdmin = ['admin', 'owner'].includes(currentUser.role);
+        var endpoint = isAdmin ? '/api/admin/tickets/' + ticketId : '/api/tickets/' + ticketId;
+        api('/api/tickets/' + ticketId).then(function (data) {
+            if (!data.success) {
+                Swal.fire({ icon: 'error', title: 'KESALAHAN', text: data.message || 'Gagal memuat tiket.' });
+                return;
+            }
+            var t = data.ticket;
+            var empty = $('ticket-empty-state');
+            var detail = $('ticket-active-content');
+            if (empty) empty.style.display = 'none';
+            if (detail) detail.classList.remove('hidden');
+
+            detail.setAttribute('data-ticket-id', t.id);
+            var badge = $('ticket-detail-status-badge');
+            var badgeClass = t.status === 'solved' ? 'status-success' : 'status-pending';
+            if (badge) { badge.textContent = t.status === 'solved' ? 'Selesai' : 'Pending'; badge.className = 'badge ' + badgeClass; }
+            if ($('ticket-detail-date')) $('ticket-detail-date').textContent = new Date(t.createdAt).toLocaleDateString('id-ID');
+            if ($('ticket-detail-subject')) $('ticket-detail-subject').textContent = t.subject;
+            if ($('ticket-detail-user-info')) $('ticket-detail-user-info').textContent = 'Dibuat oleh: @' + t.username;
+
+            // Render messages
+            var container = $('ticket-messages-container');
+            if (container) {
+                container.innerHTML = t.messages.map(function (m) {
+                    var isAdminMsg = m.role === 'admin';
+                    var time = new Date(m.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    return '<div style="display:flex;flex-direction:' + (isAdminMsg ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">' +
+                        '<div style="max-width:70%;">' +
+                        '<div style="background:' + (isAdminMsg ? 'rgba(59,130,246,0.1)' : 'var(--bg-secondary)') + ';border:1px solid var(--border-color);border-radius:var(--radius-md);padding:10px 14px;color:var(--text-primary);font-size:0.85rem;line-height:1.5;">' + esc(m.text) + '</div>' +
+                        '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">' +
+                        '<span class="text-muted" style="font-size:0.65rem;">' + time + '</span>' +
+                        '<span class="badge badge-normal" style="font-size:0.6rem;">' + (isAdminMsg ? 'Admin' : 'Anda') + '</span>' +
+                        '</div></div>';
+                }).join('');
+                container.scrollTop = container.scrollHeight;
+            }
+
+            // Show solve button for admin
+            var solveBtn = $('btn-solve-ticket');
+            if (solveBtn) {
+                if (['admin', 'owner'].includes(currentUser.role) && t.status !== 'solved') {
+                    solveBtn.style.display = 'inline-flex';
+                    solveBtn.setAttribute('data-ticket-id', t.id);
+                } else {
+                    solveBtn.style.display = 'none';
+                }
+            }
+
+            if (detail) detail.classList.remove('hidden');
+            if ($('ticket-empty-state')) $('ticket-empty-state').style.display = 'none';
+        });
+    }
+
+    function createTicket(subject, text) {
+        api('/api/tickets', { method: 'POST', body: { subject: subject, text: text } }).then(function (data) {
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'TIKET DIBUAT!', text: 'Tiket Anda berhasil dikirim. Admin akan merespon sesegera mungkin.', timer: 2000, showConfirmButton: false });
+                loadTickets(currentTicketStatusFilter);
+            } else {
+                Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal membuat tiket.' });
+            }
+        });
+    }
+
+    function replyToTicket(ticketId, text) {
+        api('/api/tickets/' + ticketId + '/reply', { method: 'POST', body: { text: text } }).then(function (data) {
+            if (data.success) {
+                loadTicketDetail(ticketId);
+            } else {
+                Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal membalas.' });
+            }
+        });
+    }
+
+    function solveTicket(ticketId) {
+        if (!['admin', 'owner'].includes(currentUser.role)) return;
+        Swal.fire({
+            title: 'Selesaikan Tiket?',
+            text: 'Tiket akan ditandai selesai dan tidak bisa dibalas lagi.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#475569',
+            confirmButtonText: 'Ya, Selesaikan',
+            cancelButtonText: 'Batal'
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                api('/api/admin/tickets/' + ticketId + '/solve', { method: 'POST' }).then(function (data) {
+                    if (data.success) {
+                        Swal.fire({ icon: 'success', title: 'SELESAI', text: 'Tiket ditandai selesai.', timer: 1500, showConfirmButton: false });
+                        loadTicketDetail(ticketId);
+                        loadTickets(currentTicketStatusFilter);
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal menyelesaikan tiket.' });
+                    }
+                });
+            }
+        });
+    }
+
+    function loadTestimonials() {
+        api('/api/reviews').then(function (data) {
+            var reviews = data.reviews || [];
+            var grid = $('testimonials-grid-container');
+            if (!grid) return;
+            if (!reviews.length) {
+                grid.innerHTML = '<div class="text-center" style="color:var(--text-muted);padding:40px;">Belum ada testimoni.</div>';
+                return;
+            }
+            grid.innerHTML = reviews.slice().reverse().slice(0, 50).map(function (r) {
+                var stars = '';
+                for (var i = 1; i <= 5; i++) stars += '<i class="fa-solid fa-star" style="color:' + (i <= r.rating ? '#f59e0b' : '#cbd5e1') + ';"></i>';
+                var date = new Date(r.createdAt).toLocaleDateString('id-ID');
+                return '<div class="glass-card" style="padding:20px;display:flex;flex-direction:column;gap:10px;">' +
+                    '<div style="display:flex;align-items:center;gap:8px;">' +
+                    '<span style="font-weight:700;">' + esc(r.username) + '</span>' +
+                    '<span class="badge badge-normal" style="font-size:0.7rem;">' + date + '</span>' +
+                    '</div>' +
+                    '<div style="color:#f59e0b;font-size:1.1rem;">' + stars + '</div>' +
+                    '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;">' + esc(r.comment || '') + '</div>' +
+                    '</div>';
+            }).join('');
+        });
+    }
+
+    function openReceiptModal(imgUrl) {
+        var modal = $('receipt-lightbox-modal');
+        var img = $('modal-receipt-img');
+        var dl = $('download-receipt-btn');
+        if (modal && img) {
+            img.src = imgUrl;
+            img.onload = function () { modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; };
+            if (dl) dl.href = imgUrl;
+        }
+    }
+
+    function loadTickets() {
+        api('/api/tickets').then(function (data) {
+            // This is the old function, use loadTickets with filter
         });
     }
 
