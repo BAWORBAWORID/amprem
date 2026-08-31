@@ -79,19 +79,20 @@ RUN npm ci --omit=dev \
     && npm cache clean --force
 
 # ------------------------------------------------------------
-# 4) Copy application source
+# 4) Copy application source + data (database)
+#
+# Seluruh isi project disalin (server.js, index.js, src/, services/,
+# public/, data/, dll.) KECUALI yang di-exclude .dockerignore
+# (node_modules, .git, *.log, dll). Dengan begini image sudah berisi
+# database (data/) bawaan + seluruh source, bukan cuma entry file.
 # ------------------------------------------------------------
-COPY server.js index.js ./
-COPY src ./src
-COPY services ./services
-COPY public ./public
+COPY . /root/
 
 # ------------------------------------------------------------
 # 5) Runtime data directory
-#
-# IMPORTANT:
-# Do NOT use Docker VOLUME here.
-# Railway Volume must be mounted to /root/data.
+#    # catatan: data/ di-copy ke image sebagai bawaan. Bila memakai
+# Railway Volume, volume di-mount ke /root/data untuk persistence
+# dan menimpa data bawaan image.
 # ------------------------------------------------------------
 RUN mkdir -p /root/data/sessions
 
