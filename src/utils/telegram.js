@@ -1538,24 +1538,35 @@ ${referralLink}
 
         case 'menu_netflixgen':
         {
+            // JANGAN await generate di sini — proses 1–3 menit. Dijalankan di
+            // background agar loop polling tidak keblokir: /start & perintah lain
+            // tetap responsif sementara token diproses (sama seperti fitur /bulk).
             await editMessageText(bot.token, chatId, messageId, '🎬 Netflix Generator\n\n⏳ Membuat token PREMIUM...\nMencari proxy + generate (1–3 menit), mohon tunggu.', null);
-            try {
-                const { generateNetflixToken } = await import('../../services/netflix.js');
-                const r = await generateNetflixToken({ plan: 'premium' });
-                if (!r.success) {
-                    await editMessageText(bot.token, chatId, messageId, '❌ Gagal: ' + r.error + '\n\nCoba lagi beberapa saat lagi.', getBackKeyboard());
-                } else {
-                    await editMessageText(bot.token, chatId, messageId,
-                        '✅ TOKEN NETFLIX PREMIUM BERHASIL DIBUAT\n\n' +
-                        '📺 Kualitas : ' + (r.quality || '-') + '\n' +
-                        '🌍 Negara   : ' + (r.country || '-') + '\n' +
-                        '⏳ Expired  : ' + (r.expires || '-') + ' (~1 jam)\n\n' +
-                        '🔗 LINK LOGIN:\n' + r.url + '\n\n' +
-                        '⚠️ Wajib gunakan VPN saat membuka link!', getBackKeyboard());
+            (async function runNetflixGen() {
+                try {
+                    // Reuse the house generator (src/utils/am.js). Dynamic import to
+                    // avoid circular dependency (am.js also imports from this file).
+                    const { generateNFToken } = await import('./am.js');
+                    const res = await generateNFToken('premium', 1);
+                    const t = res && res.success && res.results && res.results[0];
+                    const r = t
+                        ? { success: true, url: t.url, quality: t.quality, country: t.country, expires: t.expires }
+                        : { success: false, error: (res && res.message) || 'Gagal generate token' };
+                    if (!r.success) {
+                        await editMessageText(bot.token, chatId, messageId, '❌ Gagal: ' + r.error + '\n\nCoba lagi beberapa saat lagi.', getBackKeyboard());
+                    } else {
+                        await editMessageText(bot.token, chatId, messageId,
+                            '✅ TOKEN NETFLIX PREMIUM BERHASIL DIBUAT\n\n' +
+                            '📺 Kualitas : ' + (r.quality || '-') + '\n' +
+                            '🌍 Negara   : ' + (r.country || '-') + '\n' +
+                            '⏳ Expired  : ' + (r.expires || '-') + ' (~1 jam)\n\n' +
+                            '🔗 LINK LOGIN:\n' + r.url + '\n\n' +
+                            '⚠️ Wajib gunakan VPN saat membuka link!', getBackKeyboard());
+                    }
+                } catch (e) {
+                    await editMessageText(bot.token, chatId, messageId, '❌ Error: ' + e.message, getBackKeyboard());
                 }
-            } catch (e) {
-                await editMessageText(bot.token, chatId, messageId, '❌ Error: ' + e.message, getBackKeyboard());
-            }
+            })();
             break;
         }
 

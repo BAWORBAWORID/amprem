@@ -55,9 +55,14 @@ export function serveStatic(req, res, url) {
                 return res.end(DECOY_HTML);
             }
 
+            // Tanpa cache untuk SEMUA file agar update HTML/JS/CSS langsung terlihat
+            // (no-cache = browser selalu revalidate ke server; HTML SPA + injeksi
+            // security.js juga tetap segar).
+            const cacheControl = 'no-cache';
+
             res.writeHead(200, Object.assign({
                 'Content-Type': MIME[ext] || 'application/octet-stream',
-                'Cache-Control': 'no-cache',
+                'Cache-Control': cacheControl,
             }, SECURITY_HEADERS));
 
             // Injeksi script proteksi anti-devtools ke setiap halaman HTML.

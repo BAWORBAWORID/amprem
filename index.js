@@ -71,6 +71,23 @@ if (process.env.AM_HMR === '1') {
             logger.warn('[HMR] fs.watch tidak tersedia untuk ' + watchPath + ': ' + e.message);
         }
     });
+
+    // public/ ikut auto-update: file statis (html/js/css) SELALU dibaca dari
+    // disk tiap request + diserve dengan Cache-Control: no-cache, jadi begitu
+    // file berubah, versi terbaru langsung terpakai tanpa restart. Watch di sini
+    // hanya memberi tahu di log — tidak perlu reload engine (backend tak berubah).
+    try {
+        const pubWatch = fs.watch(path.resolve('./public'), { recursive: true }, (event, filename) => {
+            if (!filename) return;
+            if (filename.endsWith('.html') || filename.endsWith('.js') || filename.endsWith('.css')) {
+                logger.info('[HMR] Public updated: ' + filename + ' — browser akan ambil versi baru (no-cache).');
+            }
+        });
+        pubWatch.on('error', () => { /* abaikan */ });
+        logger.info('[HMR] Watch aktif: public/ (html/js/css auto-update tanpa restart)');
+    } catch (e) {
+        logger.warn('[HMR] fs.watch tidak tersedia untuk public/: ' + e.message);
+    }
 }
 
 server.listen(PORT, '0.0.0.0', () => {

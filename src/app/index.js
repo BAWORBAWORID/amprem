@@ -13,7 +13,7 @@ import { QRIS_IMAGE_DIR, ensureStaticQRIS } from '../utils/qris.js';
 import { startAutoCleanupScheduler } from '../utils/autocleanup.js';
 
 // Startup task (dulu berjalan di module-scope server.js)
-seedOwner();
+seedOwner().catch((e) => console.error('[SEED] Gagal membuat owner: ' + (e && e.message)));
 cleanupExpiredSessions();
 // Auto-start semua bot telegram yang berstatus online (aman saat HMR reload).
 initTelegramBots();

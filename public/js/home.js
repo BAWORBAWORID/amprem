@@ -1,8 +1,6 @@
 (function () {
     'use strict';
 
-    var API_BASE = window.API_BASE_URL || '';
-
     function api(path, options) {
         var opts = options || {};
         opts.headers = Object.assign({}, opts.headers || {});
@@ -123,7 +121,35 @@
     var chatEventSource = null;
     var batchPollTimer = null;
     var currentBatch = null;
+    var batchCompletedNotified = false; // guard: notifikasi "SELESAI" hanya sekali per halaman
     var historyCache = [];
+
+    // Persistensi bulk lokal (localStorage): batch yang sedang/prod berjalan
+    // disimpan agar setelah refresh halaman tampilannya tetap muncul dan bisa
+    // diunduh, tidak hilang hanya karena halaman di-reload.
+    var BATCH_STORE_KEY = 'am_active_batch';
+    function saveBatchLocal(b) {
+        if (!b) return;
+        try { localStorage.setItem(BATCH_STORE_KEY, JSON.stringify(b)); } catch (e) {}
+    }
+    function loadBatchLocal() {
+        try {
+            var raw = localStorage.getItem(BATCH_STORE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    }
+    function clearBatchLocal() {
+        try { localStorage.removeItem(BATCH_STORE_KEY); } catch (e) {}
+    }
+    // Tandai batch selesai sudah dinotifikasi agar refresh tidak memunculkan
+    // notifikasi "SELESAI!" berulang (marker ikut tersimpan di localStorage).
+    function markBatchNotified(b) {
+        if (!b) return;
+        try {
+            b.notified = true;
+            localStorage.setItem(BATCH_STORE_KEY, JSON.stringify(b));
+        } catch (e) {}
+    }
     var adminUsersCache = [];
     var adminLogsCache = [];
     var adminIpsCache = [];
@@ -136,7 +162,7 @@
     var ROLE_LABEL = { owner: 'Owner', vip: 'VIP', premium: 'Premium', reseller: 'Reseller', user: 'User' };
     var PROFILE_ROLE = { owner: 'Owner', vip: 'VIP', premium: 'Premium', reseller: 'Reseller', pro: 'Pro', user: 'Anggota' };
 
-    var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews', ];
+    var VALID_SCREENS = ['dashboard', 'generator', 'lifetime', 'netflix', 'purchase', 'chat', 'apiguide', 'profile', 'referral', 'admin', 'contributors', 'history', 'settings', 'reviews', 'tickets', 'testimonials'];
 
     function setLastScreenCookie(name) {
         try { document.cookie = 'last_page=' + encodeURIComponent(name) + '; Path=/; Max-Age=2592000; SameSite=Lax'; } catch (e) {}
@@ -256,7 +282,8 @@
             dashboard: loadDashboard, generator: loadGenerator, lifetime: loadVipScreen, netflix: loadNetflix,
             purchase: loadAPIPanel, chat: loadChatPanel, apiguide: loadAPIGuide,
             profile: loadProfile, referral: loadReferralScreen, admin: loadAdminPanel, history: loadHistoryScreen,
-            settings: loadAdminSettings, reviews: loadReviewsScreen
+            settings: loadAdminSettings, reviews: loadReviewsScreen,
+            tickets: function () { loadTickets(); }, testimonials: loadTestimonials
         }[name];
         if (loader) loader();
     }
@@ -285,9 +312,9 @@
     // bukan hardcoded kedua-dua.
     var MOBILE_MENU_GROUPS = [
         { label: 'Statistik Live', leaf: 'dashboard' },
-        { label: 'AM Generator', children: ['generator', 'netflix', 'history'] },
-        { label: 'Layanan & API', children: ['purchase', 'apiguide', 'chat'] },
-        { label: 'Akun & Aplikasi', children: ['profile', 'referral', 'lifetime', 'reviews', 'contributors'] },
+        { label: 'Fitur Utama', children: ['generator', 'netflix', 'history'] },
+        { label: 'Akun & Layanan', children: ['purchase', 'lifetime', 'referral'] },
+        { label: 'Support & Komunitas', children: ['chat', 'tickets', 'reviews', 'contributors'] },
         { label: 'Support & APK', children: ['whatsapp', 'apk'] },
         { label: 'Pengaturan Admin', children: ['admin', 'settings'] }
     ];
@@ -692,7 +719,57 @@
         loadYourIP();
         loadRuntime();
         loadCreditsCountdown();
+        loadAnnouncements();
         bindQuickActions();
+    }
+
+    // Pengumuman global dari /api/public/announcements — dirender sebagai
+    // panel informasi di atas menu, bukan sebagai menu biasa.
+    var ANNOUNCEMENT_META = {
+        INFO:        { icon: 'fa-circle-info',      cls: 'ann-info' },
+        SUCCESS:     { icon: 'fa-circle-check',     cls: 'ann-success' },
+        WARNING:     { icon: 'fa-triangle-exclamation', cls: 'ann-warning' },
+        MAINTENANCE: { icon: 'fa-screwdriver-wrench',   cls: 'ann-maintenance' },
+        UPDATE:      { icon: 'fa-arrows-rotate',    cls: 'ann-update' },
+        IMPORTANT:   { icon: 'fa-bullhorn',         cls: 'ann-important' }
+    };
+
+    function escapeHTML(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function loadAnnouncements() {
+        var wrap = $('announcements-panel');
+        if (!wrap) return;
+        api('/api/public/announcements').then(function (data) {
+            var list = (data && data.announcements) || [];
+            if (!list.length) {
+                wrap.hidden = true;
+                wrap.innerHTML = '';
+                return;
+            }
+            wrap.hidden = false;
+            wrap.innerHTML = list.map(function (a) {
+                var meta = ANNOUNCEMENT_META[a.type] || ANNOUNCEMENT_META.INFO;
+                var label = a.type === 'MAINTENANCE' ? 'Pemeliharaan'
+                    : a.type === 'UPDATE' ? 'Pembaruan'
+                    : a.type === 'IMPORTANT' ? 'Penting'
+                    : a.type.charAt(0) + a.type.slice(1).toLowerCase();
+                return '<article class="ann-card ' + meta.cls + (a.priority === 'critical' || a.priority === 'high' ? ' ann-urgent' : '') + '" role="status">'
+                    + '<div class="ann-icon"><i class="fa-solid ' + meta.icon + '"></i></div>'
+                    + '<div class="ann-body">'
+                    + '<div class="ann-meta"><span class="ann-type">' + escapeHTML(label) + '</span>'
+                    + (a.priority === 'critical' || a.priority === 'high' ? '<span class="ann-priority">Prioritas ' + escapeHTML(a.priority) + '</span>' : '')
+                    + '</div>'
+                    + '<h4 class="ann-title">' + escapeHTML(a.title) + '</h4>'
+                    + (a.body ? '<p class="ann-desc">' + escapeHTML(a.body) + '</p>' : '')
+                    + '</div></article>';
+            }).join('');
+        }).catch(function () {
+            wrap.hidden = true;
+        });
     }
 
 
@@ -700,6 +777,7 @@
 
     function loadPublicStats() {
         api('/api/public/stats').then(function (data) {
+            syncRuntimeAnchor(data && data.serverStartedAtEpoch);
             if (data.totalUsers != null) {
                 var el = $('dash-stat-total-registered') || $('stat-total-users');
                 if (el) el.textContent = data.totalUsers;
@@ -805,17 +883,30 @@
             .catch(function () { $('stat-your-ip').textContent = 'Gagal membaca IP'; });
     }
 
-    var runtimeStart = Date.now();
+    // Runtime dihitung dari ANCHOR server yang stabil (data/runtime.json),
+    // bukan dari Date.now() saat halaman dimuat. Dengan begitu runtime tidak
+    // pernah reset ke 0 ketika: (1) halaman di-reload, atau (2) server restart.
+    var runtimeStart = null;
+    var runtimeTickTimer = null;
     function loadRuntime() {
+        if (runtimeTickTimer) return; // hindari double timer saat loadDashboard dipanggil ulang
         function tick() {
-            var s = Math.floor((Date.now() - runtimeStart) / 1000);
+            var base = runtimeStart || Date.now();
+            var s = Math.floor((Date.now() - base) / 1000);
             var h = String(Math.floor(s / 3600)).padStart(2, '0');
             var m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
             var sec = String(s % 60).padStart(2, '0');
             $('stat-runtime').textContent = h + ':' + m + ':' + sec;
         }
         tick();
-        setInterval(tick, 1000);
+        runtimeTickTimer = setInterval(tick, 1000);
+    }
+    // Pin jam runtime ke epoch server begitu stats diterima.
+    function syncRuntimeAnchor(epochMs) {
+        if (typeof epochMs === 'number' && isFinite(epochMs) && epochMs > 0) {
+            runtimeStart = epochMs;
+            loadRuntime();
+        }
     }
 
     function loadCreditsCountdown() {
@@ -839,6 +930,37 @@
         loadUserHistory();
         bindGeneratorTabs();
         setupAutoGenerator();
+        // Pulihkan dari localStorage dahulu sehingga HUD/download langsung muncul
+        // bahkan sebelum respons polling datang (mis. batch sudah selesai di
+        // server tapi ditampilkan kembali dari salinan lokal).
+        var saved = loadBatchLocal();
+        if (saved && saved.status && saved.results) {
+            currentBatch = saved;
+            $('autogen-hud').classList.remove('hidden');
+            $('autogen-log-container').classList.remove('hidden');
+            $('autogen-hud-remaining').textContent = saved.remaining != null ? saved.remaining : (saved.status === 'completed' ? 0 : '-');
+            $('autogen-hud-total').textContent = saved.total != null ? saved.total : (saved.count || '-');
+            if (saved.status === 'completed') {
+                $('autogen-download-area').classList.remove('hidden');
+                // Notifikasi hanya tampil PERTAMA KALI batch selesai (cek marker
+                // notified). Setelah refresh, batch sudah ditandai notified → tidak
+                // muncul lagi. Batch juga dihapus otomatis 30 detik setelah selesai.
+                if (!saved.notified && !batchCompletedNotified) {
+                    batchCompletedNotified = true;
+                    var done = saved.results.length || 0;
+                    Swal.fire({ icon: 'success', title: 'SELESAI!', text: 'Batch selesai. ' + done + ' akun berhasil dibuat.', timer: 2500, showConfirmButton: false });
+                    markBatchNotified(saved);
+                }
+                scheduleBatchCleanup();
+            }
+            saved.logs && saved.logs.forEach(function (l) {
+                var txt = typeof l === 'string' ? l : (l && (l.m || l.message) ? (l.m || l.message) : String(l));
+                $('autogen-log-container').appendChild((function () { var d = document.createElement('div'); d.textContent = txt; return d; })());
+            });
+        }
+        // Setelah refresh, sejajarkan dgn status backend (polling tetap berjalan
+        // dan menampilkan ulang HUD bila masih ada batch aktif).
+        pollActiveBatch();
     }
 
     function bindGeneratorTabs() {
@@ -935,6 +1057,7 @@
                     .then(function (data) {
                         if (data.success) {
                             currentBatch = data.batch;
+                            saveBatchLocal(data.batch);
                             $('autogen-hud').classList.remove('hidden');
                             $('autogen-log-container').classList.remove('hidden');
                             $('autogen-download-area').classList.add('hidden');
@@ -1000,12 +1123,9 @@
             btn.dataset.bound = '1';
             btn.addEventListener('click', function () {
                 var prefix = input.value.trim();
-                if (!prefix) {
-                    showFeedback(feedback, 'Prefix tidak boleh kosong.', 'error');
-                    return;
-                }
+                // Kosong diperbolehkan = hapus prefix (Order ID kembali ke default).
                 // Basic client-side validation (server validates too)
-                if (!/^[a-zA-Z0-9_-]+$/.test(prefix)) {
+                if (prefix && !/^[a-zA-Z0-9_-]+$/.test(prefix)) {
                     showFeedback(feedback, 'Prefix hanya boleh huruf, angka, _, -', 'error');
                     return;
                 }
@@ -1049,6 +1169,16 @@
             api('/api/am/autogen/active-batch').then(function (data) {
                 if (data.success && data.batch) {
                     currentBatch = data.batch;
+                    // PENTING: jangan timpa marker notified yang sudah tersimpan.
+                    // Batch dari server tidak punya flag itu — kalau ditimpa, guard
+                    // di bawah selalu false dan notifikasi "SELESAI!" muncul terus.
+                    var prevSaved = loadBatchLocal();
+                    if (prevSaved && prevSaved.notified) data.batch.notified = true;
+                    saveBatchLocal(data.batch);
+                    // Pulihkan tampilan bulk yang berjalan setelah refresh halaman:
+                    // only-show kalau HUD/log sempat tersembunyi.
+                    $('autogen-hud').classList.remove('hidden');
+                    $('autogen-log-container').classList.remove('hidden');
                     $('autogen-hud-remaining').textContent = data.batch.remaining;
                     $('autogen-hud-total').textContent = data.batch.total;
                     var eta = Math.ceil(data.batch.remaining * 7);
@@ -1067,19 +1197,38 @@
                         clearInterval(batchPollTimer);
                         $('autogen-hud-remaining').textContent = '0';
                         $('autogen-download-area').classList.remove('hidden');
-                        Swal.fire({ icon: 'success', title: 'SELESAI!', text: 'Batch selesai. ' + data.batch.results.length + ' akun berhasil dibuat.', timer: 2500, showConfirmButton: false });
+                        // Notifikasi hanya sekali: cek marker notified (localStorage)
+                        // agar refresh tidak memunculkan "SELESAI!" lagi.
+                        if (!batchCompletedNotified && !(loadBatchLocal() || {}).notified) {
+                            batchCompletedNotified = true;
+                            Swal.fire({ icon: 'success', title: 'SELESAI!', text: 'Batch selesai. ' + data.batch.results.length + ' akun berhasil dibuat.', timer: 2500, showConfirmButton: false });
+                            markBatchNotified(data.batch);
+                        }
+                        scheduleBatchCleanup();
                     }
                 } else if (data.isStalled) {
                     api('/api/am/autogen/resume-batch', { method: 'POST' });
                 } else if (!data.batch) {
                     clearInterval(batchPollTimer);
+                    clearBatchLocal();
                     $('autogen-hud').classList.add('hidden');
                 }
             }).catch(function () {});
         }
         poll();
-        batchPollTimer = setInterval(poll, 3000);
+        batchPollTimer = setInterval(poll, 3000);    }
+
+    // Hapus salinan batch dari localStorage 30 detik setelah selesai, sehingga
+    // jika user refresh halaman #generator, batch lama tidak lagi muncul/notifikasi.
+    var batchCleanupTimer = null;
+    function scheduleBatchCleanup() {
+        if (batchCleanupTimer) return; // sudah dijadwalkan
+        batchCleanupTimer = setTimeout(function () {
+            clearBatchLocal();
+            batchCleanupTimer = null;
+        }, 30000);
     }
+
 
     /* ============================== NETFLIX ============================== */
 
@@ -2327,6 +2476,138 @@
 
     var currentTicketId = null;
     var currentTicketStatusFilter = 'all';
+    var ticketsBound = false;
+
+    // Satu kali saja: kaitkan seluruh kontrol halaman tiket (tab filter, pencarian,
+    // urutan, tombol tiket baru, formulir balasan, dan tombol aksi detail).
+    function bindTicketsUI() {
+        if (ticketsBound) return;
+        ticketsBound = true;
+
+        // Tab filter status
+        document.querySelectorAll('.status-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                loadTickets(this.getAttribute('data-status'));
+            });
+        });
+
+        // Urutan terbaru/terlama
+        var sort = $('ticket-sort');
+        if (sort) sort.addEventListener('change', function () { loadTickets(); });
+
+        // Pencarian subjek (client-side, data sudah termuat)
+        var search = $('ticket-search');
+        if (search) search.addEventListener('input', function () { renderTicketList(); });
+
+        // Tombol tiket baru
+        var createBtn = $('btn-create-ticket');
+        if (createBtn) {
+            createBtn.addEventListener('click', function () {
+                openNewTicketModal();
+            });
+        }
+
+        // Formulir balasan di panel detail
+        var replyForm = $('form-ticket-reply');
+        if (replyForm) {
+            replyForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var input = $('ticket-reply-input');
+                var text = input ? input.value.trim() : '';
+                if (!text || !currentTicketId) return;
+                input.value = '';
+                replyToTicket(currentTicketId, text);
+            });
+        }
+
+        // Tombol aksi di panel detail (delegasi agar tetap hidup setelah re-render)
+        var detail = $('ticket-detail-panel');
+        if (detail) {
+            detail.addEventListener('click', function (ev) {
+                var solve = ev.target.closest('#btn-solve-ticket');
+                if (solve) { solveTicket(solve.getAttribute('data-ticket-id')); return; }
+                var close = ev.target.closest('#btn-close-ticket');
+                if (close) { closeTicket(close.getAttribute('data-ticket-id')); return; }
+                var reopen = ev.target.closest('#btn-reopen-ticket');
+                if (reopen) {
+                    var adminMode = ['admin', 'owner'].includes(currentUser.role) && currentTicketStatusFilter !== 'all';
+                    reopenTicket(reopen.getAttribute('data-ticket-id'), adminMode);
+                }
+            });
+        }
+    }
+
+    // Render ulang daftar dari currentTickets + filter aktif + kata kunci pencarian.
+    // Selalu membangun ulang dari data (bukan toggle display), agar pencarian tidak
+    // merusak state dan item yang muncul kembali tetap bisa diklik.
+    function renderTicketList() {
+        var search = $('ticket-search');
+        var q = search ? search.value.trim().toLowerCase() : '';
+        var wrapper = $('ticket-items-wrapper');
+        if (!wrapper) return;
+        var tickets = (currentTickets || []).filter(function (t) {
+            if (!q) return true;
+            var haystack = (t.id + ' ' + t.subject + ' ' + (t.messages || []).map(function (m) { return m.text; }).join(' ')).toLowerCase();
+            return haystack.indexOf(q) !== -1;
+        });
+        if (!tickets.length) {
+            wrapper.innerHTML = q
+                ? '<p class="text-muted text-center" style="margin:auto;font-size:0.85rem;">Tidak ada tiket yang cocok.</p>'
+                : EMPTY_TICKETS_HTML;
+            var emptyCta = $('ticket-empty-create');
+            if (emptyCta) emptyCta.addEventListener('click', function () { openNewTicketModal(); });
+            return;
+        }
+        wrapper.innerHTML = tickets.map(function (t) {
+            var badgeClass = t.status === 'solved' ? 'status-success' : t.status === 'closed' ? 'status-muted' : 'status-pending';
+            var badgeText = t.status === 'solved' ? 'Selesai' : t.status === 'closed' ? 'Ditutup' : 'Pending';
+            var date = new Date(t.createdAt).toLocaleString('id-ID');
+            var lastMsg = (t.messages && t.messages.length ? t.messages[t.messages.length - 1].text : '') || '';
+            var prioBadge = t.priority && t.priority !== 'normal' ? '<span class="badge ' + (t.priority === 'critical' ? 'status-failed' : 'status-pending') + '" style="font-size:0.6rem;">' + esc(t.priority) + '</span>' : '';
+            return '<div class="ticket-item" data-ticket-id="' + esc(t.id) + '">' +
+                '<div class="ticket-item-main"><div class="ticket-item-head">' +
+                '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' + prioBadge +
+                '<span class="ticket-item-subject">' + esc(t.subject) + '</span></div>' +
+                '<div class="ticket-item-preview">' + esc(lastMsg) + '</div>' +
+                '<div class="ticket-item-meta">' + date + ' · ' + t.messages.length + ' message' + (t.messages.length > 1 ? 's' : '') + '</div></div>' +
+                '<i class="fa-solid fa-chevron-right ticket-item-chevron"></i></div>';
+        }).join('');
+        // Bind click pada item (daftar dibangun ulang, handler harus dipasang ulang)
+        wrapper.querySelectorAll('.ticket-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                wrapper.querySelectorAll('.ticket-item').forEach(function (i) { i.classList.remove('active'); });
+                item.classList.add('active');
+                loadTicketDetail(item.getAttribute('data-ticket-id'));
+            });
+        });
+    }
+
+    // Modal tiket baru: subject + text dengan validasi (dipakai tombol "+ Tiket Baru"
+    // dan CTA di empty state).
+    function openNewTicketModal() {
+        Swal.fire({
+            title: 'Tiket Baru',
+            html:
+                '<input id="swal-ticket-subject" class="swal2-input" placeholder="Subjek (maks 100 karakter)" maxlength="100">' +
+                '<textarea id="swal-ticket-text" class="swal2-textarea" placeholder="Jelaskan kendala Anda... (maks 5000 karakter)" rows="5"></textarea>',
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Kirim',
+            cancelButtonText: 'Batal',
+            preConfirm: function () {
+                var subject = document.getElementById('swal-ticket-subject').value.trim();
+                var text = document.getElementById('swal-ticket-text').value.trim();
+                if (!subject || !text) {
+                    Swal.showValidationMessage('Subjek dan deskripsi wajib diisi.');
+                    return false;
+                }
+                return { subject: subject, text: text };
+            }
+        }).then(function (r) {
+            if (!r.isConfirmed || !r.value) return;
+            createTicket(r.value.subject, r.value.text);
+        });
+    }
 
     function loadTickets(statusFilter) {
         var status = statusFilter || currentTicketStatusFilter || 'all';
@@ -2336,45 +2617,56 @@
         tabs.forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-status') === status); });
 
         var wrapper = $('ticket-items-wrapper');
-        if (wrapper) wrapper.innerHTML = '<p class="text-muted text-center" style="margin: auto; font-size: 0.85rem;">Memuat tiket...</p>';
+        if (wrapper) wrapper.innerHTML = TICKET_SKELETON.repeat(4);
         var detail = $('ticket-active-content');
         if (detail) detail.classList.add('hidden');
         var empty = $('ticket-empty-state');
         if (empty) empty.style.display = 'flex';
 
         var endpoint = ['admin', 'owner'].includes(currentUser.role) ? '/api/admin/tickets' : '/api/tickets';
-        var params = '?status=' + status;
+        var params = '?status=' + encodeURIComponent(status);
+        var sort = $('ticket-sort');
+        if (sort && sort.value === 'oldest') params += '&order=asc';
         api(endpoint + params).then(function (data) {
-            if (!data.success) return;
-            var tickets = data.tickets || [];
-            var wrapper = $('ticket-items-wrapper');
-            if (!tickets.length) {
-                if (wrapper) wrapper.innerHTML = '<p class="text-muted text-center" style="margin: auto; font-size: 0.85rem;">Tidak ada tiket.</p>';
+            if (!data || !data.success) throw new Error(data && data.message ? data.message : 'Respon tidak valid.');
+            currentTickets = data.tickets || [];
+            if (!currentTickets.length) {
+                if (wrapper) wrapper.innerHTML = EMPTY_TICKETS_HTML;
+                var emptyPanel = $('ticket-empty-state');
+                if (emptyPanel) emptyPanel.style.display = 'none';
+                var detailBox = $('ticket-active-content');
+                if (detailBox) detailBox.classList.add('hidden');
+                var emptyCta = $('ticket-empty-create');
+                if (emptyCta) emptyCta.addEventListener('click', function () { openNewTicketModal(); });
                 return;
             }
-            if (wrapper) wrapper.innerHTML = tickets.map(function (t) {
-                var badgeClass = t.status === 'solved' ? 'status-success' : 'status-pending';
-                var badgeText = t.status === 'solved' ? 'Selesai' : 'Pending';
-                var date = new Date(t.createdAt).toLocaleString('id-ID');
-                return '<div class="ticket-item" data-ticket-id="' + esc(t.id) + '" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-secondary);cursor:pointer;transition:all 0.2s;">' +
-                    '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
-                    '<span class="badge ' + badgeClass + '" style="font-size:0.7rem;">' + badgeText + '</span>' +
-                    '<span class="text-muted" style="font-size:0.7rem;">' + esc(t.subject) + '</span></div>' +
-                    '<div style="font-size:0.8rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;">' + esc(t.messages[t.messages.length-1]?.text || '') + '</div>' +
-                    '<div class="text-muted" style="font-size:0.65rem;">' + new Date(t.createdAt).toLocaleString('id-ID') + '</div></div>' +
-                    '<span class="badge badge-normal" style="font-size:0.65rem;">' + t.messages.length + ' pesan</span></div>';
-            }).join('');
-
-            // Bind click
-            document.querySelectorAll('.ticket-item').forEach(function (item) {
+            renderTicketList();
+            // Bind click sur les items
+            wrapper.querySelectorAll('.ticket-item').forEach(function (item) {
                 item.addEventListener('click', function () {
-                    document.querySelectorAll('.ticket-item').forEach(function (i) { i.style.borderColor = 'var(--border-color)'; });
-                    this.style.borderColor = 'var(--accent-primary)';
-                    loadTicketDetail(this.getAttribute('data-ticket-id'));
+                    wrapper.querySelectorAll('.ticket-item').forEach(function (i) { i.classList.remove('active'); });
+                    item.classList.add('active');
+                    loadTicketDetail(item.getAttribute('data-ticket-id'));
                 });
             });
+        }).catch(function (err) {
+            var msg = err && err.status === 401 ? 'Sesi berakhir. Silakan login kembali.'
+                : err && err.status === 429 ? 'Terlalu banyak permintaan. Coba lagi sebentar.'
+                : (errMsg(err) || 'Terjadi kesalahan.');
+            if (wrapper) wrapper.innerHTML =
+                '<div class="ticket-error-state">'
+                + '<i class="fa-solid fa-triangle-exclamation"></i>'
+                + '<p>❌ Tidak dapat memuat tiket</p>'
+                + '<p class="ticket-error-detail">' + esc(msg) + '</p>'
+                + '<button class="btn btn-primary btn-sm" id="btn-retry-tickets">Coba Lagi</button></div>';
+            var retry = $('btn-retry-tickets');
+            if (retry) retry.addEventListener('click', function () { loadTickets(); });
         });
     }
+
+    var TICKET_SKELETON = '<div class="ticket-skeleton"><div class="sk-line sk-title"></div><div class="sk-line sk-sub"></div><div class="sk-line sk-meta"></div></div>';
+    var EMPTY_TICKETS_HTML = '<div class="ticket-empty-block"><i class="fa-solid fa-inbox"></i><h4>Tidak ada tiket</h4><p>Anda belum memiliki tiket dukungan.</p><button class="btn btn-primary btn-sm" id="ticket-empty-create"><i class="fa-solid fa-plus"></i> Buat Tiket</button></div>';
+    var currentTickets = [];
 
     function loadTicketDetail(ticketId) {
         currentTicketId = ticketId;
@@ -2398,11 +2690,33 @@
 
             detail.setAttribute('data-ticket-id', t.id);
             var badge = $('ticket-detail-status-badge');
-            var badgeClass = t.status === 'solved' ? 'status-success' : 'status-pending';
-            if (badge) { badge.textContent = t.status === 'solved' ? 'Selesai' : 'Pending'; badge.className = 'badge ' + badgeClass; }
+            var badgeClass = t.status === 'solved' ? 'status-success' : t.status === 'closed' ? 'status-muted' : 'status-pending';
+            var badgeText = t.status === 'solved' ? 'Selesai' : t.status === 'closed' ? 'Ditutup' : 'Pending';
+            if (badge) { badge.textContent = badgeText; badge.className = 'badge ' + badgeClass; }
             if ($('ticket-detail-date')) $('ticket-detail-date').textContent = new Date(t.createdAt).toLocaleDateString('id-ID');
             if ($('ticket-detail-subject')) $('ticket-detail-subject').textContent = t.subject;
             if ($('ticket-detail-user-info')) $('ticket-detail-user-info').textContent = 'Dibuat oleh: @' + t.username;
+
+            // Priority + assignee line (admin fields; hidden when absent)
+            var prioEl = $('ticket-detail-priority');
+            if (prioEl) {
+                if (t.priority) {
+                    prioEl.textContent = 'Prioritas: ' + t.priority;
+                    prioEl.className = 'badge ' + (t.priority === 'critical' ? 'status-failed' : t.priority === 'high' ? 'status-pending' : 'status-muted');
+                    prioEl.style.display = 'inline-flex';
+                } else {
+                    prioEl.style.display = 'none';
+                }
+            }
+            var assignEl = $('ticket-detail-assignee');
+            if (assignEl) {
+                if (t.assignedTo) {
+                    assignEl.textContent = 'Ditugaskan ke: @' + t.assignedTo;
+                    assignEl.style.display = 'inline';
+                } else {
+                    assignEl.style.display = 'none';
+                }
+            }
 
             // Render messages
             var container = $('ticket-messages-container');
@@ -2432,8 +2746,57 @@
                 }
             }
 
+            // Close / reopen buttons for the ticket owner
+            var isOwnerOfTicket = t.userId === currentUser.id || t.username === currentUser.username;
+            var isAdminUser = ['admin', 'owner'].includes(currentUser.role);
+            var closeBtn = $('btn-close-ticket');
+            if (closeBtn) {
+                if (isOwnerOfTicket && t.status === 'pending') {
+                    closeBtn.style.display = 'inline-flex';
+                    closeBtn.setAttribute('data-ticket-id', t.id);
+                } else {
+                    closeBtn.style.display = 'none';
+                }
+            }
+            var reopenBtn = $('btn-reopen-ticket');
+            if (reopenBtn) {
+                var canReopen = isOwnerOfTicket && (t.status === 'closed' || t.status === 'solved');
+                var adminCanReopen = isAdminUser && t.status === 'solved';
+                if (canReopen || adminCanReopen) {
+                    reopenBtn.style.display = 'inline-flex';
+                    reopenBtn.setAttribute('data-ticket-id', t.id);
+                } else {
+                    reopenBtn.style.display = 'none';
+                }
+            }
+
             if (detail) detail.classList.remove('hidden');
             if ($('ticket-empty-state')) $('ticket-empty-state').style.display = 'none';
+        });
+    }
+
+    function closeTicket(ticketId) {
+        api('/api/tickets/' + ticketId + '/close', { method: 'POST' }).then(function (data) {
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'TIKET DITUTUP', text: 'Tiket Anda telah ditutup.', timer: 1500, showConfirmButton: false });
+                loadTicketDetail(ticketId);
+                loadTickets(currentTicketStatusFilter);
+            } else {
+                Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal menutup tiket.' });
+            }
+        });
+    }
+
+    function reopenTicket(ticketId, adminMode) {
+        var endpoint = adminMode ? '/api/admin/tickets/' + ticketId + '/reopen' : '/api/tickets/' + ticketId + '/reopen';
+        api(endpoint, { method: 'POST' }).then(function (data) {
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'TIKET DIBUKA', text: 'Tiket dibuka kembali.', timer: 1500, showConfirmButton: false });
+                loadTicketDetail(ticketId);
+                loadTickets(currentTicketStatusFilter);
+            } else {
+                Swal.fire({ icon: 'error', title: 'GAGAL', text: data.message || 'Gagal membuka tiket.' });
+            }
         });
     }
 
@@ -2518,12 +2881,6 @@
             img.onload = function () { modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; };
             if (dl) dl.href = imgUrl;
         }
-    }
-
-    function loadTickets() {
-        api('/api/tickets').then(function (data) {
-            // This is the old function, use loadTickets with filter
-        });
     }
 
     /* ============================== ADMIN PANEL ============================== */
@@ -3510,6 +3867,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         bindNav();
         bindAuth();
+        bindTicketsUI();
         restoreAuthView(); // Refresh tetap di view login/register + draft form dipulihkan
         bindNotifications();
         checkAppVersion();

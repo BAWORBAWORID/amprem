@@ -334,5 +334,19 @@
     "role": "owner",
     "text": "bulan",
     "createdAt": "2026-08-27 23:52:13"
+  },
+  {
+    "id": "mtgcro8lfbf879",
+    "username": "delvin",
+    "role": "user",
+    "text": "Info api nya min",
+    "createdAt": "2026-08-31 06:00:03"
+  },
+  {
+    "id": "mtgp2lguae5970",
+    "username": "alwayscodex",
+    "role": "owner",
+    "text": "itu netflix?",
+    "createdAt": "2026-08-31 11:44:28"
   }
 ]

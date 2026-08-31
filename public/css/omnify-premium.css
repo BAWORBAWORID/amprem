@@ -1,0 +1,711 @@
+/* ============================================================================
+   AM CREATOR — OMNIFY PREMIUM THEME OVERLAY
+   Visual language inspired by the amprem.omnifylabs.sbs reference:
+     dark-first near-black canvas (#08090d → #0e1017),
+     emerald primary (#00d294 / #10b981),
+     violet/indigo secondary accent (#6366f1 / #7d87ff),
+     ambient top glow + subtle grid, glassy surfaces, clean SaaS hierarchy.
+
+   PRESENTATION ONLY. No JS, no DOM structure, no IDs/classes on which JS
+   depends are changed. Overrides every pre-existing token family and loads
+   last so it wins the cascade while keeping light/dark/system intact.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. TOKEN RE-MAP — every known semantic token family resolves to the new
+   premium palette. Light stays a clean SaaS canvas; dark becomes the flagship
+   near-black look of the reference.
+   --------------------------------------------------------------------------- */
+:root {
+    /* Brand: emerald primary + violet secondary (reference accent pair). */
+    --accent-primary: #10b981;
+    --accent-secondary: #6366f1;
+    --accent-purple: #7d87ff;
+    --accent-color: #10b981;
+    --accent-gradient: linear-gradient(135deg, #0fd68f 0%, #6366f1 130%);
+    --accent-gradient-hover: linear-gradient(135deg, #0cb87a 0%, #545ee8 130%);
+
+    --ds-accent: #10b981;
+    --ds-accent-strong: #059669;
+    --ds-accent-cyan: #6366f1;
+    --ds-accent-cyan-strong: #545ee8;
+    --ds-accent-soft: rgba(16, 185, 129, .12);
+    --ds-accent-line: rgba(16, 185, 129, .32);
+
+    --gradient-text: linear-gradient(135deg, #10b981, #7d87ff);
+
+    /* Status hues align with the premium system. */
+    --ds-success: #10b981;
+    --ds-success-bg: rgba(16, 185, 129, .14);
+    --ds-success-line: rgba(16, 185, 129, .38);
+    --ds-info: #6366f1;
+    --ds-info-bg: rgba(99, 102, 241, .14);
+    --ds-info-line: rgba(99, 102, 241, .38);
+
+    --success: #10b981;
+    --success-text: #059669;
+    --success-bg: rgba(16, 185, 129, .12);
+    --success-bg2: rgba(16, 185, 129, .12);
+    --success-border: rgba(16, 185, 129, .38);
+
+    --btn-ghost: rgba(15, 23, 42, .05);
+    --surface-soft: rgba(15, 23, 42, .04);
+    --surface-subtle: rgba(15, 23, 42, .03);
+    --surface-hover: rgba(15, 23, 42, .06);
+    --border-soft: rgba(15, 23, 42, .07);
+    --border-strong: rgba(15, 23, 42, .14);
+
+    --radius-sm: 12px;
+    --radius-md: 18px;
+    --radius-lg: 24px;
+
+    --premium-glow: rgba(16, 185, 129, .18);
+    --premium-line: rgba(148, 163, 184, .2);
+    --premium-shadow: 0 22px 50px rgba(2, 6, 23, .18);
+}
+
+/* ---------------------------------------------------------------------------
+   2. DARK = FLAGSHIP (default matches how the reference reads).
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] body,
+body.dark-theme {
+    --bg: #08090d;
+    --surface: #0e1017;
+    --surface-2: #151823;
+    --bg-primary: #08090d;
+    --bg-secondary: #0e1017;
+    --bg-page: #08090d;
+    --bottom-nav-bg: rgba(14, 16, 23, .92);
+    --glass-bg: rgba(14, 16, 23, .9);
+
+    --ds-page: #08090d;
+    --ds-surface: rgba(17, 20, 29, .9);
+    --ds-surface-solid: #12151f;
+    --ds-surface-muted: #151823;
+    --ds-surface-subtle: rgba(148, 163, 184, .06);
+
+    --text: #f4f7fb;
+    --text-primary: #f4f7fb;
+    --text-secondary: #a9b2c3;
+    --text-muted: #7b8598;
+    --text-faint: #5b6474;
+
+    --border: rgba(255, 255, 255, .09);
+    --border-color: rgba(255, 255, 255, .09);
+    --border-color-hover: rgba(255, 255, 255, .18);
+    --border-soft: rgba(255, 255, 255, .06);
+    --border-strong: rgba(255, 255, 255, .16);
+
+    --ds-text: #f4f7fb;
+    --ds-text-secondary: #a9b2c3;
+    --ds-text-muted: #7b8598;
+    --ds-text-faint: #5b6474;
+    --ds-border: rgba(255, 255, 255, .09);
+    --ds-border-subtle: rgba(255, 255, 255, .055);
+    --ds-border-strong: rgba(255, 255, 255, .16);
+
+    --bg-sidebar: #0a0c12;
+    --surface-soft: rgba(255, 255, 255, .045);
+    --surface-subtle: rgba(255, 255, 255, .03);
+    --surface-hover: rgba(255, 255, 255, .08);
+    --btn-ghost: rgba(255, 255, 255, .06);
+
+    --topbar-bg: rgba(10, 12, 18, .82);
+    --dropdown-bg: rgba(18, 21, 31, .98);
+    --swal-bg: rgba(18, 21, 31, .98);
+    --input-bg: #12151f;
+    --input-bg-focus: #151823;
+    --option-bg: #151823;
+    --option-color: #f4f7fb;
+    --placeholder: #5b6474;
+
+    --premium-glow: rgba(16, 185, 129, .22);
+    --premium-surface: rgba(18, 21, 31, .82);
+    --premium-surface-strong: rgba(18, 21, 31, .98);
+    --premium-line: rgba(148, 163, 184, .18);
+    --premium-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+
+    --scrollbar-track: #08090d;
+    --scrollbar-border: #0e1017;
+    --grid-line: rgba(255, 255, 255, .035);
+    --icon-faint: rgba(255, 255, 255, .22);
+
+    --shadow-sm: 0 4px 18px rgba(0, 0, 0, .35);
+    --shadow-md: 0 12px 38px rgba(0, 0, 0, .4);
+    --shadow-lg: 0 26px 70px rgba(0, 0, 0, .5);
+    --hover-shadow: 0 18px 46px rgba(0, 0, 0, .42);
+
+    --ds-shadow: 0 24px 60px rgba(0, 0, 0, .4);
+    --ds-shadow-soft: 0 12px 32px rgba(0, 0, 0, .3);
+
+    --ds-accent: #10b981;
+    --ds-accent-strong: #34d399;
+    --ds-accent-cyan: #818cf8;
+    --ds-accent-cyan-strong: #6366f1;
+    --ds-accent-soft: rgba(16, 185, 129, .14);
+    --ds-accent-line: rgba(16, 185, 129, .36);
+
+    --ds-success: #34d399;
+    --ds-success-bg: rgba(16, 185, 129, .16);
+    --ds-success-line: rgba(52, 211, 153, .4);
+    --ds-info: #818cf8;
+    --ds-info-bg: rgba(99, 102, 241, .16);
+    --ds-info-line: rgba(129, 140, 248, .4);
+    --ds-warning: #fbbf24;
+    --ds-warning-bg: rgba(245, 158, 11, .16);
+    --ds-warning-line: rgba(251, 191, 36, .4);
+    --ds-danger: #fb7185;
+    --ds-danger-bg: rgba(244, 63, 94, .16);
+    --ds-danger-line: rgba(251, 113, 133, .4);
+
+    --accent-gradient: linear-gradient(135deg, #0fd68f 0%, #6366f1 135%);
+    --accent-gradient-hover: linear-gradient(135deg, #0cb87a 0%, #545ee8 135%);
+    --gradient-text: linear-gradient(135deg, #34d399, #818cf8);
+}
+
+/* ---------------------------------------------------------------------------
+   3. AMBIENT CANVAS — near-black depth with a soft top glow + grid, exactly
+   the character of the reference site's landing surface.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] body,
+body.dark-theme {
+    background:
+        radial-gradient(85% 70% at 50% -15%, rgba(99, 102, 241, .13), #0000 60%),
+        radial-gradient(60% 45% at 100% 0%, rgba(16, 185, 129, .07), #0000 55%),
+        var(--bg) !important;
+    color: var(--text) !important;
+    background-attachment: fixed;
+}
+
+/* Reference-style fine engineering grid, over the body only. */
+html[data-theme="dark"] body::before,
+body.dark-theme::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(140% 80% at 50% 0%, #000 20%, transparent 78%);
+    -webkit-mask-image: radial-gradient(140% 80% at 50% 0%, #000 20%, transparent 78%);
+}
+
+html[data-theme="dark"] body > #app-layout,
+html[data-theme="dark"] body > .app-shell,
+html[data-theme="dark"] body > .main-app,
+body.dark-theme > #app-layout,
+body.dark-theme > .app-shell,
+body.dark-theme > .main-app {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   4. SURFACES — one consistent glassy card language everywhere.
+   --------------------------------------------------------------------------- */
+.glass-card,
+.table-card,
+.generator-box,
+.auth-box,
+.chat-container,
+.plan-card,
+.flow-box,
+.review-card,
+.profile-card,
+.profile-box,
+.docs-info-block,
+.endpoint-badge-container {
+    border-radius: var(--radius-lg) !important;
+}
+html[data-theme="dark"] .glass-card,
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .generator-box,
+html[data-theme="dark"] .auth-box,
+html[data-theme="dark"] .chat-container,
+html[data-theme="dark"] .plan-card,
+html[data-theme="dark"] .flow-box,
+html[data-theme="dark"] .review-card,
+html[data-theme="dark"] .profile-card,
+html[data-theme="dark"] .profile-box,
+html[data-theme="dark"] .docs-info-block,
+html[data-theme="dark"] .endpoint-badge-container,
+body.dark-theme .glass-card,
+body.dark-theme .table-card,
+body.dark-theme .generator-box,
+body.dark-theme .auth-box,
+body.dark-theme .chat-container,
+body.dark-theme .plan-card,
+body.dark-theme .flow-box,
+body.dark-theme .review-card,
+body.dark-theme .profile-card,
+body.dark-theme .profile-box,
+body.dark-theme .docs-info-block,
+body.dark-theme .endpoint-badge-container {
+    background: var(--surface, var(--ds-surface)) !important;
+    border-color: var(--border, var(--ds-border)) !important;
+    box-shadow: var(--premium-shadow) !important;
+}
+
+/* Soft edge highlight so dark cards read as glass, not flat black. */
+html[data-theme="dark"] .glass-card,
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .generator-box,
+html[data-theme="dark"] .auth-box,
+html[data-theme="dark"] .chat-container,
+html[data-theme="dark"] .plan-card,
+html[data-theme="dark"] .profile-card,
+html[data-theme="dark"] .profile-box,
+body.dark-theme .glass-card,
+body.dark-theme .table-card,
+body.dark-theme .generator-box,
+body.dark-theme .auth-box,
+body.dark-theme .chat-container,
+body.dark-theme .plan-card,
+body.dark-theme .profile-card,
+body.dark-theme .profile-box {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .05),
+        var(--premium-shadow) !important;
+}
+
+/* Stats / metrics cards share the hierarchy. */
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .metric-card,
+html[data-theme="dark"] .dashboard-stat,
+html[data-theme="dark"] .admin-stat-card,
+body.dark-theme .stat-card,
+body.dark-theme .metric-card,
+body.dark-theme .dashboard-stat,
+body.dark-theme .admin-stat-card {
+    background: var(--surface-2, var(--ds-surface-muted)) !important;
+    border-color: var(--border, var(--ds-border)) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), var(--shadow-sm) !important;
+    color: var(--text) !important;
+}
+
+/* Action / quick cards on the dashboard. */
+html[data-theme="dark"] .action-card,
+html[data-theme="dark"] .quick-menu-card,
+html[data-theme="dark"] .quick-actions-card,
+html[data-theme="dark"] .feature-card,
+body.dark-theme .action-card,
+body.dark-theme .quick-menu-card,
+body.dark-theme .quick-actions-card,
+body.dark-theme .feature-card {
+    background: var(--surface, var(--ds-surface)) !important;
+    border-color: var(--border, var(--ds-border)) !important;
+    border-radius: var(--radius-md) !important;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease !important;
+}
+html[data-theme="dark"] .action-card:hover,
+html[data-theme="dark"] .quick-menu-card:hover,
+html[data-theme="dark"] .feature-card:hover,
+body.dark-theme .action-card:hover,
+body.dark-theme .quick-menu-card:hover,
+body.dark-theme .feature-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--ds-accent-line) !important;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .45), var(--premium-glow) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   5. INTERACTION ACCENT — emerald/violet gradient on primary actions + active
+   nav, violet ghost for secondary.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .btn-glow,
+html[data-theme="dark"] .apk-banner-btn,
+html[data-theme="dark"] .tab-btn.active,
+html[data-theme="dark"] .pagination-container .pag-btn.active,
+html[data-theme="dark"] .sidebar-link.active,
+body.dark-theme .btn-primary,
+body.dark-theme .btn-glow,
+body.dark-theme .apk-banner-btn,
+body.dark-theme .tab-btn.active,
+body.dark-theme .pagination-container .pag-btn.active,
+body.dark-theme .sidebar-link.active {
+    background: var(--accent-gradient) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 10px 26px var(--premium-glow) !important;
+}
+
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .btn-glow:hover,
+body.dark-theme .btn-primary:hover,
+body.dark-theme .btn-glow:hover {
+    background: var(--accent-gradient-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px var(--premium-glow) !important;
+}
+
+html[data-theme="dark"] .btn-secondary,
+html[data-theme="dark"] .btn-ghost,
+html[data-theme="dark"] .pagination-container .pag-btn,
+body.dark-theme .btn-secondary,
+body.dark-theme .btn-ghost,
+body.dark-theme .pagination-container .pag-btn {
+    background: var(--surface-2, var(--ds-surface-muted)) !important;
+    border-color: var(--border, var(--ds-border)) !important;
+    color: var(--text-secondary) !important;
+}
+html[data-theme="dark"] .btn-secondary:hover,
+html[data-theme="dark"] .btn-ghost:hover,
+body.dark-theme .btn-secondary:hover,
+body.dark-theme .btn-ghost:hover {
+    background: var(--ds-accent-soft) !important;
+    border-color: var(--ds-accent-line) !important;
+    color: var(--ds-accent-strong) !important;
+}
+
+/* Accent text / icons follow the brand pair. */
+html[data-theme="dark"] .accent-text,
+html[data-theme="dark"] .link-accent,
+html[data-theme="dark"] .card-title i,
+html[data-theme="dark"] .gradient-text,
+html[data-theme="dark"] .sidebar-link.active i,
+body.dark-theme .accent-text,
+body.dark-theme .link-accent,
+body.dark-theme .card-title i,
+body.dark-theme .gradient-text,
+body.dark-theme .sidebar-link.active i {
+    color: var(--ds-accent-strong) !important;
+}
+html[data-theme="dark"] .gradient-text,
+html[data-theme="dark"] .gradient-heading,
+body.dark-theme .gradient-text,
+body.dark-theme .gradient-heading {
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent !important;
+}
+
+/* ---------------------------------------------------------------------------
+   6. INPUTS & BUTTONS — consistent height, radius, focus ring.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] #chat-input-text,
+body.dark-theme input,
+body.dark-theme select,
+body.dark-theme textarea,
+body.dark-theme #chat-input-text {
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+}
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus,
+html[data-theme="dark"] #chat-input-text:focus,
+body.dark-theme input:focus,
+body.dark-theme select:focus,
+body.dark-theme textarea:focus,
+body.dark-theme #chat-input-text:focus {
+    border-color: var(--ds-accent) !important;
+    box-shadow: 0 0 0 4px var(--ds-accent-soft) !important;
+}
+
+/* Buttons: unified geometry. */
+html[data-theme="dark"] .btn,
+body.dark-theme .btn {
+    border-radius: var(--radius-sm) !important;
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease, border-color .2s ease !important;
+}
+html[data-theme="dark"] .btn:active,
+body.dark-theme .btn:active { transform: scale(.98); }
+
+/* ---------------------------------------------------------------------------
+   7. SIDEBAR — deep dark shell with a subtle brand glow.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] .app-sidebar,
+body.dark-theme .app-sidebar {
+    background:
+        radial-gradient(120% 50% at 50% -20%, rgba(99, 102, 241, .12), #0000 60%),
+        linear-gradient(180deg, #0a0c12 0%, #0b0e16 100%) !important;
+    border-color: var(--border) !important;
+    box-shadow: 18px 0 45px rgba(0, 0, 0, .4) !important;
+}
+html[data-theme="dark"] .sidebar-link,
+body.dark-theme .sidebar-link {
+    color: var(--text-secondary) !important;
+    border-radius: var(--radius-sm) !important;
+}
+html[data-theme="dark"] .sidebar-link:hover,
+body.dark-theme .sidebar-link:hover {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+}
+html[data-theme="dark"] .sidebar-link.active,
+body.dark-theme .sidebar-link.active {
+    background: var(--accent-gradient) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 22px var(--premium-glow) !important;
+}
+html[data-theme="dark"] .logo-icon,
+body.dark-theme .logo-icon {
+    background: var(--accent-gradient) !important;
+    box-shadow: 0 8px 20px var(--premium-glow) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   8. CHAT — dark native-messenger feel.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] .chat-container,
+body.dark-theme .chat-container {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+html[data-theme="dark"] .chat-msg-other,
+body.dark-theme .chat-msg-other {
+    background: var(--surface-2) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+html[data-theme="dark"] .chat-msg-self,
+body.dark-theme .chat-msg-self {
+    background: var(--accent-gradient) !important;
+    color: #fff !important;
+}
+
+/* ---------------------------------------------------------------------------
+   9. CODE / DOCS — intentional dark utility panels keep high contrast.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] pre,
+html[data-theme="dark"] .docs-code-panel,
+html[data-theme="dark"] .code-tabs,
+html[data-theme="dark"] #autogen-hud,
+html[data-theme="dark"] #autogen-log-container,
+html[data-theme="dark"] .console-box,
+body.dark-theme pre,
+body.dark-theme .docs-code-panel,
+body.dark-theme .code-tabs,
+body.dark-theme #autogen-hud,
+body.dark-theme #autogen-log-container,
+body.dark-theme .console-box {
+    background: #05060a !important;
+    border-color: var(--border) !important;
+    color: var(--text-secondary) !important;
+}
+html[data-theme="dark"] .method-badge.get,
+body.dark-theme .method-badge.get {
+    background: var(--ds-success-bg) !important;
+    color: var(--ds-success) !important;
+    border-color: var(--ds-success-line) !important;
+}
+html[data-theme="dark"] .method-badge.post,
+body.dark-theme .method-badge.post {
+    background: var(--ds-warning-bg) !important;
+    color: var(--ds-warning) !important;
+    border-color: var(--ds-warning-line) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   10. MODALS & NOTIFICATIONS — floating glass surfaces.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .swal2-popup,
+html[data-theme="dark"] .notifications-dropdown,
+html[data-theme="dark"] .theme-menu,
+html[data-theme="dark"] .dropdown-menu,
+body.dark-theme .modal-content,
+body.dark-theme .swal2-popup,
+body.dark-theme .notifications-dropdown,
+body.dark-theme .theme-menu,
+body.dark-theme .dropdown-menu {
+    background: var(--dropdown-bg, var(--surface-strong)) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+html[data-theme="dark"] .swal2-title,
+html[data-theme="dark"] .swal2-html-container,
+body.dark-theme .swal2-title,
+body.dark-theme .swal2-html-container {
+    color: var(--text) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   11. SCROLLBAR — subtle, on-canvas.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] ::-webkit-scrollbar-track,
+body.dark-theme ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb,
+body.dark-theme ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(16, 185, 129, .5), rgba(99, 102, 241, .5));
+    border-radius: 10px;
+    border: 2px solid var(--scrollbar-border);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #10b981, #6366f1);
+}
+
+/* ---------------------------------------------------------------------------
+   12. MOBILE TOP BAR + NAV — transparent glass so the ambient canvas shows.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] .mobile-top-bar,
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .bottom-nav,
+body.dark-theme .mobile-top-bar,
+body.dark-theme .topbar,
+body.dark-theme .bottom-nav {
+    background: rgba(10, 12, 18, .82) !important;
+    border-color: var(--border) !important;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+/* ---------------------------------------------------------------------------
+   13. TABLES + ADMIN — readable dark rows.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] .table-responsive,
+html[data-theme="dark"] .table-responsive thead th,
+html[data-theme="dark"] .table-responsive tbody td,
+html[data-theme="dark"] .admin-filter-bar,
+body.dark-theme .table-responsive,
+body.dark-theme .table-responsive thead th,
+body.dark-theme .table-responsive tbody td,
+body.dark-theme .admin-filter-bar {
+    background: var(--surface-2) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+html[data-theme="dark"] .table-responsive thead th,
+body.dark-theme .table-responsive thead th {
+    color: var(--text-muted) !important;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+   14. RESPONSIVE — no horizontal overflow; the grid collapses cleanly.
+   --------------------------------------------------------------------------- */
+html[data-theme="dark"] body,
+body.dark-theme {
+    overflow-x: hidden;
+}
+@media (max-width: 480px) {
+    html[data-theme="dark"] .action-card,
+    body.dark-theme .action-card { padding: 14px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme="dark"] .action-card,
+    html[data-theme="dark"] .quick-menu-card,
+    html[data-theme="dark"] .feature-card,
+    html[data-theme="dark"] .btn,
+    body.dark-theme .action-card,
+    body.dark-theme .quick-menu-card,
+    body.dark-theme .feature-card,
+    body.dark-theme .btn {
+        transition: none !important;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   15. LIGHT (PREMIUM) — the light theme stays a clean, modern SaaS canvas
+   that shares the same emerald/violet brand and uniform card language.
+   --------------------------------------------------------------------------- */
+html[data-theme="light"] body,
+body.light-theme {
+    --bg: #f7f9fc;
+    --surface: #ffffff;
+    --surface-2: #f1f5fb;
+    --text: #0f172a;
+    --text-primary: #0f172a;
+    --text-secondary: #55627a;
+    --text-muted: #7b88a3;
+    --border: #e6ebf3;
+    --border-color: #e6ebf3;
+    --border-color-hover: #cdd7e6;
+    --accent-primary: #10b981;
+    --accent-secondary: #6366f1;
+    --accent-gradient: linear-gradient(135deg, #0fd68f 0%, #6366f1 135%);
+    --accent-gradient-hover: linear-gradient(135deg, #0cb87a 0%, #545ee8 135%);
+    --ds-accent: #10b981;
+    --ds-accent-strong: #059669;
+    --ds-accent-cyan: #6366f1;
+    --ds-accent-cyan-strong: #545ee8;
+    --ds-accent-soft: rgba(16, 185, 129, .12);
+    --ds-accent-line: rgba(16, 185, 129, .32);
+    --gradient-text: linear-gradient(135deg, #059669, #545ee8);
+    --premium-glow: rgba(16, 185, 129, .16);
+    --premium-shadow: 0 20px 48px rgba(15, 23, 42, .1);
+    --ds-shadow: 0 22px 52px rgba(15, 23, 42, .1);
+    --ds-shadow-soft: 0 10px 28px rgba(15, 23, 42, .07);
+}
+
+/* Light canvas: calm SaaS depth, no flat white. */
+html[data-theme="light"] body,
+body.light-theme {
+    background:
+        radial-gradient(70% 55% at 50% -10%, rgba(99, 102, 241, .07), transparent 55%),
+        radial-gradient(50% 40% at 100% 0%, rgba(16, 185, 129, .05), transparent 50%),
+        var(--bg) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme="light"] .glass-card,
+html[data-theme="light"] .table-card,
+html[data-theme="light"] .generator-box,
+html[data-theme="light"] .auth-box,
+html[data-theme="light"] .chat-container,
+html[data-theme="light"] .plan-card,
+html[data-theme="light"] .flow-box,
+html[data-theme="light"] .review-card,
+html[data-theme="light"] .profile-card,
+html[data-theme="light"] .profile-box,
+body.light-theme .glass-card,
+body.light-theme .table-card,
+body.light-theme .generator-box,
+body.light-theme .auth-box,
+body.light-theme .chat-container,
+body.light-theme .plan-card,
+body.light-theme .flow-box,
+body.light-theme .review-card,
+body.light-theme .profile-card,
+body.light-theme .profile-box {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--premium-shadow) !important;
+}
+
+html[data-theme="light"] .stat-card,
+html[data-theme="light"] .metric-card,
+html[data-theme="light"] .dashboard-stat,
+html[data-theme="light"] .admin-stat-card,
+body.light-theme .stat-card,
+body.light-theme .metric-card,
+body.light-theme .dashboard-stat,
+body.light-theme .admin-stat-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 8px 26px rgba(15, 23, 42, .06) !important;
+}
+
+html[data-theme="light"] .sidebar-link.active,
+body.light-theme .sidebar-link.active {
+    background: var(--accent-gradient) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 22px var(--premium-glow) !important;
+}
+html[data-theme="light"] .gradient-text,
+html[data-theme="light"] .gradient-heading,
+body.light-theme .gradient-text,
+body.light-theme .gradient-heading {
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent !important;
+}

@@ -53,11 +53,32 @@ export function writeJSON(name, data) {
     // Sama dengan monolit asli: error tulis tidak ditelan agar tidak
     // menyembunyikan kegagalan penyimpanan (request handler akan menangkapnya).
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(dataFile(name), JSON.stringify(data, null, 2));
+    // Atomik yazma: önce tmp dosyasına yaz, sonra rename. Süreç yazma ortasında
+    // ölürse hedef JSON bozulmaz (rename aynı dosya sisteminde atomiktir).
+    const target = dataFile(name);
+    const tmp = target + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+    try {
+        fs.renameSync(tmp, target);
+    } catch (e) {
+        // rename gagal (jarang) → fallback ke perilaku lama: tulis langsung.
+        try { fs.unlinkSync(tmp); } catch (e) { /* abaikan */ }
+        fs.writeFileSync(target, JSON.stringify(data, null, 2));
+    }
 }
 
 export function randomKey(len) {
     return crypto.randomBytes(Math.ceil(len / 2)).toString('hex').slice(0, len);
+}
+
+/**
+ * API Key yang mudah dibaca: "Codex-XXXX-XXXX-XXXX-XXXX"
+ * 4 grup x 8 hex (32 hex = 128-bit entropy), huruf besar agar mudah diketik
+ * dan dibedakan. Semantik sama dengan key lama; hanya presentasinya beda.
+ */
+export function generateApiKey() {
+    const raw = randomKey(32).toUpperCase();
+    return 'Codex-' + raw.slice(0, 8) + '-' + raw.slice(8, 16) + '-' + raw.slice(16, 24) + '-' + raw.slice(24, 32);
 }
 
 export function newId() {
@@ -79,16 +100,61 @@ export function sendJSON(res, status, data) {
     res.end(JSON.stringify(data));
 }
 
+// Maksimum istek gövdesi (1 MB) — bellek DoS'unu önler.
+const MAX_BODY_BYTES = 1024 * 1024;
+
 export function readBody(req) {
     return new Promise((resolve) => {
         let body = '';
-        req.on('data', (chunk) => { body += chunk; });
-        req.on('end', () => {
-            try { resolve(JSON.parse(body || '{}')); }
-            catch (e) { resolve({}); }
+        let bytes = 0;
+        let tooLarge = false;
+        let settled = false;
+        const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            resolve(value);
+        };
+        req.on('data', (chunk) => {
+            bytes += chunk.length;
+            if (bytes > MAX_BODY_BYTES) {
+                tooLarge = true;
+                req.destroy(); // putuskan koneksi, jangan lanjut konsumsi data
+                finish({});    // destroy 'end' tetiklemeyebilir — burada resolve et
+                return;
+            }
+            body += chunk;
         });
-        req.on('error', () => resolve({}));
+        req.on('end', () => {
+            if (tooLarge) { finish({}); return; }
+            try { finish(JSON.parse(body || '{}')); }
+            catch (e) { finish({}); }
+        });
+        req.on('error', () => finish({}));
+        req.on('close', () => finish({})); // son güvenlik ağı: her durumda resolve
     });
+}
+
+/**
+ * Rate limit sederhana berbasis IP (in-memory, sliding window).
+ * Untuk proteksi brute-force login. Default: 15 percobaan per menit.
+ * Reset saat HMR reload dapat diterima (hanya pembatas laju).
+ */
+const rateBuckets = new Map(); // ip -> { windowStart, count }
+export function isRateLimited(key, limit = 15, windowMs = 60_000) {
+    const now = Date.now();
+    const bucket = rateBuckets.get(key);
+    if (!bucket || now - bucket.windowStart >= windowMs) {
+        rateBuckets.set(key, { windowStart: now, count: 1 });
+        // Bersihkan bucket lama agar memori tidak menumpuk.
+        if (rateBuckets.size > 10_000) {
+            for (const [k, b] of rateBuckets) {
+                if (now - b.windowStart >= windowMs) rateBuckets.delete(k);
+            }
+        }
+        return false;
+    }
+    bucket.count += 1;
+    return bucket.count > limit;
 }
 
 export function getClientIP(req) {
@@ -148,6 +214,21 @@ export function generateOrderId() {
     const d = (n) => String(crypto.randomInt(0, Math.pow(10, n))).padStart(n, '0');
     return 'GPA.' + d(4) + '-' + d(4) + '-' + d(4) + '-' + d(5);
 }
+
+/* ============================== RUNTIME ANCHOR ============================== */
+
+/**
+ * Waktu mulai PROSES server (sejak `npm start` / proses PM2 boot). Dihitung
+ * dari process.uptime(), jadi:
+ *  - server restart / mati  -> runtime ikut reset ke 0 (mencerminkan boot baru)
+ *  - halaman di-refresh     -> frontend fetch ulang nilai live, TIDAK reset
+ * Tidak disimpan di file; runtime adalah milik sistem / proses, bukan milik tab.
+ */
+export function getServerStartedAt() {
+    return Date.now() - Math.round(process.uptime() * 1000);
+}
+
+/* ============================== LAIN-LAIN ============================== */
 
 export function isMaintenance(which) {
     const settings = readJSON('settings', {});

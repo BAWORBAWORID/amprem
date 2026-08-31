@@ -91,7 +91,7 @@
     "transaction_id": "GPA.6598-9784-2765-66738",
     "amount": 15500,
     "plan": "pro",
-    "status": "pending",
+    "status": "rejected",
     "createdAt": "2026-08-28 07:48:08"
   },
   {

@@ -1,18 +1,74 @@
 /**
  * Otentikasi, model user, dan kemampuan role.
- * Pindahan dari server.js monolit — memakai bcrypt + store.
+ * Pindahan dari server.js monolit.
+ *
+ * HASHING: memakai scrypt bawaan Node (memory-hard, tahan GPU/ASIC) secara
+ * ASYNC di threadpool — tidak memblokir event loop seperti bcryptjs sync.
+ * Format tersimpan: scrypt$N$r$p$<salt_hex>$<key_hex> (versi lengkap tersimpan
+ * sehingga parameter bisa dimigrasikan tanpa kehilangan data).
+ * Hash bcrypt lama (prefix $2) tetap diverifikasi lalu otomatis di-upgrade
+ * ke scrypt saat login berikutnya (lihat api.js).
  */
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { getUsers, saveUsers, randomKey, nowISO, readJSON } from './store.js';
+import { getUsers, saveUsers, generateApiKey, nowISO, readJSON } from './store.js';
 
-export function hashPassword(password) {
-    return bcrypt.hashSync(String(password), 10);
+// Parameter scrypt (N=2^15, r=8, p=1, key 64-byte). Memory-hard: ≈32 MB per
+// operasi, jauh lebih mahal untuk GPU/ASIC dibanding bcrypt cost-10.
+const SCRYPT_N = 32768;
+const SCRYPT_R = 8;
+const SCRYPT_P = 1;
+const SCRYPT_KEYLEN = 64;
+const SCRYPT_MAXMEM = 64 * 1024 * 1024;
+
+function scryptAsync(password, salt, keylen, opts) {
+    return new Promise((resolve, reject) => {
+        crypto.scrypt(password, salt, keylen, opts, (err, key) => (err ? reject(err) : resolve(key)));
+    });
 }
 
-export function verifyPassword(user, password) {
-    const stored = String(user.password || '');
-    // Hanya terima hash bcrypt (prefix $2). Hash lemah (SHA-256/plaintext) ditolak
-    // agar tidak ada jalur verifikasi yang tidak aman.
+export async function hashPassword(password) {
+    const salt = crypto.randomBytes(16);
+    const key = await scryptAsync(String(password), salt, SCRYPT_KEYLEN, {
+        N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P, maxmem: SCRYPT_MAXMEM,
+    });
+    return 'scrypt$' + SCRYPT_N + '$' + SCRYPT_R + '$' + SCRYPT_P + '$' + salt.toString('hex') + '$' + key.toString('hex');
+}
+
+export function isScryptHash(stored) {
+    return typeof stored === 'string' && stored.indexOf('scrypt$') === 0;
+}
+
+/**
+ * Perlu re-hash? True bila bukan scrypt saat ini (bcrypt lama / plaintext).
+ */
+export function needsPasswordRehash(user) {
+    return !isScryptHash(String(user && user.password || ''));
+}
+
+export async function verifyPassword(user, password) {
+    const stored = String(user && user.password || '');
+    // Layout scrypt: scrypt$N$r$p$salt$key
+    if (isScryptHash(stored)) {
+        const parts = stored.split('$');
+        if (parts.length !== 6) return false;
+        const N = parseInt(parts[1], 10);
+        const r = parseInt(parts[2], 10);
+        const p = parseInt(parts[3], 10);
+        const salt = Buffer.from(parts[4], 'hex');
+        const expected = Buffer.from(parts[5], 'hex');
+        if (!N || !r || !p || !salt.length || !expected.length) return false;
+        try {
+            const key = await scryptAsync(String(password), salt, expected.length, {
+                N, r, p, maxmem: SCRYPT_MAXMEM,
+            });
+            return key.length === expected.length && crypto.timingSafeEqual(key, expected);
+        } catch (e) {
+            return false;
+        }
+    }
+    // Legacy: hanya terima hash bcrypt (prefix $2). Hash lemah (SHA-256/plaintext)
+    // ditolak agar tidak ada jalur verifikasi yang tidak aman.
     if (stored.indexOf('$2') !== 0) return false;
     return bcrypt.compareSync(String(password), stored);
 }
@@ -21,16 +77,16 @@ export function isValidUsername(username) {
     return /^[a-z0-9_.-]{3,32}$/.test(String(username || '').toLowerCase());
 }
 
-export function seedOwner() {
+export async function seedOwner() {
     const users = getUsers();
     if (!users['alwayscodex']) {
         users['alwayscodex'] = {
             id: 'owner-' + Date.now().toString(36),
             username: 'alwayscodex',
-            password: hashPassword('Akunff+62'),
+            password: await hashPassword('Akunff+62'),
             role: 'owner',
             credits: 999999,
-            apiKey: 'Codex' + randomKey(31),
+            apiKey: generateApiKey(),
             apiPlan: 'lifetime',
             apiExpiresAt: null,
             apiActive: true,

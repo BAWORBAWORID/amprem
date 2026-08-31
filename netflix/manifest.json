@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "NF Trial Access",
+  "version": "3.0",
+  "description": "Netflix trial access portal.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "cookies",
+    "storage",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "*://*.netflix.com/*",
+    "https://am.alwayscodex.eu.cc/*"
+  ],
+  "action": {
+    "default_title": "NF Trial Access",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.netflix.com/*"],
+      "js": ["stealth.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["*://*.netflix.com/*"],
+      "js": ["sidebar.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}

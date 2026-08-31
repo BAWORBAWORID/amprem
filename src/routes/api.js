@@ -2,8 +2,9 @@
  * Rute API utama (semua endpoint /api/*).
  * Pindahan verbatim dari server.js monolit — memakai helper dari utils.
  */
-import { getClientIP, sendJSON, readBody, getUsers, saveUsers, readJSON, writeJSON, newId, nowISO, fmtDateTime, randomKey, getClientDevice, isLocalIP, requireNoMaintenance, addLog, addDuplicateLog, generateOrderId } from '../utils/store.js';
+import { getClientIP, sendJSON, readBody, getUsers, saveUsers, readJSON, writeJSON, newId, nowISO, fmtDateTime, generateApiKey, getClientDevice, isLocalIP, requireNoMaintenance, addLog, addDuplicateLog, generateOrderId, isRateLimited, getServerStartedAt } from '../utils/store.js';
 import { runAutoCleanup } from '../utils/autocleanup.js';
+import { listAnnouncements, getAnnouncement, createAnnouncement, updateAnnouncement, deleteAnnouncement } from '../utils/announcements.js';
 import { CHAT_CLIENTS, createTransaction } from '../utils/chat.js';
 import { generatePaymentQRIS } from '../utils/qris.js';
 
@@ -31,9 +32,9 @@ function saveBannedIPRecords(records) {
 }
 
 import { createSession, setSessionCookie, destroySession, getSessionUser } from '../utils/session.js';
-import { sanitizeUser, hashPassword, verifyPassword, isUnlimitedRole, hasApiRole, hasBulkRole, canUseApiKey, prepareApiRole, isPremiumExpired, canUseGenerator, canUseBatch, generateReferralCode, ensureReferralCode, findReferralOwner, getReferralData, claimReferralRewards, REFERRAL_REWARD, ensureDailyUserCredits, DEFAULT_USER_CREDITS, isValidUsername } from '../utils/auth.js';
+import { sanitizeUser, hashPassword, verifyPassword, needsPasswordRehash, isUnlimitedRole, hasApiRole, hasBulkRole, canUseApiKey, prepareApiRole, isPremiumExpired, canUseGenerator, canUseBatch, generateReferralCode, ensureReferralCode, findReferralOwner, getReferralData, claimReferralRewards, REFERRAL_REWARD, ensureDailyUserCredits, DEFAULT_USER_CREDITS, isValidUsername } from '../utils/auth.js';
 import { getChatMessages, broadcastChat, broadcastChatEvent, containsBadword, reviewStats } from '../utils/chat.js';
-import { sendLink, claimPremium, getActiveBatch, startBatch, startBatchWorker, progressBatch, serializeBatch, generateNFToken, GENEMAIL_DOMAINS, GENEMAIL_VERIFIED_DOMAINS } from '../utils/am.js';
+import { sendLink, claimPremium, getActiveBatch, setActiveBatch, startBatch, startBatchWorker, progressBatch, serializeBatch, generateNFToken, GENEMAIL_DOMAINS, GENEMAIL_VERIFIED_DOMAINS } from '../utils/am.js';
 
 import { deployBot, stopBot, startBot, restartBot, removeBot, listBots, canManageBot, isBotOwnedBy, rekeyBotsForUser } from '../utils/telegram.js';
 import { SECURITY_HEADERS } from '../utils/security.js';
@@ -49,12 +50,59 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const activations = readJSON('activations', []);
         const success = activations.filter(function (a) { return a.status === 'success'; }).length;
+        const serverStartedAt = getServerStartedAt();
         return sendJSON(res, 200, {
             totalUsers: Object.keys(users).length,
             totalSuccess: success,
             pageViews: 0,
-            uptime: process.uptime(),
+            uptime: Math.max(0, Math.floor((Date.now() - serverStartedAt) / 1000)),
+            serverStartedAtEpoch: serverStartedAt,
         });
+    }
+
+    // Pengumuman publik (dashboard): hanya yang aktif.
+    if (pathname === '/api/public/announcements' && method === 'GET') {
+        const enabled = listAnnouncements().filter(function (a) { return a.enabled; });
+        const sorted = enabled.slice().sort(function (a, b) {
+            const pr = { critical: 0, high: 1, normal: 2, low: 3 };
+            return (pr[a.priority] ?? 2) - (pr[b.priority] ?? 2);
+        });
+        return sendJSON(res, 200, { success: true, announcements: sorted });
+    }
+
+    // Admin: CRUD pengumuman.
+    if (pathname === '/api/admin/announcements' && method === 'GET') {
+        const admin = requireAdmin(res);
+        if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        return sendJSON(res, 200, { success: true, announcements: listAnnouncements() });
+    }
+
+    if (pathname === '/api/admin/announcements' && method === 'POST') {
+        const admin = requireAdmin(res);
+        if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        const body = await readBody(req);
+        if (!body.title || !String(body.title).trim()) return sendJSON(res, 400, { success: false, message: 'Judul pengumuman wajib diisi.' });
+        const item = createAnnouncement(body);
+        addLog('[ADMIN] Pengumuman dibuat: ' + item.title);
+        return sendJSON(res, 201, { success: true, announcement: item });
+    }
+
+    if (pathname.match(/^\/api\/admin\/announcements\/[^\/]+$/) && method === 'PUT') {
+        const admin = requireAdmin(res);
+        if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        const id = pathname.split('/').pop();
+        const body = await readBody(req);
+        const item = updateAnnouncement(id, body);
+        if (!item) return sendJSON(res, 404, { success: false, message: 'Pengumuman tidak ditemukan.' });
+        return sendJSON(res, 200, { success: true, announcement: item });
+    }
+
+    if (pathname.match(/^\/api\/admin\/announcements\/[^\/]+$/) && method === 'DELETE') {
+        const admin = requireAdmin(res);
+        if (!admin) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        const id = pathname.split('/').pop();
+        if (!deleteAnnouncement(id)) return sendJSON(res, 404, { success: false, message: 'Pengumuman tidak ditemukan.' });
+        return sendJSON(res, 200, { success: true, message: 'Pengumuman dihapus.' });
     }
 
     // Validasi kode referal (dipakai halaman /invite?code=xxx supaya banner
@@ -156,11 +204,14 @@ async function handleAPI(req, res, url) {
         if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
         const tickets = readJSON('tickets', []);
         var userTickets = tickets.filter(function (t) { return t.userId === user.id || t.username === user.username; });
-        var statusFilter = new URL(req.url, 'http://localhost').searchParams.get('status');
+        var urlParams = new URL(req.url, 'http://localhost').searchParams;
+        var statusFilter = urlParams.get('status');
         if (statusFilter && statusFilter !== 'all') {
             userTickets = userTickets.filter(function (t) { return t.status === statusFilter; });
         }
-        userTickets.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+        // Sorting di backend: order=asc (terlama) | desc (terbaru, default)
+        var asc = urlParams.get('order') === 'asc';
+        userTickets.sort(function (a, b) { return asc ? new Date(a.createdAt) - new Date(b.createdAt) : new Date(b.createdAt) - new Date(a.createdAt); });
         return sendJSON(res, 200, { success: true, tickets: userTickets });
     }
 
@@ -239,11 +290,13 @@ async function handleAPI(req, res, url) {
         const user = getSessionUser(req, res);
         if (!user || (user.role !== 'admin' && user.role !== 'owner')) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
         var tickets = readJSON('tickets', []);
-        var statusFilter = new URL(req.url, 'http://localhost').searchParams.get('status');
+        var urlParams = new URL(req.url, 'http://localhost').searchParams;
+        var statusFilter = urlParams.get('status');
         if (statusFilter && statusFilter !== 'all') {
             tickets = tickets.filter(function (t) { return t.status === statusFilter; });
         }
-        tickets.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+        var asc = urlParams.get('order') === 'asc';
+        tickets.sort(function (a, b) { return asc ? new Date(a.createdAt) - new Date(b.createdAt) : new Date(b.createdAt) - new Date(a.createdAt); });
         return sendJSON(res, 200, { success: true, tickets: tickets });
     }
 
@@ -260,6 +313,96 @@ async function handleAPI(req, res, url) {
         writeJSON('tickets', tickets);
         addLog('[TICKET] Admin ' + user.username + ' menyelesaikan tiket: ' + tickets[idx].subject);
         return sendJSON(res, 200, { success: true, message: 'Tiket diselesaikan.', ticket: tickets[idx] });
+    }
+
+    // User: POST /api/tickets/:id/close - pemilik tiket menutup tiketnya sendiri
+    if (pathname.match(/^\/api\/tickets\/[^\/]+\/close$/) && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        var ticketId = pathname.split('/')[3];
+        const tickets = readJSON('tickets', []);
+        var idx = tickets.findIndex(function (t) { return t.id === ticketId; });
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        if (tickets[idx].userId !== user.id && tickets[idx].username !== user.username) {
+            return sendJSON(res, 403, { success: false, message: 'Hanya pemilik tiket yang bisa menutupnya.' });
+        }
+        tickets[idx].status = 'closed';
+        tickets[idx].updatedAt = fmtDateTime();
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] ' + user.username + ' menutup tiket: ' + tickets[idx].subject);
+        return sendJSON(res, 200, { success: true, message: 'Tiket ditutup.', ticket: tickets[idx] });
+    }
+
+    // User: POST /api/tickets/:id/reopen - buka kembali tiket yang sudah closed/solved
+    if (pathname.match(/^\/api\/tickets\/[^\/]+\/reopen$/) && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
+        var ticketId = pathname.split('/')[3];
+        const tickets = readJSON('tickets', []);
+        var idx = tickets.findIndex(function (t) { return t.id === ticketId; });
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        if (tickets[idx].userId !== user.id && tickets[idx].username !== user.username) {
+            return sendJSON(res, 403, { success: false, message: 'Hanya pemilik tiket yang bisa membuka kembali.' });
+        }
+        tickets[idx].status = 'pending';
+        tickets[idx].updatedAt = fmtDateTime();
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] ' + user.username + ' membuka kembali tiket: ' + tickets[idx].subject);
+        return sendJSON(res, 200, { success: true, message: 'Tiket dibuka kembali.', ticket: tickets[idx] });
+    }
+
+    // Admin: POST /api/admin/tickets/:id/priority - ubah prioritas (low/normal/high/critical)
+    if (pathname.match(/^\/api\/admin\/tickets\/[^\/]+\/priority$/) && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user || (user.role !== 'admin' && user.role !== 'owner')) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        var ticketId = pathname.split('/')[4];
+        const body = await readBody(req);
+        const VALID_PRIORITIES = ['low', 'normal', 'high', 'critical'];
+        var priority = String(body.priority || '').toLowerCase();
+        if (VALID_PRIORITIES.indexOf(priority) === -1) {
+            return sendJSON(res, 400, { success: false, message: 'Prioritas harus salah satu dari: ' + VALID_PRIORITIES.join(', ') + '.' });
+        }
+        const tickets = readJSON('tickets', []);
+        var idx = tickets.findIndex(function (t) { return t.id === ticketId; });
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        tickets[idx].priority = priority;
+        tickets[idx].updatedAt = fmtDateTime();
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] Admin ' + user.username + ' mengubah prioritas tiket "' + tickets[idx].subject + '" menjadi ' + priority);
+        return sendJSON(res, 200, { success: true, message: 'Prioritas diperbarui.', ticket: tickets[idx] });
+    }
+
+    // Admin: POST /api/admin/tickets/:id/assign - tugaskan tiket ke admin lain
+    if (pathname.match(/^\/api\/admin\/tickets\/[^\/]+\/assign$/) && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user || (user.role !== 'admin' && user.role !== 'owner')) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        var ticketId = pathname.split('/')[4];
+        const body = await readBody(req);
+        var assignee = String(body.assignee || '').trim();
+        if (!assignee) return sendJSON(res, 400, { success: false, message: 'Nama admin yang ditugaskan wajib diisi.' });
+        const tickets = readJSON('tickets', []);
+        var idx = tickets.findIndex(function (t) { return t.id === ticketId; });
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        tickets[idx].assignedTo = assignee;
+        tickets[idx].updatedAt = fmtDateTime();
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] Admin ' + user.username + ' menugaskan tiket "' + tickets[idx].subject + '" ke ' + assignee);
+        return sendJSON(res, 200, { success: true, message: 'Tiket ditugaskan ke ' + assignee + '.', ticket: tickets[idx] });
+    }
+
+    // Admin: POST /api/admin/tickets/:id/reopen - buka kembali tiket yang diselesaikan
+    if (pathname.match(/^\/api\/admin\/tickets\/[^\/]+\/reopen$/) && method === 'POST') {
+        const user = getSessionUser(req, res);
+        if (!user || (user.role !== 'admin' && user.role !== 'owner')) return sendJSON(res, 403, { success: false, message: 'Akses ditolak.' });
+        var ticketId = pathname.split('/')[4];
+        const tickets = readJSON('tickets', []);
+        var idx = tickets.findIndex(function (t) { return t.id === ticketId; });
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Tiket tidak ditemukan.' });
+        tickets[idx].status = 'pending';
+        tickets[idx].updatedAt = fmtDateTime();
+        writeJSON('tickets', tickets);
+        addLog('[TICKET] Admin ' + user.username + ' membuka kembali tiket: ' + tickets[idx].subject);
+        return sendJSON(res, 200, { success: true, message: 'Tiket dibuka kembali.', ticket: tickets[idx] });
     }
 
     /* ---------- REFERRAL (halaman Program Referal) ---------- */
@@ -318,8 +461,9 @@ async function handleAPI(req, res, url) {
             return sendJSON(res, 403, { success: false, message: 'Batas maksimal 3 akun per IP tercapai. Hubungi admin jika ini akun Anda.' });
         }
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+        const hashedPassword = await hashPassword(password);
         const user = {
-            id: newId(), username: username, password: hashPassword(password),
+            id: newId(), username: username, password: hashedPassword,
             role: 'user', credits: DEFAULT_USER_CREDITS, creditResetDate: today, apiKey: '', apiPlan: '', apiExpiresAt: null, apiActive: false,
             createdAt: nowISO(), banned: false, ip: ip, device: getClientDevice(req),
             referralCode: generateReferralCode(users), referredBy: '', referralCount: 0, referralEarned: 0,
@@ -371,18 +515,23 @@ async function handleAPI(req, res, url) {
     }
 
     if (pathname === '/api/auth/login' && method === 'POST') {
+        // Proteksi brute-force: maksimal 10 percobaan login per IP per menit.
+        if (isRateLimited('login:' + clientIP, 10, 60_000)) {
+            addDuplicateLog('[BOT/IP] Rate limit: terlalu banyak percobaan login gagal — IP ' + clientIP);
+            return sendJSON(res, 429, { success: false, message: 'Terlalu banyak percobaan. Silakan coba lagi dalam satu menit.' });
+        }
         const body = await readBody(req);
         const username = String(body.username || '').trim().toLowerCase();
         console.log('[LOGIN] Username: ' + username + ' from ' + clientIP);
         const password = String(body.password || '');
         const users = getUsers();
         const user = users[username];
-        if (!user || !verifyPassword(user, password)) {
+        if (!user || !(await verifyPassword(user, password))) {
             return sendJSON(res, 401, { success: false, message: 'Username atau password salah.' });
         }
         let userChanged = false;
-        if (String(user.password || '').indexOf('$2') !== 0) {
-            user.password = hashPassword(password);
+        if (needsPasswordRehash(user)) {
+            user.password = await hashPassword(password);
             userChanged = true;
         }
         if (userChanged) {
@@ -427,7 +576,7 @@ async function handleAPI(req, res, url) {
         }
         const users = getUsers();
         const oldKey = user.apiKey || '';
-        user.apiKey = 'Codex' + randomKey(31);
+        user.apiKey = generateApiKey();
         user.apiKeyRevoked = false;
         user.apiActive = true;
         users[user.username] = user;
@@ -474,10 +623,17 @@ async function handleAPI(req, res, url) {
         migrateField('chat', 'username');
         migrateField('reviews', 'username');
 
-        const batch = readJSON('batch', null);
-        if (batch && batch.operator === oldName) {
-            batch.operator = newName;
-            writeJSON('batch', batch);
+        const legacyBatch = readJSON('batch', null);
+        if (legacyBatch && legacyBatch.operator === oldName) {
+            legacyBatch.operator = newName;
+            writeJSON('batch', legacyBatch);
+        }
+        const batchesMap = readJSON('batches', {});
+        if (batchesMap && batchesMap[oldName]) {
+            batchesMap[newName] = batchesMap[oldName];
+            batchesMap[newName].operator = newName;
+            delete batchesMap[oldName];
+            writeJSON('batches', batchesMap);
         }
 
         addLog('[SISTEM] Username "' + oldName + '" diubah menjadi "' + newName + '"');
@@ -492,7 +648,7 @@ async function handleAPI(req, res, url) {
         if (!newPassword) return sendJSON(res, 400, { success: false, message: 'Password baru wajib diisi.' });
         if (newPassword.length < 6) return sendJSON(res, 400, { success: false, message: 'Password minimal 6 karakter.' });
         const users = getUsers();
-        user.password = hashPassword(newPassword);
+        user.password = await hashPassword(newPassword);
         users[user.username] = user;
         saveUsers(users);
         addLog('[SISTEM] ' + user.username + ' mengubah password');
@@ -523,21 +679,20 @@ async function handleAPI(req, res, url) {
         const body = await readBody(req);
         const prefix = String(body.prefix || '').trim();
 
-        // Validasi: tidak boleh kosong jika mencoba simpan
-        if (!prefix) {
-            return sendJSON(res, 400, { success: false, message: 'Prefix tidak boleh kosong.' });
-        }
-        // Validasi: whitelist karakter aman (huruf, angka, _, -)
-        if (!/^[a-zA-Z0-9_-]+$/.test(prefix)) {
-            return sendJSON(res, 400, { success: false, message: 'Prefix hanya boleh mengandung huruf, angka, underscore (_), dan strip (-).' });
-        }
-        // Validasi: batasi panjang
-        if (prefix.length > 20) {
-            return sendJSON(res, 400, { success: false, message: 'Prefix maksimal 20 karakter.' });
+        // Kosong = hapus prefix (Order ID kembali ke format default GPA.xxxx).
+        // Jika diisi: whitelist karakter aman + batas panjang.
+        if (prefix) {
+            if (!/^[a-zA-Z0-9_-]+$/.test(prefix)) {
+                return sendJSON(res, 400, { success: false, message: 'Prefix hanya boleh mengandung huruf, angka, underscore (_), dan strip (-).' });
+            }
+            if (prefix.length > 20) {
+                return sendJSON(res, 400, { success: false, message: 'Prefix maksimal 20 karakter.' });
+            }
         }
 
         const users = getUsers();
-        user.customOrderPrefix = prefix;
+        user.customOrderPrefix = prefix || '';
+        if (!prefix && user.customOrderPrefixCounter) user.customOrderPrefixCounter = {};
         // Inisialisasi counter jika belum ada
         if (!user.customOrderPrefixCounter) user.customOrderPrefixCounter = {};
         users[user.username] = user;
@@ -612,25 +767,24 @@ async function handleAPI(req, res, url) {
     if (pathname === '/api/am/autogen/active-batch' && method === 'GET') {
         const user = getSessionUser(req, res);
         if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
-        const batch = getActiveBatch();
-        if (batch && !canUseBatch(user, batch)) return sendJSON(res, 403, { success: false, message: 'Batch ini bukan milik Anda.' });
-        progressBatch();
+        const batch = getActiveBatch(user.username);
+        progressBatch(user.username);
+        const fresh = getActiveBatch(user.username);
         return sendJSON(res, 200, {
-            success: !!batch,
-            isStalled: !!(batch && batch.status === 'stalled'),
-            batch: serializeBatch(batch),
+            success: !!fresh,
+            isStalled: !!(fresh && fresh.status === 'stalled'),
+            batch: serializeBatch(fresh),
         });
     }
 
     if (pathname === '/api/am/autogen/resume-batch' && method === 'POST') {
         const user = getSessionUser(req, res);
         if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
-        const batch = getActiveBatch();
-        if (batch && !canUseBatch(user, batch)) return sendJSON(res, 403, { success: false, message: 'Batch ini bukan milik Anda.' });
+        const batch = getActiveBatch(user.username);
         if (batch && batch.status === 'stalled') {
             batch.status = 'running';
             batch.logs.push('[SYSTEM] Batch dilanjutkan...');
-            writeJSON('batch', batch);
+            setActiveBatch(user.username, batch);
             startBatchWorker(batch);
             return sendJSON(res, 200, { success: true, message: 'Batch dilanjutkan. Worker dijalankan ulang.' });
         }
@@ -640,9 +794,7 @@ async function handleAPI(req, res, url) {
     if (pathname === '/api/am/autogen/clear-batch' && method === 'POST') {
         const user = getSessionUser(req, res);
         if (!user) return sendJSON(res, 401, { success: false, message: 'Tidak terautentikasi.' });
-        const batch = getActiveBatch();
-        if (batch && !canUseBatch(user, batch)) return sendJSON(res, 403, { success: false, message: 'Batch ini bukan milik Anda.' });
-        writeJSON('batch', null);
+        setActiveBatch(user.username, null);
         return sendJSON(res, 200, { success: true, message: 'Batch dibersihkan.' });
     }
 
@@ -999,7 +1151,7 @@ async function handleAPI(req, res, url) {
         const target = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.id === body.userId; });
         if (!target) return sendJSON(res, 404, { success: false, message: 'User tidak ditemukan.' });
         if (!isValidUsername(target.username)) return sendJSON(res, 400, { success: false, message: 'Username mengandung karakter tidak valid.' });
-        target.password = hashPassword(String(body.newPassword));
+        target.password = await hashPassword(String(body.newPassword));
         users[target.username] = target;
         saveUsers(users);
         addLog('[ADMIN ' + admin.username + '] Reset password ' + target.username);
@@ -1153,7 +1305,7 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         let apiKey = admin.apiKey;
         if (!apiKey) {
-            apiKey = 'Codex' + randomKey(31);
+            apiKey = generateApiKey();
             admin.apiKey = apiKey;
             admin.apiActive = true;
             users[admin.username] = admin;
@@ -1278,6 +1430,51 @@ async function handleAPI(req, res, url) {
         if (admin.role !== "owner") return sendJSON(res, 403, { success: false, message: "Khusus owner." });
         return sendJSON(res, 200, { success: true, upgrades: readJSON("transactions", []) });
     }
+
+    /* ---------- API NETFLIX EXTENSION (publik, via apikey user) ---------- */
+    // Validasi API key untuk extension Netflix. Key harus milik user aktif
+    // dengan akses API (Premium, AutoGen, Admin, Owner).
+    if (pathname === '/api/netflix' && method === 'GET') {
+        const key = url.searchParams.get('apikey') || req.headers['x-api-key'];
+        if (!key) return sendJSON(res, 401, { success: false, message: 'API Key wajib disertakan.' });
+        const users = getUsers();
+        const user = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.apiKey === key && u.apiActive && !isPremiumExpired(u); });
+        if (!user) return sendJSON(res, 403, { success: false, message: 'API Key tidak valid, tidak aktif, atau masa aktif sudah berakhir.' });
+        if (!canUseApiKey(user)) {
+            return sendJSON(res, 403, { success: false, message: 'Fitur API generator hanya untuk role Premium, AutoGen, Admin, atau Owner.' });
+        }
+        return sendJSON(res, 200, {
+            success: true,
+            valid: true,
+            user: user.username,
+        });
+    }
+
+    // Ambil cookies akun Netflix untuk di-inject ke extension. Response hanya
+    // berisi cookies milik akun yang diminta (atau semua jika tanpa ?account=).
+    if (pathname === '/api/inject/netflix' && method === 'GET') {
+        const key = url.searchParams.get('apikey') || req.headers['x-api-key'];
+        if (!key) return sendJSON(res, 401, { success: false, message: 'API Key wajib disertakan.' });
+        const users = getUsers();
+        const user = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.apiKey === key && u.apiActive && !isPremiumExpired(u); });
+        if (!user) return sendJSON(res, 403, { success: false, message: 'API Key tidak valid, tidak aktif, atau masa aktif sudah berakhir.' });
+        if (!canUseApiKey(user)) {
+            return sendJSON(res, 403, { success: false, message: 'Fitur API generator hanya untuk role Premium, AutoGen, Admin, atau Owner.' });
+        }
+        const netflixData = readJSON('netflix', { accounts: [] });
+        const accounts = Array.isArray(netflixData.accounts) ? netflixData.accounts : [];
+        const accountId = parseInt(url.searchParams.get('account'), 10);
+        if (accountId) {
+            const account = accounts.find(function (a) { return a.id === accountId; });
+            if (!account) return sendJSON(res, 404, { success: false, message: 'Akun tidak ditemukan.' });
+            return sendJSON(res, 200, { success: true, account: { id: account.id, cookies: account.cookies } });
+        }
+        return sendJSON(res, 200, {
+            success: true,
+            accounts: accounts.map(function (a) { return { id: a.id, cookies: a.cookies }; }),
+        });
+    }
+
     return sendJSON(res, 404, { success: false, message: 'Endpoint tidak ditemukan.' });
 }
 

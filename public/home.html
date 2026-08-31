@@ -853,6 +853,66 @@ tr:last-child td {
     font-weight: 700;
 }
 
+.status-muted {
+    color: var(--ds-slate-500);
+    background: var(--ds-slate-100);
+    border: 1px solid var(--ds-slate-200);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+/* Ticket list items (dashboard #tickets) */
+.ticket-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.ticket-item:hover { border-color: var(--accent-primary); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08); }
+.ticket-item.active { border-color: var(--accent-primary); box-shadow: 0 0 0 1px var(--accent-primary); }
+.ticket-item-main { flex: 1; min-width: 0; }
+.ticket-item-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.ticket-item-subject { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
+.ticket-item-preview { font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.ticket-item-meta { font-size: 0.65rem; color: var(--text-muted); margin-top: 3px; }
+.ticket-item-chevron { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+.ticket-detail-header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+@media (max-width: 768px) {
+    .ticket-item { padding: 10px 12px; }
+    .ticket-item-subject { font-size: 0.78rem; }
+    .ticket-item-preview { font-size: 0.72rem; }
+    .ticket-item-chevron { display: none; }
+}
+
+/* Squelettes + états (chargement / erreur / vide) de la page tickets */
+.ticket-skeleton { border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-secondary); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.sk-line { height: 10px; border-radius: 4px; background: linear-gradient(90deg, rgba(148, 163, 184, 0.15) 25%, rgba(148, 163, 184, 0.3) 50%, rgba(148, 163, 184, 0.15) 75%); background-size: 200% 100%; animation: skShimmer 1.4s ease infinite; }
+.sk-title { width: 55%; height: 12px; }
+.sk-sub { width: 85%; }
+.sk-meta { width: 35%; height: 8px; }
+@keyframes skShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.ticket-error-state { margin: auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 20px; color: var(--text-secondary); }
+.ticket-error-state i { font-size: 1.8rem; color: var(--ds-danger); }
+.ticket-error-state p { margin: 0; font-weight: 600; color: var(--text-primary); }
+.ticket-error-detail { font-size: 0.78rem; color: var(--text-muted); font-weight: 400 !important; }
+
+.ticket-empty-block { margin: auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 20px; }
+.ticket-empty-block i { font-size: 2rem; color: var(--text-muted); }
+.ticket-empty-block h4 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.ticket-empty-block p { margin: 0; font-size: 0.82rem; color: var(--text-muted); }
+
 /* ===== PURCHASE PACKAGES ===== */
 .purchase-grid {
     display: grid;
@@ -3115,16 +3175,46 @@ body.dark-theme .pinfo-colon-row:hover {
 /* Dashboard Sub Title */
 .dashboard-sub-title { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
-/* Quick Actions Grid */
-.quick-actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+/* Menu grid per grup: primary (fitur utama, kartu menonjol) vs compact (sekunder) */
+.menu-grid { display: grid; gap: 14px; margin-bottom: 24px; }
+.menu-grid-primary { grid-template-columns: repeat(3, 1fr); }
+.menu-grid-compact { grid-template-columns: repeat(3, 1fr); }
 .action-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; box-shadow: var(--shadow-sm); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 .action-card:hover { transform: translateY(-2px); border-color: var(--accent-primary); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1); }
-.action-card-left { display: flex; align-items: center; gap: 12px; }
+.action-card:active { transform: translateY(0); }
+.action-card-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.action-card-primary { padding: 20px 18px; border-width: 1.5px; }
+.action-card-primary .action-icon-wrapper { width: 42px; height: 42px; font-size: 1.1rem; }
+.action-card-primary .action-title { font-size: 0.95rem; }
 .action-icon-wrapper { width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.1); color: var(--accent-primary); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-.action-title { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
-.action-desc { margin: 2px 0 0; font-size: 0.72rem; color: var(--text-muted); }
-.action-arrow { font-size: 0.8rem; color: var(--text-muted); transition: transform 0.2s ease, color 0.2s ease; }
+.action-title { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.action-desc { margin: 2px 0 0; font-size: 0.72rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.action-arrow { font-size: 0.8rem; color: var(--text-muted); transition: transform 0.2s ease, color 0.2s ease; flex-shrink: 0; }
 .action-card:hover .action-arrow { transform: translateX(4px); color: var(--accent-primary); }
+
+/* Panel pengumuman: panel informasi, bukan menu */
+.announcements-panel { display: flex; flex-direction: column; gap: 12px; }
+.ann-card { display: flex; gap: 14px; padding: 16px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-card); box-shadow: var(--shadow-sm); }
+.ann-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+.ann-body { min-width: 0; }
+.ann-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap; }
+.ann-type { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.ann-priority { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--ds-warning); }
+.ann-title { margin: 0; font-size: 0.92rem; font-weight: 700; color: var(--text-primary); }
+.ann-desc { margin: 3px 0 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+.ann-info .ann-icon { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.ann-info .ann-type { color: #3b82f6; }
+.ann-success .ann-icon { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
+.ann-success .ann-type { color: #16a34a; }
+.ann-warning .ann-icon { background: rgba(234, 179, 8, 0.12); color: #ca8a04; }
+.ann-warning .ann-type { color: #ca8a04; }
+.ann-maintenance .ann-icon { background: rgba(234, 179, 8, 0.12); color: #ca8a04; }
+.ann-maintenance .ann-type { color: #ca8a04; }
+.ann-update .ann-icon { background: rgba(99, 102, 241, 0.1); color: var(--accent-primary); }
+.ann-update .ann-type { color: var(--accent-primary); }
+.ann-important .ann-icon { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+.ann-important .ann-type { color: #dc2626; }
+.ann-urgent { border-color: rgba(239, 68, 68, 0.35); border-width: 1.5px; }
 
 /* Stats Grid (System Health) */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
@@ -3167,20 +3257,22 @@ body.dark-theme .pinfo-colon-row:hover {
 /* Responsive */
 @media (max-width: 1024px) {
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-    .quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
+    .menu-grid-primary, .menu-grid-compact { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
     .metrics-grid { grid-template-columns: 1fr; gap: 12px; }
-    .quick-actions-grid { grid-template-columns: 1fr; gap: 10px; }
+    .menu-grid-primary, .menu-grid-compact { grid-template-columns: 1fr; gap: 10px; }
     .metric-card { min-height: auto; padding: 20px; }
     .metric-card-content { margin-top: 16px; }
     .metric-value { font-size: 1.65rem; }
-    .quick-actions-grid { grid-template-columns: 1fr; gap: 10px; }
     .action-card { padding: 14px; }
+    .action-card-primary { padding: 16px 14px; }
     .action-icon-wrapper { width: 32px; height: 32px; font-size: 0.9rem; }
+    .action-card-primary .action-icon-wrapper { width: 36px; height: 36px; }
     .stats-grid { grid-template-columns: 1fr; gap: 12px; }
     .stat-card { padding: 18px 20px; }
     .stat-card-value { font-size: 1.35rem; }
+    .ann-card { padding: 14px 15px; gap: 11px; }
 }
 
 @keyframes premiumFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -3259,7 +3351,8 @@ body.dark-theme .pinfo-colon-row:hover {
 <link rel="stylesheet" href="/css/admin-controls.css">
 <link rel="stylesheet" href="/css/premium-polish.css">
 <link rel="stylesheet" href="/css/design-system.css">
-<link rel="stylesheet" href="/css/profile-redesign.css?v=20260823">
+<link rel="stylesheet" href="/css/profile-redesign.css">
+<link rel="stylesheet" href="/css/omnify-premium.css">
 </head>
 <body>
 <div class="bg-blob b1"></div>
@@ -3378,12 +3471,15 @@ body.dark-theme .pinfo-colon-row:hover {
     </div>
 </nav><div class="sidebar-footer"><button id="btn-logout" class="btn btn-danger" type="button" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 16px; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.88rem;"><i class="fa-solid fa-power-off"></i> Logout</button></div></aside><main class="main-content" id="main-content"><div class="mobile-top-bar" id="mobile-top-bar"><button type="button" class="mobile-menu-trigger" id="btn-mobile-menu-trigger" aria-label="Menu" aria-haspopup="true" aria-expanded="false" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button><div class="topbar-brand" aria-label="AM Creator"><i class="fa-solid fa-cube topbar-brand-icon"></i><span class="topbar-brand-text">AM <span class="accent-text">CREATOR</span></span></div><div class="topbar-right"><div class="theme-control" id="theme-control"><button type="button" class="theme-trigger topbar-btn" id="btn-theme-menu" aria-label="Theme" title="Theme" aria-haspopup="true" aria-expanded="false"><span class="theme-trigger-icons" aria-hidden="true"><i class="fa-solid fa-sun theme-icon-sun"></i><i class="fa-solid fa-moon theme-icon-moon"></i></span><span class="theme-trigger-label">Theme</span></button><div class="theme-menu hidden" id="theme-menu" role="menu" aria-label="Theme"><button type="button" class="theme-option" data-theme-choice="light" role="menuitemradio" aria-checked="false"><i class="fa-solid fa-sun"></i><span>Light</span><i class="fa-solid fa-check theme-option-check"></i></button><button type="button" class="theme-option" data-theme-choice="dark" role="menuitemradio" aria-checked="false"><i class="fa-solid fa-moon"></i><span>Dark</span><i class="fa-solid fa-check theme-option-check"></i></button><button type="button" class="theme-option" data-theme-choice="system" role="menuitemradio" aria-checked="true"><i class="fa-solid fa-desktop"></i><span>System</span><i class="fa-solid fa-check theme-option-check"></i></button></div></div><button class="topbar-btn" id="btn-topbar-chat"><i class="fa-regular fa-comments"></i></button><div style="position: relative;"><button id="btn-topbar-notifications" class="topbar-btn"><i class="fa-regular fa-bell"></i><span class="topbar-badge" id="notifications-badge" style="display: none;"></span></button><div id="notifications-dropdown" class="notifications-dropdown hidden"><div class="notifications-header"><span>Pemberitahuan</span><button id="btn-clear-notifications" class="clear-all-btn">Hapus Semua</button></div><div class="notifications-list" id="notifications-list"></div></div></div><div class="topbar-avatar" id="btn-topbar-profile" style="cursor: pointer;"><i class="fa-regular fa-circle-user"></i></div></div></div><section id="screen-auth" class="screen hidden"><div class="auth-box glass-card animate-fade-in"><div id="invite-banner" class="invite-banner hidden" role="status" aria-live="polite"></div><div id="auth-login-view"><h2 class="section-title">Sign In</h2><p class="section-subtitle">Akses Generator Alight Motion Premium</p><form id="form-login"><div class="input-group"><i class="fa-solid fa-envelope input-icon"></i><input type="text" id="login-username" placeholder="Username" required autocomplete="username"></div><div class="input-group"><i class="fa-solid fa-key input-icon"></i><input type="password" id="login-password" placeholder="Password" required autocomplete="current-password"></div><button type="submit" class="btn btn-primary btn-block btn-glow"><span>Login <i class="fa-solid fa-chevron-right"></i></span></button></form><p class="auth-toggle-text">Belum punya akun? <a href="#" id="link-to-register" class="link-accent">Daftar Akun</a></p></div><div id="auth-register-view" class="hidden"><h2 class="section-title">Sign Up</h2><p class="section-subtitle">Buat akun untuk mulai membuat lisensi premium</p><form id="form-register"><div class="input-group"><i class="fa-solid fa-envelope input-icon"></i><input type="text" id="register-username" placeholder="Username (Min 3 Karakter)" required autocomplete="username"></div><div class="input-group"><i class="fa-solid fa-key input-icon"></i><input type="password" id="register-password" placeholder="Password (Min 6 Karakter)" required autocomplete="new-password"></div><div class="input-group"><i class="fa-solid fa-gift input-icon" style="color: #8b5cf6;"></i><input type="text" id="register-referral" placeholder="Kode Referal (Opsional)" autocomplete="off"></div><div id="referral-status" class="referral-status" role="status" aria-live="polite"></div><button type="submit" class="btn btn-primary btn-block btn-glow"><span>Daftar <i class="fa-solid fa-circle-check"></i></span></button></form><p class="auth-toggle-text">Sudah punya akun? <a href="#" id="link-to-login" class="link-accent">Login disini</a></p></div><div style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 18px; text-align: center;"><a href="/alwayscodex.apk" download class="apk-download-btn-auth"><i class="fa-brands fa-android" style="font-size: 1.15rem;"></i><span>Unduh Aplikasi Android (.APK)</span></a></div></div></section><section id="screen-dashboard" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-chart-line" style="color: var(--accent-primary);"></i> Dashboard</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Pantau statistik aktivitas server, sisa saldo kredit, status runtime, dan informasi perangkat Anda secara real-time.</p></div><div class="apk-banner animate-fade-in"><div class="apk-banner-content"><div class="apk-banner-icon"><i class="fa-brands fa-android"></i></div><div><h4 class="apk-banner-title">Tersedia Aplikasi Android!</h4><p class="apk-banner-desc">Gunakan aplikasi Android resmi kami untuk akses yang lebih cepat, stabil, dan praktis.</p></div></div><a href="/alwayscodex.apk" download class="apk-banner-btn"><i class="fa-solid fa-download"></i> Download APK </a></div><div class="stats-grid mb-4"><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Server Status</span><p class="stat-card-value text-success" id="stat-server-status">Online</p><span class="stat-card-desc">Status Server</span></div><div class="stat-card-right"><i class="fa-solid fa-server"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Total Users</span><p class="stat-card-value" id="stat-total-users">--</p><span class="stat-card-desc">Total Pengguna</span></div><div class="stat-card-right"><i class="fa-solid fa-users"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Your Credits</span><p class="stat-card-value" id="stat-your-credits">--</p><span class="stat-card-desc">Sisa Credits Anda</span><span class="stat-card-reset" id="stat-credits-reset-countdown" style="font-size: 0.75rem; color: var(--ds-slate-400); margin-top: 4px; display: block;">Reset: --:--:--</span></div><div class="stat-card-right"><i class="fa-solid fa-bolt"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Berhasil Terbuat</span><p class="stat-card-value" id="stat-total-requests">0</p><span class="stat-card-desc">Total Berhasil Terbuat (Semua Pengguna)</span></div><div class="stat-card-right"><i class="fa-solid fa-circle-check" style="color: var(--ds-success);"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Baterai HP</span><p class="stat-card-value" id="stat-battery">--</p><span class="stat-card-desc" id="stat-battery-status">Membaca data...</span></div><div class="stat-card-right"><i class="fa-solid fa-battery-three-quarters" id="stat-battery-icon"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Hari</span><p class="stat-card-value" id="stat-day">--</p><span class="stat-card-desc" id="stat-date">Membaca tanggal...</span></div><div class="stat-card-right"><i class="fa-solid fa-calendar-day"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Your IP</span><p class="stat-card-value" id="stat-your-ip" style="font-size: 1.15rem; word-break: break-all;">Loading...</p><span class="stat-card-desc">Alamat IP Anda</span></div><div class="stat-card-right"><i class="fa-solid fa-network-wired"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Runtime</span><p class="stat-card-value" id="stat-runtime" style="font-size: 1.15rem;">--:--:--</p><span class="stat-card-desc">Waktu Aktif Server</span></div><div class="stat-card-right"><i class="fa-solid fa-stopwatch"></i></div></div><div class="glass-card stat-card"><div class="stat-card-left"><span class="stat-card-label">Contact Owner</span><p class="stat-card-value" style="font-size: 1.1rem;"><a href="https://wa.me/6288297563383" target="_blank" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 5px;"><i class="fa-brands fa-whatsapp" style="color: var(--ds-accent-cyan);"></i> WhatsApp</a></p><span class="stat-card-desc">6288297563383</span></div><div class="stat-card-right"><i class="fa-solid fa-headset"></i></div></div></div>
 
-    <!-- Quick Actions Grid -->
-    <h3 class="dashboard-sub-title mb-3 animate-fade-in" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">
-        <i class="fa-solid fa-rocket" style="color: var(--accent-primary); margin-right: 8px;"></i> Start something new
+    <!-- Panel informasi: pengumuman dari admin (bukan menu) -->
+    <div id="announcements-panel" class="announcements-panel mb-4 animate-fade-in" hidden aria-live="polite"></div>
+
+    <!-- Fitur utama -->
+    <h3 class="dashboard-sub-title mb-3 animate-fade-in">
+        <i class="fa-solid fa-rocket" style="color: var(--accent-primary);"></i> Fitur Utama
     </h3>
-    <div class="quick-actions-grid mb-4 animate-fade-in">
-        <div class="glass-card action-card" data-screen="generator">
+    <div class="menu-grid menu-grid-primary mb-4 animate-fade-in">
+        <div class="glass-card action-card action-card-primary" data-screen="generator">
             <div class="action-card-left">
                 <div class="action-icon-wrapper">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -3395,7 +3491,7 @@ body.dark-theme .pinfo-colon-row:hover {
             </div>
             <i class="fa-solid fa-arrow-right action-arrow"></i>
         </div>
-        <div class="glass-card action-card" data-screen="netflix">
+        <div class="glass-card action-card action-card-primary" data-screen="netflix">
             <div class="action-card-left">
                 <div class="action-icon-wrapper">
                     <i class="fa-solid fa-ticket" style="color: #e50914;"></i>
@@ -3407,6 +3503,25 @@ body.dark-theme .pinfo-colon-row:hover {
             </div>
             <i class="fa-solid fa-arrow-right action-arrow"></i>
         </div>
+        <div class="glass-card action-card action-card-primary" data-screen="history">
+            <div class="action-card-left">
+                <div class="action-icon-wrapper">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div>
+                    <h4 class="action-title">Riwayat Akun</h4>
+                    <p class="action-desc">Tinjau & unduh seluruh riwayat aktivasi</p>
+                </div>
+            </div>
+            <i class="fa-solid fa-arrow-right action-arrow"></i>
+        </div>
+    </div>
+
+    <!-- Akun & layanan -->
+    <h3 class="dashboard-sub-title mb-3 animate-fade-in">
+        <i class="fa-solid fa-user-gear" style="color: var(--accent-primary);"></i> Akun & Layanan
+    </h3>
+    <div class="menu-grid menu-grid-compact mb-4 animate-fade-in">
         <div class="glass-card action-card" data-screen="purchase">
             <div class="action-card-left">
                 <div class="action-icon-wrapper">
@@ -3414,7 +3529,7 @@ body.dark-theme .pinfo-colon-row:hover {
                 </div>
                 <div>
                     <h4 class="action-title">Beli API Key</h4>
-                    <p class="action-desc">Beli paket premium otomatis via QRIS instan</p>
+                    <p class="action-desc">Paket premium via QRIS instan</p>
                 </div>
             </div>
             <i class="fa-solid fa-arrow-right action-arrow"></i>
@@ -3426,7 +3541,7 @@ body.dark-theme .pinfo-colon-row:hover {
                 </div>
                 <div>
                     <h4 class="action-title">Layanan Lifetime</h4>
-                    <p class="action-desc">Buat & kelola bot Telegram premium Anda sendiri</p>
+                    <p class="action-desc">Kelola bot Telegram premium Anda</p>
                 </div>
             </div>
             <i class="fa-solid fa-arrow-right action-arrow"></i>
@@ -3438,11 +3553,18 @@ body.dark-theme .pinfo-colon-row:hover {
                 </div>
                 <div>
                     <h4 class="action-title">Program Referral</h4>
-                    <p class="action-desc">Undang teman & dapatkan komisi saldo tambahan</p>
+                    <p class="action-desc">Undang teman, dapatkan komisi saldo</p>
                 </div>
             </div>
-            <i class="fa-solid fa-arrow-right action-arrow"></i
+            <i class="fa-solid fa-arrow-right action-arrow"></i>
         </div>
+    </div>
+
+    <!-- Support & komunitas -->
+    <h3 class="dashboard-sub-title mb-3 animate-fade-in">
+        <i class="fa-solid fa-people-group" style="color: var(--accent-primary);"></i> Support & Komunitas
+    </h3>
+    <div class="menu-grid menu-grid-compact mb-4 animate-fade-in">
         <div class="glass-card action-card" data-screen="chat">
             <div class="action-card-left">
                 <div class="action-icon-wrapper">
@@ -3450,19 +3572,7 @@ body.dark-theme .pinfo-colon-row:hover {
                 </div>
                 <div>
                     <h4 class="action-title">Chat Global</h4>
-                    <p class="action-desc">Mengobrol & diskusi dengan sesama pengguna</p>
-                </div>
-            </div>
-            <i class="fa-solid fa-arrow-right action-arrow"></i>
-        </div>
-        <div class="glass-card action-card" data-screen="reviews">
-            <div class="action-card-left">
-                <div class="action-icon-wrapper">
-                    <i class="fa-solid fa-star"></i>
-                </div>
-                <div>
-                    <h4 class="action-title">Rating & Ulasan</h4>
-                    <p class="action-desc">Berikan penilaian & ulasan atas layanan kami</p>
+                    <p class="action-desc">Diskusi dengan sesama pengguna</p>
                 </div>
             </div>
             <i class="fa-solid fa-arrow-right action-arrow"></i>
@@ -3474,12 +3584,25 @@ body.dark-theme .pinfo-colon-row:hover {
                 </div>
                 <div>
                     <h4 class="action-title">Dukungan Tiket</h4>
-                    <p class="action-desc">Ajukan kendala teknis langsung ke Administrator</p>
+                    <p class="action-desc">Ajukan kendala ke Administrator</p>
                 </div>
             </div>
             <i class="fa-solid fa-arrow-right action-arrow"></i>
         </div>
-    </div></section><section id="screen-generator" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-primary);"></i> Create Account</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Kirim tautan verifikasi email Alight Motion dan aktifkan status langganan premium secara instan.</p></div><div class="generator-box glass-card animate-fade-in"><div class="panel-header-desc"><h2 class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Alight Motion Premium License</h2><span id="badge-admin-control" class="badge badge-admin hidden"><i class="fa-solid fa-circle-check"></i> Admin Mode Enabled</span></div><div class="tab-switcher" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; overflow-x: auto;"><button class="tab-btn active" id="tab-btn-manual" style="padding: 10px 18px; border-radius: var(--radius-sm); border: none; background: var(--accent-primary); color: var(--ds-white); font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Manual Generator</button><button class="tab-btn" id="tab-btn-auto" style="padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;"><i class="fa-solid fa-bolt"></i> Auto Generator (Otomatis)</button></div><div id="tab-manual-content" class="activation-flow"><div class="flow-box"><h3><i class="fa-solid fa-envelope-circle-check"></i> Masukkan Email Target</h3><p class="step-desc">Masukkan alamat email Alight Motion target Anda. Server akan mengirimkan pesan verifikasi lisensi ke email tersebut.</p><form id="form-send-link"><div class="input-group"><i class="fa-solid fa-at input-icon"></i><input type="email" id="send-email" placeholder="nama@email.com" required></div><button type="submit" id="btn-send-link" class="btn btn-primary btn-glow"><span class="btn-text">Lanjutkan <i class="fa-solid fa-arrow-right"></i></span><span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span></button></form></div><div id="stage-activate-container" class="flow-box mt-4 hidden animate-fade-in"><h3><i class="fa-solid fa-link"></i> Tempel Tautan Verifikasi</h3><p class="step-desc">Buka pesan di email target (cek folder spam jika perlu), salin tautan tombol verifikasi, dan tempelkan di bawah ini.</p><form id="form-activate"><div class="input-group"><i class="fa-solid fa-at input-icon"></i><input type="email" id="activate-email" placeholder="Email target" required readonly></div><div class="input-group"><i class="fa-solid fa-link input-icon"></i><input type="url" id="activate-link" placeholder="https://alightcreative.com/..." required></div><button type="submit" id="btn-activate" class="btn btn-primary"><span class="btn-text">Terapkan Lisensi Premium <i class="fa-solid fa-bolt"></i></span><span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin"></i> Memverifikasi...</span></button></form></div></div><div id="tab-auto-content" class="activation-flow hidden"><div id="autogen-locked-container" class="flow-box text-center" style="padding: 40px 20px;"><i class="fa-solid fa-lock text-accent" style="font-size: 3rem; color: var(--ds-warning); margin-bottom: 20px;"></i><h3 style="font-weight: 700; font-size: 1.3rem;">Fitur Auto Generator Terkunci</h3><p class="step-desc" style="max-width: 500px; margin: 10px auto 25px;"> Fitur ini memungkinkan pembuatan akun Alight Motion premium secara 100% otomatis menggunakan server kotak masuk terintegrasi. Anda tidak perlu lagi menyalin dan menempel tautan verifikasi. </p><div class="price-badge" style="background: var(--ds-warning-bg); border: 1px solid var(--ds-warning-line); color: var(--ds-warning); padding: 10px 20px; border-radius: var(--radius-sm); display: inline-block; font-weight: 700; margin-bottom: 25px;"> Harga: Rp 7.000 / Bulan (Sekali Jalan Maksimal 500 Akun) </div><br><button id="btn-buy-autogen-shortcut" class="btn btn-primary" style="font-weight: 600;"><i class="fa-solid fa-cart-shopping"></i> Beli Paket Sekarang</button></div><div id="autogen-unlocked-container" class="flow-box hidden"><h3><i class="fa-solid fa-bolt"></i> Mulai Generator Otomatis</h3><p class="step-desc">Tentukan jumlah akun yang ingin dibuat (maksimal 500), isi Custom Order ID (opsional), lalu klik Mulai. Akun akan dibuat dan diaktifkan premium secara berurutan.</p><div style="background: var(--ds-slate-50); border: 1px solid var(--ds-slate-200); border-radius: var(--radius-sm); padding: 15px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;"><div><span style="font-weight: 600; color: var(--ds-slate-600); font-size: 0.9rem;">Kapasitas Pembuatan:</span><span class="badge badge-normal" style="font-weight: 700; background: var(--ds-slate-200); color: var(--ds-slate-600);">Maksimal 500 Akun / Batch</span></div><span class="badge badge-premium" style="background: var(--ds-warning-bg); color: var(--ds-warning); border: 1px solid var(--ds-warning-line);"><i class="fa-solid fa-circle-check"></i> Paket Aktif</span></div>
+        <div class="glass-card action-card" data-screen="reviews">
+            <div class="action-card-left">
+                <div class="action-icon-wrapper">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div>
+                    <h4 class="action-title">Rating & Ulasan</h4>
+                    <p class="action-desc">Nilai layanan kami</p>
+                </div>
+            </div>
+            <i class="fa-solid fa-arrow-right action-arrow"></i>
+        </div>
+    </div>
+</section><section id="screen-generator" class="screen hidden"><div class="dashboard-header animate-fade-in" style="margin-bottom: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;"><h2 class="section-title" style="font-size: 1.85rem; display: flex; align-items: center; gap: 12px; margin: 0;"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-primary);"></i> Create Account</h2><p class="section-subtitle" style="margin-top: 6px; font-size: 0.88rem; line-height: 1.6; max-width: 700px; color: var(--text-secondary);">Kirim tautan verifikasi email Alight Motion dan aktifkan status langganan premium secara instan.</p></div><div class="generator-box glass-card animate-fade-in"><div class="panel-header-desc"><h2 class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Alight Motion Premium License</h2><span id="badge-admin-control" class="badge badge-admin hidden"><i class="fa-solid fa-circle-check"></i> Admin Mode Enabled</span></div><div class="tab-switcher" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; overflow-x: auto;"><button class="tab-btn active" id="tab-btn-manual" style="padding: 10px 18px; border-radius: var(--radius-sm); border: none; background: var(--accent-primary); color: var(--ds-white); font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;"><i class="fa-solid fa-wand-magic-sparkles"></i> Manual Generator</button><button class="tab-btn" id="tab-btn-auto" style="padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;"><i class="fa-solid fa-bolt"></i> Auto Generator (Otomatis)</button></div><div id="tab-manual-content" class="activation-flow"><div class="flow-box"><h3><i class="fa-solid fa-envelope-circle-check"></i> Masukkan Email Target</h3><p class="step-desc">Masukkan alamat email Alight Motion target Anda. Server akan mengirimkan pesan verifikasi lisensi ke email tersebut.</p><form id="form-send-link"><div class="input-group"><i class="fa-solid fa-at input-icon"></i><input type="email" id="send-email" placeholder="nama@email.com" required></div><button type="submit" id="btn-send-link" class="btn btn-primary btn-glow"><span class="btn-text">Lanjutkan <i class="fa-solid fa-arrow-right"></i></span><span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span></button></form></div><div id="stage-activate-container" class="flow-box mt-4 hidden animate-fade-in"><h3><i class="fa-solid fa-link"></i> Tempel Tautan Verifikasi</h3><p class="step-desc">Buka pesan di email target (cek folder spam jika perlu), salin tautan tombol verifikasi, dan tempelkan di bawah ini.</p><form id="form-activate"><div class="input-group"><i class="fa-solid fa-at input-icon"></i><input type="email" id="activate-email" placeholder="Email target" required readonly></div><div class="input-group"><i class="fa-solid fa-link input-icon"></i><input type="url" id="activate-link" placeholder="https://alightcreative.com/..." required></div><button type="submit" id="btn-activate" class="btn btn-primary"><span class="btn-text">Terapkan Lisensi Premium <i class="fa-solid fa-bolt"></i></span><span class="btn-spinner hidden"><i class="fa-solid fa-spinner fa-spin"></i> Memverifikasi...</span></button></form></div></div><div id="tab-auto-content" class="activation-flow hidden"><div id="autogen-locked-container" class="flow-box text-center" style="padding: 40px 20px;"><i class="fa-solid fa-lock text-accent" style="font-size: 3rem; color: var(--ds-warning); margin-bottom: 20px;"></i><h3 style="font-weight: 700; font-size: 1.3rem;">Fitur Auto Generator Terkunci</h3><p class="step-desc" style="max-width: 500px; margin: 10px auto 25px;"> Fitur ini memungkinkan pembuatan akun Alight Motion premium secara 100% otomatis menggunakan server kotak masuk terintegrasi. Anda tidak perlu lagi menyalin dan menempel tautan verifikasi. </p><div class="price-badge" style="background: var(--ds-warning-bg); border: 1px solid var(--ds-warning-line); color: var(--ds-warning); padding: 10px 20px; border-radius: var(--radius-sm); display: inline-block; font-weight: 700; margin-bottom: 25px;"> Harga: Rp 7.000 / Bulan (Sekali Jalan Maksimal 500 Akun) </div><br><button id="btn-buy-autogen-shortcut" class="btn btn-primary" style="font-weight: 600;"><i class="fa-solid fa-cart-shopping"></i> Beli Paket Sekarang</button></div><div id="autogen-unlocked-container" class="flow-box hidden"><h3><i class="fa-solid fa-bolt"></i> Mulai Generator Otomatis</h3><p class="step-desc">Tentukan jumlah akun yang ingin dibuat (maksimal 500), isi Custom Order ID (opsional), lalu klik Mulai. Akun akan dibuat dan diaktifkan premium secara berurutan.</p><div style="background: var(--ds-slate-50); border: 1px solid var(--ds-slate-200); border-radius: var(--radius-sm); padding: 15px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;"><div><span style="font-weight: 600; color: var(--ds-slate-600); font-size: 0.9rem;">Kapasitas Pembuatan:</span><span class="badge badge-normal" style="font-weight: 700; background: var(--ds-slate-200); color: var(--ds-slate-600);">Maksimal 500 Akun / Batch</span></div><span class="badge badge-premium" style="background: var(--ds-warning-bg); color: var(--ds-warning); border: 1px solid var(--ds-warning-line);"><i class="fa-solid fa-circle-check"></i> Paket Aktif</span></div>
 
 <!-- CUSTOM ORDER ID PREFIX CARD (VIP + OWNER) -->
 <div id="autogen-order-prefix-card" class="glass-card" style="padding: 15px; margin-bottom: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--card-bg);">
@@ -3808,9 +3931,10 @@ curl_close($ch);
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                         <div class="ticket-status-tabs" style="display: flex; gap: 4px; background: var(--bg-secondary); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                            <button class="status-tab active" data-status="all">All</button>
+                            <button class="status-tab active" data-status="all">Semua</button>
                             <button class="status-tab" data-status="pending">Pending</button>
-                            <button class="status-tab" data-status="solved">Solved</button>
+                            <button class="status-tab" data-status="solved">Selesai</button>
+                            <button class="status-tab" data-status="closed">Ditutup</button>
                         </div>
                         
                         <select id="ticket-sort" style="padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.8rem; cursor: pointer;">
@@ -3851,10 +3975,18 @@ curl_close($ch);
                         </div>
                         <h3 id="ticket-detail-subject" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">Subjek Tiket</h3>
                         <span class="text-muted" style="font-size: 0.78rem;" id="ticket-detail-user-info">Dibuat oleh: @username</span>
+                        <span id="ticket-detail-priority" class="badge status-muted" style="display: none; font-size: 0.65rem;"></span>
+                        <span id="ticket-detail-assignee" class="text-muted" style="display: none; font-size: 0.72rem;"></span>
                     </div>
                     
-                    <button id="btn-solve-ticket" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; border-color: #10b981; color: #10b981; background: transparent;">
+                    <button id="btn-solve-ticket" class="btn btn-secondary btn-sm" style="display: none; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; border-color: #10b981; color: #10b981; background: transparent;">
                         <i class="fa-solid fa-circle-check"></i> Selesaikan Tiket
+                    </button>
+                    <button id="btn-close-ticket" class="btn btn-secondary btn-sm" style="display: none; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; border-color: #64748b; color: #64748b; background: transparent;">
+                        <i class="fa-solid fa-lock"></i> Tutup Tiket
+                    </button>
+                    <button id="btn-reopen-ticket" class="btn btn-secondary btn-sm" style="display: none; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; border-color: #3b82f6; color: #3b82f6; background: transparent;">
+                        <i class="fa-solid fa-unlock"></i> Buka Kembali
                     </button>
                 </div>
 

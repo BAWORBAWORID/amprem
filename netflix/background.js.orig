@@ -1,0 +1,325 @@
+// NF Trial Access — cleaned background service worker.
+// Reverse-engineered from the obfuscated source; behavior preserved.
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Configuration
+ * ------------------------------------------------------------------ */
+
+// Validates against the AM Creator API (https://am.alwayscodex.eu.cc).
+// The key entered in the sidebar is the user's AM API key. Validation goes
+// through GET /api/netflix?apikey=..., cookies come from
+// GET /api/inject/netflix?apikey=...&account=<id>.
+const API_BASE = "https://am.alwayscodex.eu.cc";
+
+const ONE_YEAR_SECONDS = 365 * 24 * 60 * 60;
+const REINJECT_THROTTLE_MS = 15000; // 0x3a98
+const REINJECT_RELOAD_DELAY_MS = 500; // 0x1f4
+const HEARTBEAT_INTERVAL_MS = 30 * 60 * 1000; // 0x1e * 0x3c * 0x3e8
+
+// chrome.storage.local keys
+const K_INSTALL_ID = "nfiInstallId";
+const K_LICENSE = "nfiKey";
+const K_FINGERPRINT = "nfiFingerprint";
+const K_OPEN = "nfiOpen";
+const K_DAYS = "nfiDays";
+
+// Netflix cookie names handled specially
+const CN_NETFLIX_ID = "NetflixId";
+const CN_SECURE_NETFLIX_ID = "SecureNetflixId";
+const CN_GSID = "gsid";
+const CN_OPTANON = "OptanonConsent";
+const CN_FLWSSN = "flwssn";
+const CN_NFVDID = "nfvdid";
+
+// ==================================================================
+// AM Creator API — validation + cookie fetch.
+// Cookies are stored server-side in data/netflix.json; the extension never
+// holds them locally, it fetches them on demand for the selected account.
+// ==================================================================
+
+// Attribute metadata per Netflix cookie name, applied when setting cookies.
+const COOKIE_META = {
+  [CN_NETFLIX_ID]: { secure: true, httpOnly: true, domain: "www.netflix.com", url: "https://www.netflix.com/", sameSite: "strict" },
+  [CN_SECURE_NETFLIX_ID]: { secure: true, httpOnly: true, domain: ".netflix.com", url: "https://netflix.com/", sameSite: "strict" },
+  [CN_FLWSSN]: { secure: false, httpOnly: false, domain: ".netflix.com", url: "https://netflix.com/", sameSite: "lax" },
+  [CN_NFVDID]: { secure: false, httpOnly: false, domain: ".netflix.com", url: "https://netflix.com/", sameSite: "lax" },
+  [CN_GSID]: { secure: true, httpOnly: true, domain: ".netflix.com", url: "https://netflix.com/", sameSite: "no_restriction" },
+};
+
+// "NetflixId=xxx;SecureNetflixId=yyy;..." -> [{name, value}, ...]
+function parseCookieString(str) {
+  return String(str || "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const i = part.indexOf("=");
+      if (i === -1) return null;
+      return { name: part.slice(0, i).trim(), value: part.slice(i + 1).trim() };
+    })
+    .filter(Boolean);
+}
+
+async function validateApiKey(key) {
+  try {
+    const res = await fetch(API_BASE + "/api/netflix?apikey=" + encodeURIComponent(key), {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+    });
+    const payload = await res.json();
+    if (res.ok && payload && payload.valid) {
+      return { valid: true, accounts: payload.accounts || [], user: payload.user };
+    }
+    return { valid: false, reason: (payload && payload.message) || "invalid_key" };
+  } catch (e) {
+    return { valid: false, reason: "server_offline" };
+  }
+}
+
+async function fetchAccountCookies(key, accountId, random) {
+  const url =
+    API_BASE + "/api/inject/netflix?apikey=" + encodeURIComponent(key) +
+    (accountId ? "&account=" + encodeURIComponent(accountId) : "");
+  const res = await fetch(url, { method: "GET", headers: { "Accept": "application/json" } });
+  const payload = await res.json();
+  if (!res.ok || !payload || !payload.success) {
+    throw new Error((payload && payload.message) || "inject_failed");
+  }
+  // Single-account response, or full list. If random, pick a random account.
+  if (payload.account) {
+    if (!payload.account.cookies) throw new Error("no_cookies");
+    return payload.account.cookies;
+  }
+  const list = payload.accounts || [];
+  if (!list.length) throw new Error("no_cookies");
+  const pick = random && list.length > 1 ? list[Math.floor(Math.random() * list.length)] : list[0];
+  if (!pick || !pick.cookies) throw new Error("no_cookies");
+  return pick.cookies;
+}
+
+async function applyCookies(cookieString) {
+  await wipeCookies();
+  const expiry = Math.floor(Date.now() / 1000) + ONE_YEAR_SECONDS;
+  let count = 0;
+  for (const cookie of parseCookieString(cookieString)) {
+    const meta = COOKIE_META[cookie.name] || { secure: false, httpOnly: false, domain: ".netflix.com", url: "https://netflix.com/", sameSite: "lax" };
+    let value = cookie.value;
+    // NOTE: dt%3D (timestamp di SecureNetflixId) sengaja TIDAK di-refresh ke
+    // Date.now() — dibiarkan sesuai nilai cookie agar data identik dengan aslinya.
+    await chrome.cookies.set({
+      url: meta.url,
+      name: cookie.name,
+      value,
+      domain: meta.domain,
+      path: "/",
+      secure: meta.secure,
+      httpOnly: meta.httpOnly,
+      sameSite: meta.sameSite,
+      expirationDate: expiry,
+    }).catch(() => {});
+    count++;
+  }
+  await chrome.cookies.set({
+    url: "https://netflix.com/",
+    name: CN_OPTANON,
+    value: buildOptanon(),
+    domain: ".netflix.com",
+    path: "/",
+    secure: false,
+    httpOnly: false,
+    sameSite: "lax",
+    expirationDate: expiry,
+  }).catch(() => {});
+  return { ok: true, count, total: parseCookieString(cookieString).length };
+}
+
+// Domains passed to chrome.cookies.getAll/remove when wiping. The original
+// string table left these entries empty, so every domain is cleared.
+const WIPE_DOMAINS = ["", "", "", "", ""];
+
+/* ------------------------------------------------------------------ *
+ * Small helpers
+ * ------------------------------------------------------------------ */
+
+function uuidv4() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0"));
+  return (
+    hex.slice(0, 4).join("") +
+    "-" +
+    hex.slice(4, 6).join("") +
+    "-" +
+    hex.slice(6, 8).join("") +
+    "-" +
+    hex.slice(8, 10).join("") +
+    "-" +
+    hex.slice(10, 16).join("")
+  );
+}
+
+function randomInstallId() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Builds the OptanonConsent cookie value (consent + datestamp + landing path).
+function buildOptanon() {
+  const id = uuidv4();
+  const datestamp = encodeURIComponent(new Date().toUTCString());
+  const now = Date.now();
+  return `${id}${datestamp}${now}`;
+}
+
+async function wipeCookies() {
+  for (const domain of WIPE_DOMAINS) {
+    const all = await chrome.cookies.getAll({ domain }).catch(() => []);
+    for (const cookie of all) {
+      const url =
+        "https://" + (cookie.domain.startsWith(".") ? cookie.domain.slice(1) : cookie.domain) + cookie.path;
+      await chrome.cookies.remove({ url, name: cookie.name }).catch(() => {});
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Install id provisioning
+ * ------------------------------------------------------------------ */
+
+async function ensureInstallId() {
+  const stored = await chrome.storage.local.get(K_INSTALL_ID);
+  if (!stored[K_INSTALL_ID]) {
+    await chrome.storage.local.set({ [K_INSTALL_ID]: randomInstallId() });
+  }
+}
+
+chrome.runtime.onInstalled.addListener(ensureInstallId);
+
+/* ------------------------------------------------------------------ *
+ * License / cookie flow
+ * ------------------------------------------------------------------ */
+
+async function injectLicense(key, fingerprint, days, accountId, random) {
+  // Fetch cookies from the AM API (random account if flagged), then inject.
+  const cookieString = await fetchAccountCookies(key, accountId || null, random);
+  return applyCookies(cookieString);
+}
+
+async function getKeyStatus() {
+  const stored = await chrome.storage.local.get(K_LICENSE);
+  if (!stored[K_LICENSE]) return { valid: false, reason: "no_key" };
+  // Re-validate the stored key against the AM API.
+  return validateApiKey(stored[K_LICENSE]);
+}
+
+async function getCookieCount() {
+  const all = await chrome.cookies.getAll({ domain: ".netflix.com" }).catch(() => []);
+  return {
+    count: all.length,
+    hasSession: all.some((c) => c.name === CN_NETFLIX_ID),
+  };
+}
+
+async function logout() {
+  await chrome.storage.local.remove([K_LICENSE, K_FINGERPRINT]);
+}
+
+/* ------------------------------------------------------------------ *
+ * Message router (called from sidebar.js / heartbeat)
+ * ------------------------------------------------------------------ */
+
+async function handleMessage(msg, sender) {
+  switch (msg.action) {
+    case "validateKey":
+      // Validate the AM API key against the AM Creator API.
+      return validateApiKey(msg.key);
+
+    case "inject":
+      try {
+        const result = await injectLicense(msg.key, msg.fingerprint, msg.days, msg.account, msg.random);
+        if (result.ok) {
+          await chrome.storage.local.set({ nfiRandom: !!msg.random, nfiLastInject: Date.now() });
+          if (sender.tab) {
+            chrome.tabs.update(sender.tab.id, { url: "https://www.netflix.com/in/" });
+          }
+        }
+        return result;
+      } catch (e) {
+        return { ok: false, reason: e.message || "inject_failed" };
+      }
+
+    case "getKeyStatus":
+      return getKeyStatus();
+
+    case "getCookieCount":
+      return getCookieCount();
+
+    case "logout":
+      await logout();
+      return { ok: true };
+
+    case "heartbeat":
+      // Local-only status: no server round-trip for the key.
+      return getKeyStatus();
+
+    default:
+      return { ok: false, reason: "unknown_action" };
+  }
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  handleMessage(msg, sender).then(sendResponse).catch(() => sendResponse({ ok: false, reason: "error" }));
+  return true; // keep message channel open for async response
+});
+
+/* ------------------------------------------------------------------ *
+ * Toolbar button -> inject sidebar UI into the active tab
+ * ------------------------------------------------------------------ */
+
+chrome.action.onClicked.addListener((tab) => {
+  if (!tab.url || !tab.url.includes("netflix.com")) {
+    chrome.tabs.create({ url: "https://www.netflix.com" });
+    return;
+  }
+  chrome.scripting &&
+    chrome.scripting
+      .executeScript({ target: { tabId: tab.id }, files: ["sidebar.js"] })
+      .then(() => {
+        setTimeout(() => chrome.tabs.sendMessage(tab.id, { action: "togglePanel" }), REINJECT_RELOAD_DELAY_MS);
+      })
+      .catch(() => {});
+});
+
+/* ------------------------------------------------------------------ *
+ * Re-injection when a Netflix tab reloads
+ * ------------------------------------------------------------------ */
+
+let lastReinject = 0;
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (!changeInfo.url) return;
+  const url = changeInfo.url;
+  if (!url.includes("netflix.com")) return;
+  if (!url.includes("/epr?")) return;
+
+  const now = Date.now();
+  if (now - lastReinject < REINJECT_THROTTLE_MS) return;
+  lastReinject = now;
+
+  const stored = await chrome.storage.local.get([K_LICENSE, K_OPEN, "nfiRandom"]);
+  if (!stored[K_LICENSE] || !stored[K_OPEN]) return;
+  console.log("[NF] Error page /epr detected, re-injecting...");
+
+  try {
+    const cookieString = await fetchAccountCookies(stored[K_LICENSE], null, stored.nfiRandom);
+    await applyCookies(cookieString);
+
+    setTimeout(() => chrome.tabs.update(tabId, { url: "https://www.netflix.com/in/" }), REINJECT_RELOAD_DELAY_MS);
+  } catch (e) {
+    console.log("[NF] Re-inject failed:", e.message);
+  }
+});

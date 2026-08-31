@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "id": "mtg4qnhie2e649",
+    "userId": "owner-msgsyfbc",
+    "username": "alwayscodex",
+    "subject": "Bh",
+    "status": "pending",
+    "createdAt": "2026-08-31 02:15:18",
+    "updatedAt": "2026-08-31 02:15:24",
+    "messages": [
+      {
+        "role": "user",
+        "text": "Bb",
+        "createdAt": "2026-08-31 02:15:18"
+      },
+      {
+        "role": "admin",
+        "text": "Anjir",
+        "createdAt": "2026-08-31 02:15:24"
+      }
+    ]
+  }
+]

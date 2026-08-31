@@ -1,50 +1,5 @@
 [
   {
-    "id": "mso1age21de5c6",
-    "createdAt": "2026-08-11 10:21:11",
-    "message": "[BOT/IP] IP 172.71.188.159 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: kirk"
-  },
-  {
-    "id": "mso1n923909f25",
-    "createdAt": "2026-08-11 10:31:08",
-    "message": "[BOT/IP] IP 162.158.88.12 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: moch"
-  },
-  {
-    "id": "mso5pe7jb78710",
-    "createdAt": "2026-08-11 12:24:46",
-    "message": "[BOT/IP] IP 104.23.175.82 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: onk"
-  },
-  {
-    "id": "mso5ph2x032dba",
-    "createdAt": "2026-08-11 12:24:50",
-    "message": "[BOT/IP] IP 104.23.175.82 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: onk"
-  },
-  {
-    "id": "mso5pm6pefb550",
-    "createdAt": "2026-08-11 12:24:56",
-    "message": "[BOT/IP] IP 104.23.175.82 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: onko"
-  },
-  {
-    "id": "mso5poxy99828a",
-    "createdAt": "2026-08-11 12:25:00",
-    "message": "[BOT/IP] IP 104.23.175.82 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: onko"
-  },
-  {
-    "id": "mso84kilec86bf",
-    "createdAt": "2026-08-11 13:32:33",
-    "message": "[BOT/IP] IP 162.158.108.148 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: zayzensenpai-79a"
-  },
-  {
-    "id": "mso84w3967f842",
-    "createdAt": "2026-08-11 13:32:48",
-    "message": "[BOT/IP] IP 162.158.108.148 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: zayzen"
-  },
-  {
-    "id": "mso9cu44f5def9",
-    "createdAt": "2026-08-11 14:06:59",
-    "message": "[BOT/IP] IP 172.71.188.159 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: shnvh"
-  },
-  {
     "id": "mso9cy4d87febb",
     "createdAt": "2026-08-11 14:07:04",
     "message": "[BOT/IP] IP 172.71.188.159 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: shnvh"
@@ -998,5 +953,50 @@
     "id": "mtelyywr4f049e",
     "createdAt": "2026-08-30 00:42:07",
     "message": "[BOT/IP] IP 103.130.61.61 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: probesrbtyq"
+  },
+  {
+    "id": "mtfpyjzi6e62af",
+    "createdAt": "2026-08-30 19:21:33",
+    "message": "[BOT/IP] Rate limit: çok fazla başarısız login denemesi — IP 127.0.0.1"
+  },
+  {
+    "id": "mtfpyjzra8c5f9",
+    "createdAt": "2026-08-30 19:21:33",
+    "message": "[BOT/IP] Rate limit: çok fazla başarısız login denemesi — IP 127.0.0.1"
+  },
+  {
+    "id": "mtfvaai4e1f1ce",
+    "createdAt": "2026-08-30 21:50:38",
+    "message": "[BOT/IP] IP 8.229.150.193 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: astra_msd7wj2y"
+  },
+  {
+    "id": "mtfvay8w1476a3",
+    "createdAt": "2026-08-30 21:51:09",
+    "message": "[BOT/IP] IP 8.229.150.193 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: astra_nayi0nhl"
+  },
+  {
+    "id": "mtfvcgi236760d",
+    "createdAt": "2026-08-30 21:52:19",
+    "message": "[BOT/IP] IP 8.229.150.193 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: astra_hwcmg7w8"
+  },
+  {
+    "id": "mtfvsv3qcab829",
+    "createdAt": "2026-08-30 22:05:05",
+    "message": "[BOT/IP] IP 42.96.18.62 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: probelevlg0"
+  },
+  {
+    "id": "mtg91520d1d31e",
+    "createdAt": "2026-08-31 04:15:26",
+    "message": "[BOT/IP] IP 103.218.122.183 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: shkzs7bcy"
+  },
+  {
+    "id": "mtg92mjh6f7f41",
+    "createdAt": "2026-08-31 04:16:35",
+    "message": "[BOT/IP] IP 38.49.208.28 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: testshk123"
+  },
+  {
+    "id": "mtg9vqzzf6b33c",
+    "createdAt": "2026-08-31 04:39:14",
+    "message": "[BOT/IP] IP 27.185.218.213 mencoba daftar akun ke-4 (maksimal 3 akun per IP). Username: probe29zx07"
   }
 ]

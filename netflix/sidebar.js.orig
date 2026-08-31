@@ -1,0 +1,403 @@
+// NF Trial Access — cleaned sidebar content script (activation panel UI).
+// Reverse-engineered from the obfuscated source; behavior preserved.
+"use strict";
+
+(function () {
+// Validates the AM API key against the AM Creator API. Cookies are fetched
+// on demand from the API (data/netflix.json) — never stored in the extension.
+
+// chrome.storage.local keys
+const K_INSTALL_ID = "nfiInstallId";
+const K_LICENSE = "nfiKey";
+const K_FINGERPRINT = "nfiFingerprint";
+const K_OPEN = "nfiOpen";
+
+const HEARTBEAT_INTERVAL_MS = 30 * 60 * 1000;
+
+const STYLES = `
+  *{box-sizing:border-box;margin:0;padding:0}
+  :host{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,"Helvetica Neue",Arial,sans-serif}
+  #fab{position:fixed;bottom:28px;right:28px;width:54px;height:54px;border-radius:16px;
+    background:linear-gradient(145deg,#e50914,#a10010);border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;pointer-events:auto;
+    box-shadow:0 8px 24px rgba(229,9,20,.5);transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+  #fab:hover{transform:scale(1.1) translateY(-2px)}
+  #fab svg{width:24px;height:24px;stroke:#fff;fill:none}
+  #backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+    pointer-events:none;opacity:0;transition:opacity .3s}
+  #backdrop.open{opacity:1;pointer-events:auto}
+  #panel{position:fixed;top:0;right:0;width:370px;height:100dvh;background:#0a0c12;
+    border-left:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;
+    pointer-events:auto;transform:translateX(100%);
+    transition:transform .38s cubic-bezier(.22,.61,.36,1);color:#f8fafc;overflow:hidden}
+  #panel.open{transform:translateX(0)}
+  .bar{height:3px;background:linear-gradient(90deg,#e50914,#ff4d4d,#e50914);
+    background-size:200%;animation:bar 4s linear infinite;flex-shrink:0}
+  @keyframes bar{0%{background-position:0%}100%{background-position:200%}}
+  #licenseScreen{position:absolute;inset:0;background:#0a0c12;z-index:10;
+    display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+  #licenseScreen.show{display:flex}
+  .lic-logo{width:64px;height:64px;border-radius:18px;
+    background:linear-gradient(145deg,#e50914,#a10010);
+    display:flex;align-items:center;justify-content:center;
+    font-size:32px;font-weight:900;color:#fff;
+    box-shadow:0 8px 32px rgba(229,9,20,.5);margin-bottom:18px}
+  .lic-title{font-size:22px;font-weight:800}
+  .lic-sub{color:#94a3b8;margin:6px 0 26px;font-size:14px}
+  .lic-label{font-size:12px;color:#94a3b8;align-self:flex-start;margin-bottom:8px;font-weight:600}
+  .lic-input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
+    background:#11141d;color:#fff;font-size:15px;letter-spacing:2px;text-align:center;outline:none}
+  .lic-input:focus{border-color:#e50914}
+  .lic-err{color:#f87171;font-size:13px;min-height:18px;margin:10px 0}
+  .lic-btn{width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;
+    background:linear-gradient(145deg,#e50914,#a10010);color:#fff;font-weight:700;font-size:15px;
+    display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s}
+  .lic-btn:disabled{opacity:.6;cursor:default}
+  .lic-tg{margin-top:18px;font-size:13px;color:#94a3b8}
+  .lic-tg a{color:#e50914}
+  .hd{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+  .hd-top{display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#e50914,#a10010);
+    display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff}
+  .brand-info h2{font-size:16px;font-weight:800}
+  .brand-info p{font-size:12px;color:#94a3b8}
+  .close-btn{background:none;border:none;color:#94a3b8;cursor:pointer;padding:6px}
+  .pill{display:flex;align-items:center;gap:8px;margin-top:14px;background:#11141d;
+    padding:8px 12px;border-radius:10px;width:fit-content}
+  .dot{width:9px;height:9px;border-radius:50%;background:#ef4444;transition:background .3s}
+  .dot.green{background:#22c55e}.dot.amber{background:#f59e0b}
+  .pill-txt{font-size:13px;color:#cbd5e1}
+  .body{padding:20px;overflow-y:auto;flex:1}
+  .key-chip{background:#11141d;border:1px solid rgba(255,255,255,.07);border-radius:10px;
+    padding:12px 14px;font-size:13px;color:#cbd5e1;margin-bottom:18px;word-break:break-all}
+  .sec{font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin:6px 0 12px;letter-spacing:.5px}
+  .card{background:#11141d;border-radius:14px;padding:16px;margin-bottom:18px}
+  .dur-tabs{display:flex;gap:8px;margin-bottom:14px}
+  .dur-tab{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+    background:#0d1017;color:#cbd5e1;cursor:pointer;font-weight:600;font-size:13px;text-align:center}
+  .dur-tab.active{border-color:#e50914;background:#1a0c0e;color:#fff}
+  .inject-btn{width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;
+    background:linear-gradient(145deg,#e50914,#a10010);color:#fff;font-weight:700;font-size:14px;
+    display:flex;align-items:center;justify-content:center;gap:8px}
+  .inject-btn:disabled{opacity:.6}
+  .log{background:#0d1017;border-radius:10px;padding:12px;height:160px;overflow-y:auto;
+    font-size:12px;line-height:1.7;font-family:ui-monospace,monospace;color:#94a3b8}
+  .log div{margin-bottom:2px}.l-ok{color:#22c55e}.l-err{color:#f87171}.l-warn{color:#f59e0b}
+  .spin{display:inline-block;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+`;
+
+const MARKUP = `
+  <button id="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>
+  <div id="backdrop"></div>
+  <div id="panel">
+    <div class="bar"></div>
+    <div id="licenseScreen">
+      <div class="lic-logo">N</div>
+      <div class="lic-title">NF Trial Access</div>
+      <div class="lic-sub">Enter your access key to continue</div>
+      <div class="lic-label">AM API Key</div>
+      <input class="lic-input" id="licInput" placeholder="Masukkan API Key AM Anda" maxlength="120" autocomplete="off" spellcheck="false"/>
+      <div class="lic-err" id="licErr"></div>
+      <button class="lic-btn" id="licBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span id="licBtnTxt">Activate Access</span>
+      </button>
+      <div class="lic-tg">Get free access on <a href="https://t.me/your_bot" target="_blank">our Telegram bot</a></div>
+    </div>
+    <div class="hd">
+      <div class="hd-top">
+        <div class="brand">
+          <div class="logo">N</div>
+          <div class="brand-info"><h2>NF Trial Access</h2><p>Netflix trial portal</p></div>
+        </div>
+        <button class="close-btn" id="closeBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="pill"><div class="dot" id="dot"></div><div class="pill-txt" id="pillTxt">Connecting...</div></div>
+    </div>
+    <div class="body">
+      <div class="key-chip"><span id="keyChipTxt">No access key</span></div>
+      <div class="sec">Access Details</div>
+      <div class="card">
+        <div class="dur-tabs" id="durTabs">
+          <div class="dur-tab active" data-opt="normal">30 Days</div>
+          <div class="dur-tab" data-opt="trial">30-Day Trial</div>
+        </div>
+        <button class="inject-btn" id="injectBtn">Access Trial</button>
+      </div>
+      <div class="sec">Activity Log</div>
+      <div class="log" id="logEl"></div>
+    </div>
+  </div>
+`;
+
+/* ------------------------------------------------------------------ *
+ * Fingerprint generation (matches what the server expects)
+ * ------------------------------------------------------------------ */
+
+async function generateFingerprint() {
+  const stored = await chrome.storage.local.get(K_INSTALL_ID);
+  let installId = stored[K_INSTALL_ID];
+  if (!installId) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    installId = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    await chrome.storage.local.set({ [K_INSTALL_ID]: installId });
+  }
+
+  const raw = [
+    installId,
+    navigator.userAgent,
+    navigator.language,
+    screen.width + "x" + screen.height,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.hardwareConcurrency || 4,
+  ].join("|");
+
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* ------------------------------------------------------------------ *
+ * UI helpers
+ * ------------------------------------------------------------------ */
+
+function log(line, kind) {
+  const logEl = root.getElementById("logEl");
+  if (!logEl) return;
+  const entry = document.createElement("span");
+  entry.className = kind || "l-info";
+  entry.textContent = new Date().toLocaleTimeString("en", { hour12: false }) + "  " + line;
+  logEl.appendChild(entry);
+  logEl.scrollTop = 9999;
+}
+
+function setStatus(color, text) {
+  const dot = root.getElementById("dot");
+  const pill = root.getElementById("pillTxt");
+  if (dot) dot.className = "dot " + (color || "");
+  if (pill) pill.textContent = text;
+}
+
+function showLicense(error) {
+  const screen = root.getElementById("licenseScreen");
+  const licErr = root.getElementById("licErr");
+  screen.classList.add("show");
+  licErr.textContent = error || "";
+  root.getElementById("licInput").value = "";
+}
+
+function hideLicense() {
+  root.getElementById("licenseScreen").classList.remove("show");
+}
+
+/* ------------------------------------------------------------------ *
+ * Panel open / close
+ * ------------------------------------------------------------------ */
+
+function openPanel() {
+  root.getElementById("panel").classList.add("open");
+  root.getElementById("backdrop").classList.add("open");
+  chrome.storage.local.set({ [K_OPEN]: true });
+  refreshStatus();
+}
+function closePanel() {
+  root.getElementById("panel").classList.remove("open");
+  root.getElementById("backdrop").classList.remove("open");
+  chrome.storage.local.set({ [K_OPEN]: false });
+}
+
+async function refreshStatus() {
+  const res = await new Promise((resolve) =>
+    chrome.runtime.sendMessage({ action: "getKeyStatus" }, resolve),
+  );
+  if (!res || !res.valid) setStatus("red", "Inactive");
+  else setStatus("green", "Trial Active");
+}
+
+/* ------------------------------------------------------------------ *
+ * Boot
+ * ------------------------------------------------------------------ */
+
+if (document.getElementById("nfi-host")) return;
+
+const host = document.createElement("div");
+host.id = "nfi-host";
+host.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:2147483647";
+document.body.appendChild(host);
+
+const root = host.attachShadow({ mode: "closed" });
+const style = document.createElement("style");
+style.textContent = STYLES;
+root.appendChild(style);
+
+const container = document.createElement("div");
+container.innerHTML = MARKUP;
+while (container.firstChild) root.appendChild(container.firstChild);
+
+let selectedTrial = false;
+let activeKey = null;
+let activeFingerprint = null;
+
+/* events */
+root.getElementById("fab").onclick = () =>
+  root.getElementById("panel").classList.contains("open") ? closePanel() : openPanel();
+root.getElementById("closeBtn").onclick = closePanel;
+root.getElementById("backdrop").onclick = closePanel;
+
+root.getElementById("licBtn").onclick = async () => {
+  const key = root.getElementById("licInput").value.trim();
+  if (!key) {
+    root.getElementById("licErr").textContent = "Masukkan API Key AM Anda";
+    return;
+  }
+  root.getElementById("licBtn").disabled = true;
+  root.getElementById("licBtnTxt").textContent = "Verifying...";
+  root.getElementById("licErr").textContent = "";
+
+  const fingerprint = await generateFingerprint();
+  const res = await new Promise((resolve) =>
+    chrome.runtime.sendMessage({ action: "validateKey", key, fingerprint }, resolve),
+  );
+
+  if (res && res.valid) {
+    await chrome.storage.local.set({ [K_LICENSE]: key, [K_FINGERPRINT]: fingerprint });
+    activeKey = key;
+    activeFingerprint = fingerprint;
+    root.getElementById("keyChipTxt").textContent = key;
+    hideLicense();
+    refreshStatus();
+  } else {
+    const messages = {
+      invalid_key: "API Key tidak valid",
+      revoked: "Access revoked — get new key from bot",
+      wrong_device: "Key bound to another device",
+      server_offline: "Layanan offline — coba lagi nanti",
+    };
+    root.getElementById("licErr").textContent = messages[res && res.reason] || (res && res.reason) || "Aktivasi gagal";
+  }
+  root.getElementById("licBtn").disabled = false;
+  root.getElementById("licBtnTxt").textContent = "Activate Access";
+};
+
+root.getElementById("logoutBtn") &&
+  (root.getElementById("logoutBtn").onclick = async () => {
+    await chrome.storage.local.remove([K_LICENSE, K_FINGERPRINT]);
+    activeKey = null;
+    activeFingerprint = null;
+    showLicense();
+  });
+
+root.querySelectorAll(".dur-tab").forEach((tab) => {
+  tab.onclick = () => {
+    root.querySelectorAll(".dur-tab").forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    selectedTrial = tab.dataset.opt === "trial";
+    chrome.storage.local.set({ nfiTrial: selectedTrial });
+  };
+});
+
+root.getElementById("injectBtn").onclick = async () => {
+  if (!activeKey) {
+    showLicense("Activate your access key first");
+    return;
+  }
+  const btn = root.getElementById("injectBtn");
+  const label = btn.textContent;
+  btn.disabled = true;
+  setStatus("amber", "Accessing trial...");
+  log("Injecting akun random...", "l-info");
+
+  const res = await new Promise((resolve) =>
+    chrome.runtime.sendMessage(
+      { action: "inject", key: activeKey, fingerprint: activeFingerprint, days: 30, random: true },
+      resolve,
+    ),
+  );
+
+  btn.textContent = label;
+  btn.disabled = false;
+
+  if (!res || !res.ok) {
+    const reasons = {
+      invalid_key: "Access key invalid",
+      revoked: "Access revoked",
+      wrong_device: "Device mismatch",
+      server_offline: "Service offline",
+      channel_required: "Verification required",
+    };
+    log("Failed: " + (reasons[res && res.reason] || "unknown"), "l-err");
+    setStatus("red", "Access Failed");
+    if (res && res.reason === "channel_required") {
+      setStatus("amber", "Verify on Telegram");
+      log("Verification required! Open our Telegram bot, send /start and join the required channels, then try again.", "l-warn");
+    } else if (res && (res.reason === "revoked" || res.reason === "invalid_key")) {
+      showLicense();
+    }
+  } else {
+    log("Trial access granted", "l-ok");
+    setStatus("green", "Trial Active");
+  }
+  setTimeout(refreshStatus, 3000);
+};
+
+root.addEventListener("contextmenu", (e) => e.preventDefault());
+document.addEventListener(
+  "keydown",
+  (e) => {
+    if (e.key === "F12") e.preventDefault();
+    if (e.ctrlKey && (e.key === "I" || e.key === "J" || e.key === "C")) e.preventDefault();
+  },
+  true,
+);
+
+setInterval(async () => {
+  if (!activeKey) return;
+  const status = await new Promise((resolve) => chrome.runtime.sendMessage({ action: "heartbeat" }, resolve));
+  if (status && !status.valid && status.reason !== "no_key") {
+    activeKey = null;
+    await chrome.storage.local.remove([K_LICENSE, K_FINGERPRINT]);
+    showLicense(status.reason === "revoked" ? "Access revoked" : "Access invalid");
+  }
+}, HEARTBEAT_INTERVAL_MS);
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.action === "togglePanel") {
+    root.getElementById("panel").classList.contains("open") ? closePanel() : openPanel();
+    sendResponse({ ok: true });
+  }
+  return true;
+});
+
+/* restore prior session */
+(async function restore() {
+  const stored = await chrome.storage.local.get([K_LICENSE, K_FINGERPRINT, K_OPEN, "nfiTrial"]);
+  if (stored.nfiTrial !== undefined) {
+    selectedTrial = !!stored.nfiTrial;
+    root.querySelectorAll(".dur-tab").forEach((t) => t.classList.toggle("active", (t.dataset.opt === "trial") === selectedTrial));
+  }
+  if (!stored[K_LICENSE]) {
+    if (stored[K_OPEN]) openPanel();
+    showLicense();
+    return;
+  }
+  const status = await new Promise((resolve) =>
+    chrome.runtime.sendMessage({ action: "validateKey", key: stored[K_LICENSE], fingerprint: stored[K_FINGERPRINT] }, resolve),
+  );
+  if (status && status.valid) {
+    activeKey = stored[K_LICENSE];
+    activeFingerprint = stored[K_FINGERPRINT];
+    root.getElementById("keyChipTxt").textContent = stored[K_LICENSE];
+    hideLicense();
+    if (stored[K_OPEN]) openPanel();
+    refreshStatus();
+  } else {
+    await chrome.storage.local.remove([K_LICENSE, K_FINGERPRINT]);
+    if (stored[K_OPEN]) openPanel();
+    showLicense();
+  }
+})();
+})();

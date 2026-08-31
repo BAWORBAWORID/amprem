@@ -1,0 +1,224 @@
+// NF Trial Access — cleaned stealth content script (fingerprint spoofing).
+// Runs in MAIN world at document_start. Reverse-engineered from the obfuscated
+// source; behavior preserved: fakes a Linux/Chrome fingerprint and strips
+// automation (WebDriver / ChromeDriver) signals so the page looks human.
+"use strict";
+
+/* Fake hardware/browser profile */
+const FAKE_PROFILE = {
+  platform: "Linux x86_64",
+  userAgent:
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+  appVersion: "5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+  hardwareConcurrency: 8,
+  deviceMemory: 32,
+  languages: ["en-US", "en", "de", "en"],
+  language: "en-US",
+  maxTouchPoints: 0,
+  screenWidth: 2560,
+  screenHeight: 1440,
+  availWidth: 2560,
+  availHeight: 1410,
+  colorDepth: 24,
+  pixelDepth: 24,
+};
+
+const GPU_PROFILES = [
+  { vendor: "NVIDIA", renderer: "NVIDIA GeForce RTX 3060 OpenGL Engine" },
+  { vendor: "AMD", renderer: "AMD Radeon RX 6600 XT OpenGL Engine" },
+  { vendor: "Intel", renderer: "Mesa Intel(R) UHD Graphics 630 (CFL GT2)" },
+];
+const GPU = GPU_PROFILES[Math.floor(Math.random() * GPU_PROFILES.length)];
+
+const WEBGL_VENDOR_ID = 0x9245;
+const WEBGL_RENDERER_ID = 0x9246;
+
+/* ------------------------------------------------------------------ *
+ * navigator + screen spoofing
+ * ------------------------------------------------------------------ */
+
+function spoofNavigator() {
+  const overrides = {
+    platform: FAKE_PROFILE.platform,
+    userAgent: FAKE_PROFILE.userAgent,
+    appVersion: FAKE_PROFILE.appVersion,
+    hardwareConcurrency: FAKE_PROFILE.hardwareConcurrency,
+    deviceMemory: FAKE_PROFILE.deviceMemory,
+    webdriver: undefined,
+    languages: Object.freeze(FAKE_PROFILE.languages),
+    language: FAKE_PROFILE.language,
+    maxTouchPoints: FAKE_PROFILE.maxTouchPoints,
+    plugins: buildFakePlugins(),
+  };
+
+  for (const prop in overrides) {
+    try {
+      Object.defineProperty(navigator, prop, {
+        get: () => overrides[prop],
+        configurable: true,
+      });
+    } catch {}
+  }
+}
+
+function spoofScreen() {
+  const screenOverrides = {
+    width: FAKE_PROFILE.screenWidth,
+    height: FAKE_PROFILE.screenHeight,
+    availWidth: FAKE_PROFILE.availWidth,
+    availHeight: FAKE_PROFILE.availHeight,
+    colorDepth: FAKE_PROFILE.colorDepth,
+    pixelDepth: FAKE_PROFILE.pixelDepth,
+  };
+  for (const prop in screenOverrides) {
+    try {
+      Object.defineProperty(screen, prop, {
+        get: () => screenOverrides[prop],
+        configurable: true,
+      });
+    } catch {}
+  }
+}
+
+function buildFakePlugins() {
+  const list = [
+    { name: "PDF Viewer", filename: "internal-pdf-viewer", description: "", length: 1 },
+    { name: "Chrome PDF Viewer", filename: "internal-pdf-viewer", description: "Portable Document Format", length: 1 },
+    { name: "Chromium PDF Viewer", filename: "internal-pdf-viewer", description: "", length: 1 },
+  ];
+  list.item = function (i) {
+    return this[i];
+  };
+  list.namedItem = function (name) {
+    return this.find((p) => p.name === name) || null;
+  };
+  list.refresh = function () {};
+  try {
+    Object.setPrototypeOf(list, PluginArray.prototype);
+  } catch {}
+  return list;
+}
+
+/* ------------------------------------------------------------------ *
+ * WebGL spoofing (vendor / renderer)
+ * ------------------------------------------------------------------ */
+
+function spoofWebGL(ctxPrototype) {
+  if (!ctxPrototype) return;
+  const originalGetParameter = ctxPrototype.getParameter;
+  if (originalGetParameter) {
+    ctxPrototype.getParameter = function (pname) {
+      if (pname === WEBGL_VENDOR_ID) return GPU.vendor;
+      if (pname === WEBGL_RENDERER_ID) return GPU.renderer;
+      return originalGetParameter.apply(this, arguments);
+    };
+  }
+  const originalGetExtension = ctxPrototype.getExtension;
+  if (originalGetExtension) {
+    ctxPrototype.getExtension = function (name) {
+      const ext = originalGetExtension.apply(this, arguments);
+      if (name === "WEBGL_debug_renderer_info" && ext) {
+        return {
+          UNMASKED_VENDOR_WEBGL: WEBGL_VENDOR_ID,
+          UNMASKED_RENDERER_WEBGL: WEBGL_RENDERER_ID,
+        };
+      }
+      return ext;
+    };
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Canvas noise (anti-fingerprinting via tiny perturbation)
+ * ------------------------------------------------------------------ */
+
+function spoofCanvas() {
+  try {
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function () {
+      const ctx = this.getContext && originalGetContext.apply(this, arguments);
+      if (ctx && this.width < 300 && this.height < 300 && ctx.getImageData) {
+        try {
+          const img = ctx.getImageData(0, 0, this.width, this.height);
+          for (let i = 0; i < img.data.length; i += 4) img.data[i] ^= 1;
+          ctx.putImageData(img, 0, 0);
+        } catch {}
+      }
+      return originalGetContext.apply(this, arguments);
+    };
+  } catch {}
+}
+
+/* ------------------------------------------------------------------ *
+ * Make spoofed functions read as native code
+ * ------------------------------------------------------------------ */
+
+function spoofFunctionToString() {
+  try {
+    const originalToString = Function.prototype.toString;
+    const seen = new WeakSet();
+    Function.prototype.toString = function () {
+      if (seen.has(this)) return "function " + (this.name || "") + "() { [native code] }";
+      return originalToString.apply(this, arguments);
+    };
+    seen.add(Function.prototype.toString);
+
+    [
+      "platform",
+      "userAgent",
+      "appVersion",
+      "language",
+      "languages",
+      "hardwareConcurrency",
+      "deviceMemory",
+      "maxTouchPoints",
+      "webdriver",
+    ].forEach((prop) => {
+      try {
+        const desc = Object.getOwnPropertyDescriptor(navigator, prop);
+        if (desc && desc.get) seen.add(desc.get);
+      } catch {}
+    });
+  } catch {}
+}
+
+/* ------------------------------------------------------------------ *
+ * Remove automation signatures
+ * ------------------------------------------------------------------ */
+
+function removeAutomationSignals() {
+  const props = [
+    ["webdriver", "window"],
+    ["cdc_adoQpoasnfa76pfcZLmcfl_Array", "window"],
+    ["cdc_adoQpoasnfa76pfcZLmcfl_Promise", "window"],
+    ["cdc_adoQpoasnfa76pfcZLmcfl_Symbol", "window"],
+    ["__proto__", "navigator"],
+  ];
+  for (const [key, scope] of props) {
+    try {
+      delete (scope === "window" ? window : navigator)[key];
+    } catch {}
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Boot
+ * ------------------------------------------------------------------ */
+
+spoofNavigator();
+spoofScreen();
+try {
+  spoofWebGL(WebGLRenderingContext.prototype);
+} catch {}
+try {
+  spoofWebGL(WebGL2RenderingContext.prototype);
+} catch {}
+try {
+  spoofCanvas();
+} catch {}
+try {
+  spoofFunctionToString();
+} catch {}
+try {
+  removeAutomationSignals();
+} catch {}

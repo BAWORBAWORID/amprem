@@ -160,39 +160,70 @@ const GENEMAIL_JAGOAN_DOMAINS = [
  * - markWorkerInactive: hanya membersihkan bila id cocok — mencegah worker lama
  *   (yang selesai belakangan) menghapus registry milik batch baru.
  */
+/* ---------- Worker tracking PER BATCH (paralel antar user) ---------- */
+// Map batchId -> { aliveAt } sehingga banyak user bisa jalan bersamaan.
 function markWorkerActive(batchId) {
-    globalThis.__amBatchWorker = { id: batchId, aliveAt: Date.now() };
+    if (!globalThis.__amBatchWorkers) globalThis.__amBatchWorkers = {};
+    globalThis.__amBatchWorkers[batchId] = { aliveAt: Date.now() };
 }
-function markWorkerPing() {
-    if (globalThis.__amBatchWorker) globalThis.__amBatchWorker.aliveAt = Date.now();
+function markWorkerPing(batchId) {
+    const m = globalThis.__amBatchWorkers;
+    if (m && m[batchId]) m[batchId].aliveAt = Date.now();
 }
 function markWorkerInactive(batchId) {
-    const w = globalThis.__amBatchWorker;
-    if (!batchId || (w && w.id === batchId)) globalThis.__amBatchWorker = null;
+    const m = globalThis.__amBatchWorkers;
+    if (m && batchId && m[batchId]) delete m[batchId];
 }
 function workerAliveFor(batchId) {
-    const w = globalThis.__amBatchWorker;
-    if (!w || w.id !== batchId) return false;
-    return Date.now() - w.aliveAt < 3 * 60 * 1000;
+    const m = globalThis.__amBatchWorkers;
+    if (!m || !m[batchId]) return false;
+    return Date.now() - m[batchId].aliveAt < 3 * 60 * 1000;
 }
 
-function getActiveBatch() {
-    return readJSON('batch', null);
+/* ---------- Penyimpanan batch PER USER (data/batches.json) ---------- */
+// Batch lama di data/batch.json (single-file) dipindah sekali ke map per-user
+// agar tidak ada data yang hilang saat migrasi.
+function migrateLegacyBatchIfNeeded() {
+    const legacy = readJSON('batch', null);
+    if (!legacy || !legacy.operator) return;
+    const all = readJSON('batches', {});
+    if (!(all && all[legacy.operator])) {
+        all[legacy.operator] = legacy;
+        writeJSON('batches', all);
+    }
+    writeJSON('batch', null); // bersihkan slot global
 }
-
-function updateBatch(mutator) {
-    const batch = readJSON('batch', null);
+function getAllBatches() {
+    return readJSON('batches', {});
+}
+function saveAllBatches(all) {
+    writeJSON('batches', all);
+}
+function getActiveBatch(operator) {
+    const all = getAllBatches();
+    return operator ? (all[operator] || null) : null;
+}
+function setActiveBatch(operator, batch) {
+    if (!operator) return;
+    const all = getAllBatches();
+    if (batch == null) delete all[operator];
+    else all[operator] = batch;
+    saveAllBatches(all);
+}
+function updateBatch(operator, mutator) {
+    const batch = getActiveBatch(operator);
     if (!batch) return;
     try { mutator(batch); } catch (e) { /* abaikan */ }
-    writeJSON('batch', batch);
+    setActiveBatch(operator, batch);
 }
 
 function startBatch(user, domain, count, prefix, notify) {
-    const batch = getActiveBatch();
+    migrateLegacyBatchIfNeeded();
+    const batch = getActiveBatch(user.username);
     if (batch && (batch.status === 'running' || batch.status === 'stalled')) {
-        // Worker masih benar-benar hidup -> tolak (perilaku normal).
+        // Worker masih benar-benar hidup -> tolak (perilaku normal) — hanya utk user ini.
         if (workerAliveFor(batch.id)) {
-            return { success: false, message: 'Masih ada batch yang berjalan. Selesaikan batch sebelumnya terlebih dahulu.' };
+            return { success: false, message: 'Anda masih memiliki batch yang berjalan. Selesaikan batch Anda sebelumnya terlebih dahulu.' };
         }
         // Worker mati (crash/restart/kill) -> abort batch lama agar tidak
         // menggantung selamanya dan memblokir semua batch berikutnya.
@@ -209,7 +240,7 @@ function startBatch(user, domain, count, prefix, notify) {
             });
             writeJSON('history', history);
         }
-        writeJSON('batch', batch);
+        setActiveBatch(batch.operator || user.username, batch);
         addLog('[' + (batch.operator || user.username) + '] Batch lama (' + batch.id + ') di-abort otomatis (worker mati, sisa ' + (batch.count - batch.done) + ' akun)');
         // Beri tahu chat Telegram yang meminta batch lama, bila ada.
         if (batch.notify && batch.notify.tgBotId) {
@@ -252,7 +283,7 @@ function startBatch(user, domain, count, prefix, notify) {
     // ke user (response instan, gaya apiku) — worker akan memakai daftar ini.
     const emails = buildEmailList({ name: prefix, domains: batchDomains, count: count });
     newBatch.emails = emails;
-    writeJSON('batch', newBatch);
+    setActiveBatch(user.username, newBatch);
     addLog('[' + user.username + '] Auto generator batch dimulai (' + count + ' akun @' + domain + ')');
     startBatchWorker(newBatch);
     return { success: true, message: 'Batch dimulai. Worker generator.email berjalan di background.', batch: newBatch, emails: emails };
@@ -262,7 +293,7 @@ function startBatchWorker(batch, extra) {
     const opts = extra || {};
     const remaining = Math.max(0, batch.count - batch.done);
     if (remaining <= 0) {
-        updateBatch(function (b) {
+        updateBatch(batch.operator, function (b) {
             if (b.id !== batch.id) return;
             b.status = 'completed';
             b.logs.push('[SYSTEM] Semua akun sudah diproses.');
@@ -289,16 +320,16 @@ function startBatchWorker(batch, extra) {
         count: opts.count || remaining,
         maxTries: 20,
         onLog: function (msg) {
-            markWorkerPing();
-            updateBatch(function (b) {
+            markWorkerPing(batch.id);
+            updateBatch(batch.operator, function (b) {
                 if (b.id !== batch.id) return;
                 b.logs.push('[' + fmtDateTime() + '] ' + msg);
                 if (b.logs.length > 300) b.logs.splice(0, b.logs.length - 300);
             });
         },
         onResult: function (r, idx) {
-            markWorkerPing();
-            updateBatch(function (b) {
+            markWorkerPing(batch.id);
+            updateBatch(batch.operator, function (b) {
                 if (b.id !== batch.id) return;
                 b.results.push(r);
                 b.done = b.results.length;
@@ -327,7 +358,7 @@ function startBatchWorker(batch, extra) {
                 }
             }
             
-            updateBatch(function (b) {
+            updateBatch(batch.operator, function (b) {
                 if (b.id !== batch.id) return;
                 b.status = 'completed';
                 b.logs.push('[SYSTEM] Selesai! ' + ok + '/' + results.length + ' akun sukses.');
@@ -360,7 +391,7 @@ function startBatchWorker(batch, extra) {
         },
     }).catch(async function (e) {
         let notifyTarget = null;
-        updateBatch(function (b) {
+        updateBatch(batch.operator, function (b) {
             if (b.id !== batch.id) return;
             b.status = 'failed';
             b.logs.push('[SYSTEM] Batch gagal: ' + e.message);
@@ -385,13 +416,13 @@ function startBatchWorker(batch, extra) {
     });
 }
 
-function progressBatch() {
-    const batch = getActiveBatch();
+function progressBatch(operator) {
+    const batch = getActiveBatch(operator);
     if (!batch || batch.status === 'completed' || batch.status === 'failed') return;
     if (batch.status === 'running' && !workerAliveFor(batch.id)) {
         batch.status = 'stalled';
         batch.logs.push('[SYSTEM] Worker tidak aktif. Klik "Lanjutkan" untuk menjalankan ulang worker.');
-        writeJSON('batch', batch);
+        setActiveBatch(operator, batch);
     }
 }
 
@@ -655,6 +686,7 @@ export {
     GENEMAIL_VERIFIED_DOMAINS,
     GENEMAIL_JAGOAN_DOMAINS,
     getActiveBatch, 
+    setActiveBatch, 
     updateBatch, 
     startBatch, 
     startBatchWorker, 
