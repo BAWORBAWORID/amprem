@@ -18,7 +18,9 @@ img { -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none; }
     html.theme-pending body { visibility: hidden; }
 </style>
 <script>
-    window.API_BASE_URL = 'https://am.alwayscodex.eu.cc';
+    // API base URL otomatis mengikuti domain tempat situs di-deploy.
+    // Bisa di-override lewat window.API_BASE_URL (mis. dari query/hardcode).
+    window.API_BASE_URL = window.API_BASE_URL || window.location.origin;
 (function () {
     try {
         var key = 'am-theme-preference:guest';
