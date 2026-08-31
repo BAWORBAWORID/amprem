@@ -90,8 +90,12 @@ if (process.env.AM_HMR === '1') {
     }
 }
 
-server.listen(PORT, '0.0.0.0', () => {
-    logger.ready('AM Premium Creator berjalan di http://0.0.0.0:' + PORT);
+// Bind ke localhost saja (127.0.0.1) — akses publik lewat nginx/Cloudflare yang
+// reverse-proxy ke 127.0.0.1:PORT. Port tidak ter-expose ke jaringan luar secara
+// langsung, lebih aman. Ubah via env AM_HOST_BIND bila ingin bind lain.
+const HOST_BIND = process.env.AM_HOST_BIND || '127.0.0.1';
+server.listen(PORT, HOST_BIND, () => {
+    logger.ready('AM Premium Creator berjalan di http://' + HOST_BIND + ':' + PORT);
     logger.info('Owner login: alwayscodex');
     logger.info('Local: http://localhost:' + PORT);
 });

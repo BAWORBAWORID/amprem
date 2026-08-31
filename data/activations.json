@@ -1,261 +1,5 @@
 [
   {
-    "id": "mtfyiev5c32c3f",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:20:56"
-  },
-  {
-    "id": "mtfyjliw3b1750",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:21:51"
-  },
-  {
-    "id": "mtfykw2081ca81",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:22:52"
-  },
-  {
-    "id": "mtfym7dy265f41",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:23:53"
-  },
-  {
-    "id": "mtfynisj6f7ec2",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:24:54"
-  },
-  {
-    "id": "mtfyos0b54f8d3",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:25:53"
-  },
-  {
-    "id": "mtfypaet01cd68",
-    "operator": "yulzs",
-    "email": "am65fkfbs@mail.tm",
-    "status": "failed",
-    "note": "autogen: gagal create akun (email=false, token=false, pass=true)",
-    "createdAt": "2026-08-30 23:26:17"
-  },
-  {
-    "id": "mtfyq1h4a40504",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:26:52"
-  },
-  {
-    "id": "mtfyqhsmc6c700",
-    "operator": "yulzs",
-    "email": "am91sxqcm@mail.tm",
-    "status": "failed",
-    "note": "autogen: gagal create akun (email=true, token=false, pass=true)",
-    "createdAt": "2026-08-30 23:27:13"
-  },
-  {
-    "id": "mtfyrc8k77961f",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:27:52"
-  },
-  {
-    "id": "mtfyrnkg3e480e",
-    "operator": "yulzs",
-    "email": "amwg0pcjk@mail.tm",
-    "status": "failed",
-    "note": "autogen: gagal create akun (email=true, token=false, pass=true)",
-    "createdAt": "2026-08-30 23:28:07"
-  },
-  {
-    "id": "mtfyshts0f59c8",
-    "operator": "yulzs",
-    "email": "amwo1qkvl@mail.tm",
-    "status": "failed",
-    "note": "autogen: gagal create akun (email=false, token=false, pass=true)",
-    "createdAt": "2026-08-30 23:28:46"
-  },
-  {
-    "id": "mtfysm2m4a3f6b",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:28:52"
-  },
-  {
-    "id": "mtfytxh235ec3c",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:29:53"
-  },
-  {
-    "id": "mtfyv5ytd4f1bd",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:30:51"
-  },
-  {
-    "id": "mtfywg8vf0000f",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:31:51"
-  },
-  {
-    "id": "mtfyxqrg6dfbce",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:32:51"
-  },
-  {
-    "id": "mtfyz0sp651ef4",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:33:51"
-  },
-  {
-    "id": "mtfz0bu91cd067",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:34:52"
-  },
-  {
-    "id": "mtfz1lfme0e8e6",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:35:51"
-  },
-  {
-    "id": "mtfz2vy62a3e72",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:36:51"
-  },
-  {
-    "id": "mtfz45yx87f5d4",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:37:51"
-  },
-  {
-    "id": "mtfz5ga4294cc6",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:38:51"
-  },
-  {
-    "id": "mtfz6ql88316db",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:39:51"
-  },
-  {
-    "id": "mtfz80x6a1c4be",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:40:51"
-  },
-  {
-    "id": "mtfz9b7gc909de",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:41:51"
-  },
-  {
-    "id": "mtfzalfsaa7763",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:42:51"
-  },
-  {
-    "id": "mtfzbvqo493050",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:43:51"
-  },
-  {
-    "id": "mtfzd6bie119ba",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:44:51"
-  },
-  {
-    "id": "mtfzegds3c9200",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:45:51"
-  },
-  {
-    "id": "mtfzgx6x7e9961",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:47:46"
-  },
-  {
-    "id": "mtfzi7fo00031e",
-    "operator": "branndeveloper",
-    "email": "healthchecktest@tempmail.lol",
-    "status": "success",
-    "note": "send-link: tautan dikirim",
-    "createdAt": "2026-08-30 23:48:46"
-  },
-  {
     "id": "mtfzjhop48f44a",
     "operator": "branndeveloper",
     "email": "healthchecktest@tempmail.lol",
@@ -7998,5 +7742,261 @@
     "status": "success",
     "note": "Licence Active",
     "createdAt": "2026-08-31 12:57:28"
+  },
+  {
+    "id": "mtgrowq741c01e",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 12:57:48"
+  },
+  {
+    "id": "mtgrq70rfe5d73",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 12:58:48"
+  },
+  {
+    "id": "mtgrrh8nf7f388",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 12:59:48"
+  },
+  {
+    "id": "mtgrssbpbf3aad",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:00:49"
+  },
+  {
+    "id": "mtgru1xl1fcbdb",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:01:48"
+  },
+  {
+    "id": "mtgrvy0rcf5037",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:03:16"
+  },
+  {
+    "id": "mtgrx8a3e63367",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:04:16"
+  },
+  {
+    "id": "mtgryiru5b6671",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:05:16"
+  },
+  {
+    "id": "mtgrzsvw1d3f3b",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:06:16"
+  },
+  {
+    "id": "mtgs134n21d7b6",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:07:16"
+  },
+  {
+    "id": "mtgs2dkc6307ac",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:08:16"
+  },
+  {
+    "id": "mtgs32n085579e",
+    "operator": "xyaba",
+    "email": "preuddobreuweunu-8892@yopmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:08:49"
+  },
+  {
+    "id": "mtgs3ksm1345fb",
+    "operator": "xyaba",
+    "email": "preuddobreuweunu-8892@yopmail.com",
+    "status": "success",
+    "note": "Licence Active",
+    "createdAt": "2026-08-31 13:09:12"
+  },
+  {
+    "id": "mtgs3o4ff72ce7",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:09:17"
+  },
+  {
+    "id": "mtgs4y5x899736",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:10:16"
+  },
+  {
+    "id": "mtgs68dwab5810",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:11:16"
+  },
+  {
+    "id": "mtgs68vm776b69",
+    "operator": "am-generator-aceh",
+    "email": "fikrikhairuakbar911@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:11:17"
+  },
+  {
+    "id": "mtgs7io2980fdc",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:12:16"
+  },
+  {
+    "id": "mtgs8sxtbab293",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:13:16"
+  },
+  {
+    "id": "mtgsa38v447d56",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:14:16"
+  },
+  {
+    "id": "mtgsbdmybef081",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:15:16"
+  },
+  {
+    "id": "mtgsbonj1ce5de",
+    "operator": "am-generator-aceh",
+    "email": "fikrikhairuakbar911@gmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:15:31"
+  },
+  {
+    "id": "mtgscnwld3e062",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:16:16"
+  },
+  {
+    "id": "mtgsdti34c3d85",
+    "operator": "am-generator-aceh",
+    "email": "fikrikhairuakbar911@gmail.com",
+    "status": "success",
+    "note": "Licence Active",
+    "createdAt": "2026-08-31 13:17:10"
+  },
+  {
+    "id": "mtgsdylva6a3f4",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:17:17"
+  },
+  {
+    "id": "mtgsf8dw533a6e",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:18:16"
+  },
+  {
+    "id": "mtgsgizx6b64cd",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:19:17"
+  },
+  {
+    "id": "mtgshts2561e07",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:20:17"
+  },
+  {
+    "id": "mtgsj3iaa79733",
+    "operator": "xyaba",
+    "email": "quiceffeimmapa-2952@yopmail.com",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:21:16"
+  },
+  {
+    "id": "mtgsj3moffd4be",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:21:17"
+  },
+  {
+    "id": "mtgsjl4p7b9606",
+    "operator": "xyaba",
+    "email": "quiceffeimmapa-2952@yopmail.com",
+    "status": "success",
+    "note": "Licence Active",
+    "createdAt": "2026-08-31 13:21:39"
+  },
+  {
+    "id": "mtgske8l59858c",
+    "operator": "branndeveloper",
+    "email": "healthchecktest@tempmail.lol",
+    "status": "success",
+    "note": "send-link: tautan dikirim",
+    "createdAt": "2026-08-31 13:22:17"
   }
 ]

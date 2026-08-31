@@ -11,8 +11,8 @@
       "username": "alightmotion_ac_bot",
       "first_name": "alightmotionbot"
     },
-    "status": "online",
-    "error": null,
+    "status": "error",
+    "error": "Token sedang dipakai instance/bot lain (409). Stop bot lain dengan token ini.",
     "createdAt": "2026-08-12T01:06:34.276Z",
     "startedAt": "2026-08-31T03:33:57.782Z"
   },
@@ -28,8 +28,8 @@
       "username": "Kyverse_bot",
       "first_name": "ky"
     },
-    "status": "online",
-    "error": null,
+    "status": "error",
+    "error": "Token sedang dipakai instance/bot lain (409). Stop bot lain dengan token ini.",
     "createdAt": "2026-08-27T10:26:56.439Z",
     "startedAt": "2026-08-31T03:33:59.799Z"
   }

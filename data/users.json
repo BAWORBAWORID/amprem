@@ -2328,7 +2328,7 @@
     "username": "xyaba",
     "password": "$2b$10$MXS/idunWMd2m41AHZvymuDMtM3gZc6oNSfXzZKG2SOgeLbbp3nb.",
     "role": "user",
-    "credits": 44,
+    "credits": 42,
     "creditResetDate": "2026-08-31",
     "apiKey": "Codex8afac4687f14ffc8ed011da55853b36",
     "apiPlan": "",
@@ -3120,10 +3120,10 @@
     "role": "user",
     "credits": 50,
     "creditResetDate": "2026-08-31",
-    "apiKey": "",
+    "apiKey": "Codex-F2B6229B-C69F28F4-2EB97FC5-A10D3D04",
     "apiPlan": "",
     "apiExpiresAt": null,
-    "apiActive": false,
+    "apiActive": true,
     "createdAt": "2026-08-27T14:44:33.271Z",
     "banned": false,
     "ip": "182.62.54.48",
@@ -3134,7 +3134,8 @@
     "referralEarned": 0,
     "referralPending": 0,
     "referralClaimed": 0,
-    "referrals": []
+    "referrals": [],
+    "apiKeyRevoked": false
   },
   "pp_apa": {
     "id": "mtbn6hplcf0f2d",
@@ -9358,5 +9359,28 @@
     "referralClaimed": 0,
     "referrals": [],
     "apiKeyRevoked": false
+  },
+  "am-generator-aceh": {
+    "id": "mtgs2klke13249",
+    "username": "am-generator-aceh",
+    "password": "scrypt$32768$8$1$78283c1544b154a5ce2c96a9d5edf75a$19e5bf850e330b62e2690ec0a58e61c1497064f570d33e1daab7ee9c0e873bf739f796160500231a098b3c0d296eb7205e041f5daecf1f706885d135c67a9994",
+    "role": "user",
+    "credits": 48,
+    "creditResetDate": "2026-08-31",
+    "apiKey": "",
+    "apiPlan": "",
+    "apiExpiresAt": null,
+    "apiActive": false,
+    "createdAt": "2026-08-31T05:08:25.929Z",
+    "banned": false,
+    "ip": "36.82.32.197",
+    "device": "Windows",
+    "referralCode": "nna-o50",
+    "referredBy": "",
+    "referralCount": 0,
+    "referralEarned": 0,
+    "referralPending": 0,
+    "referralClaimed": 0,
+    "referrals": []
   }
 }
