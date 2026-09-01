@@ -4,17 +4,17 @@
     "name": "alwayscodex Bot",
     "token": "8672100802:AAHnS-_MwAhk7w2G7PyI_N7ILlby9UayxYw",
     "ownerId": "5323386592",
-    "apiKey": "Codex-699F33F6-C43B37DE-A0E02840-EFB33CEE",
+    "apiKey": "Codex-E8B782D6-70E77ED4-AAA52444-21B3CB9D",
     "deployedBy": "alwayscodex",
     "me": {
       "id": 8672100802,
       "username": "alightmotion_ac_bot",
       "first_name": "alightmotionbot"
     },
-    "status": "error",
-    "error": "Token sedang dipakai instance/bot lain (409). Stop bot lain dengan token ini.",
+    "status": "online",
+    "error": null,
     "createdAt": "2026-08-12T01:06:34.276Z",
-    "startedAt": "2026-08-31T03:33:57.782Z"
+    "startedAt": "2026-08-31T09:57:25.914Z"
   },
   {
     "id": "mtbdorp2f20d8a",
@@ -28,9 +28,9 @@
       "username": "Kyverse_bot",
       "first_name": "ky"
     },
-    "status": "error",
-    "error": "Token sedang dipakai instance/bot lain (409). Stop bot lain dengan token ini.",
+    "status": "online",
+    "error": null,
     "createdAt": "2026-08-27T10:26:56.439Z",
-    "startedAt": "2026-08-31T03:33:59.799Z"
+    "startedAt": "2026-08-31T09:49:01.757Z"
   }
 ]

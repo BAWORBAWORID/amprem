@@ -16,6 +16,8 @@
     "moment-timezone": "^0.6.3",
     "playwright": "^1.62.1",
     "puppeteer-core": "^25.5.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "qrcode": "^1.5.4"
   }
 }

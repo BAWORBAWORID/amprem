@@ -1440,9 +1440,6 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const user = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.apiKey === key && u.apiActive && !isPremiumExpired(u); });
         if (!user) return sendJSON(res, 403, { success: false, message: 'API Key tidak valid, tidak aktif, atau masa aktif sudah berakhir.' });
-        if (!canUseApiKey(user)) {
-            return sendJSON(res, 403, { success: false, message: 'Fitur API generator hanya untuk role Premium, AutoGen, Admin, atau Owner.' });
-        }
         return sendJSON(res, 200, {
             success: true,
             valid: true,
@@ -1458,9 +1455,6 @@ async function handleAPI(req, res, url) {
         const users = getUsers();
         const user = Object.keys(users).map(function (k) { return users[k]; }).find(function (u) { return u.apiKey === key && u.apiActive && !isPremiumExpired(u); });
         if (!user) return sendJSON(res, 403, { success: false, message: 'API Key tidak valid, tidak aktif, atau masa aktif sudah berakhir.' });
-        if (!canUseApiKey(user)) {
-            return sendJSON(res, 403, { success: false, message: 'Fitur API generator hanya untuk role Premium, AutoGen, Admin, atau Owner.' });
-        }
         const netflixData = readJSON('netflix', { accounts: [] });
         const accounts = Array.isArray(netflixData.accounts) ? netflixData.accounts : [];
         const accountId = parseInt(url.searchParams.get('account'), 10);

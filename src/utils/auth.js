@@ -6,8 +6,9 @@
  * ASYNC di threadpool — tidak memblokir event loop seperti bcryptjs sync.
  * Format tersimpan: scrypt$N$r$p$<salt_hex>$<key_hex> (versi lengkap tersimpan
  * sehingga parameter bisa dimigrasikan tanpa kehilangan data).
- * Hash bcrypt lama (prefix $2) tetap diverifikasi lalu otomatis di-upgrade
- * ke scrypt saat login berikutnya (lihat api.js).
+ * Verifikasi bcrypt lama (prefix $2) DINONAKTIFKAN (lihat verifyPassword):
+ * user dengan hash lama tidak bisa login; semua akun sudah dimigrasi ke scrypt.
+ * Kode legacy tetap ada (di-comment) sebagai referensi.
  */
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -67,10 +68,15 @@ export async function verifyPassword(user, password) {
             return false;
         }
     }
-    // Legacy: hanya terima hash bcrypt (prefix $2). Hash lemah (SHA-256/plaintext)
-    // ditolak agar tidak ada jalur verifikasi yang tidak aman.
-    if (stored.indexOf('$2') !== 0) return false;
-    return bcrypt.compareSync(String(password), stored);
+    // ===================================================================
+    // LEGACY DISABLED (2026-09-01): verifikasi hash lama (bcrypt $2) sengaja
+    // dimatikan. Semua user sudah dimigrasi ke scrypt; hash lama tidak boleh
+    // dipakai login lagi. Kode dibiarkan (di-comment) sebagai referensi —
+    // jangan dihapus, cukup diaktifkan kembali bila migrasi dibatalkan.
+    // -------------------------------------------------------------------
+    // if (stored.indexOf('$2') !== 0) return false;
+    // return bcrypt.compareSync(String(password), stored);
+    return false;
 }
 
 export function isValidUsername(username) {
